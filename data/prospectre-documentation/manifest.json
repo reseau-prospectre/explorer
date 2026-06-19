@@ -1,0 +1,141 @@
+{
+  "id": "pack:prospectre-documentation",
+  "titre": "PROSPECTRE — Documentation et laboratoire",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "date_generation": "2026-06-11",
+  "description": "Documentation officielle de PROSPECTRE 1.0, starter pack générique et laboratoire Markdown illustré.",
+  "modele": {
+    "version": "1.0.0",
+    "relations": {
+      "related_to": { "label": "Complète" },
+      "supports": { "label": "Documente" },
+      "derived_from": { "label": "Prolonge" }
+    },
+    "types": [
+      {
+        "id": "guide",
+        "label": "Guides",
+        "singular": "Guide",
+        "folder": "guides",
+        "color": "#4f8cff",
+        "size": 18,
+        "order": 0,
+        "showLabel": true,
+        "fields": [
+          { "key": "titre", "label": "Titre", "kind": "text", "required": true },
+          { "key": "audience", "label": "Public", "kind": "select", "required": true, "values": ["tous", "utilisateur", "animateur"] },
+          { "key": "statut", "label": "Statut", "kind": "select", "required": true, "values": ["brouillon", "validé"] },
+          { "key": "tags", "label": "Mots-clés", "kind": "text", "required": false },
+          { "key": "relations", "label": "Relations", "kind": "reference", "target": "*", "multiple": true, "required": false }
+        ]
+      },
+      {
+        "id": "procedure",
+        "label": "Procédures",
+        "singular": "Procédure",
+        "folder": "administration",
+        "color": "#e0a336",
+        "size": 15,
+        "order": 1,
+        "showLabel": true,
+        "fields": [
+          { "key": "titre", "label": "Titre", "kind": "text", "required": true },
+          { "key": "audience", "label": "Public", "kind": "select", "required": true, "values": ["administrateur", "responsable de pack"] },
+          { "key": "statut", "label": "Statut", "kind": "select", "required": true, "values": ["brouillon", "validé"] },
+          { "key": "relations", "label": "Relations", "kind": "reference", "target": "*", "multiple": true, "required": false }
+        ]
+      },
+      {
+        "id": "architecture",
+        "label": "Architecture",
+        "singular": "Architecture",
+        "folder": "technique",
+        "color": "#6fb85f",
+        "size": 16,
+        "order": 2,
+        "showLabel": true,
+        "fields": [
+          { "key": "titre", "label": "Titre", "kind": "text", "required": true },
+          { "key": "composant", "label": "Composant", "kind": "text", "required": false },
+          { "key": "statut", "label": "Statut", "kind": "select", "required": true, "values": ["expérimental", "stable"] },
+          { "key": "relations", "label": "Relations", "kind": "reference", "target": "*", "multiple": true, "required": false }
+        ]
+      },
+      {
+        "id": "reference",
+        "label": "Références",
+        "singular": "Référence",
+        "folder": "references",
+        "color": "#9b6be8",
+        "size": 13,
+        "order": 3,
+        "showLabel": false,
+        "fields": [
+          { "key": "titre", "label": "Titre", "kind": "text", "required": true },
+          { "key": "format", "label": "Format", "kind": "select", "required": true, "values": ["cheat sheet", "spécification", "check-list"] },
+          { "key": "statut", "label": "Statut", "kind": "select", "required": true, "values": ["brouillon", "validé"] },
+          { "key": "relations", "label": "Relations", "kind": "reference", "target": "*", "multiple": true, "required": false }
+        ]
+      },
+      {
+        "id": "demo",
+        "label": "Démonstrations",
+        "singular": "Démonstration",
+        "folder": "demos",
+        "color": "#e5534b",
+        "size": 17,
+        "order": 4,
+        "showLabel": true,
+        "fields": [
+          { "key": "titre", "label": "Titre", "kind": "text", "required": true },
+          { "key": "niveau", "label": "Niveau", "kind": "select", "required": true, "values": ["débutant", "intermédiaire", "avancé"] },
+          { "key": "statut", "label": "Statut", "kind": "select", "required": true, "values": ["brouillon", "prêt à tester"] },
+          { "key": "relations", "label": "Relations", "kind": "reference", "target": "*", "multiple": true, "required": false }
+        ]
+      }
+    ]
+  },
+  "contenu": {
+    "guides": 9,
+    "procedures": 5,
+    "architecture": 7,
+    "references": 3,
+    "demonstrations": 2,
+    "illustrations": 4
+  },
+  "fichiers": [
+    "README.md",
+    "guides/accueil.md",
+    "guides/premiers-pas.md",
+    "guides/explorer-graphe.md",
+    "guides/fiches-edition.md",
+    "guides/collaboration.md",
+    "guides/import-export.md",
+    "guides/analyses-reperes.md",
+    "guides/profil-preferences.md",
+    "guides/nouveautes-v1.md",
+    "administration/administrer-modele.md",
+    "administration/types-champs.md",
+    "administration/permissions-gouvernance.md",
+    "administration/cycle-vie-pack.md",
+    "administration/migrer-pack-v1.md",
+    "technique/architecture.md",
+    "technique/format-pack.md",
+    "technique/modele-donnees.md",
+    "technique/securite-temps-reel.md",
+    "technique/deploiement.md",
+    "technique/depannage.md",
+    "technique/modules-extension.md",
+    "references/markdown-cheat-sheet.md",
+    "references/frontmatter-reference.md",
+    "references/specification-pack-v1.md",
+    "demos/fiche-demonstration.md",
+    "demos/scenario-atelier.md",
+    "assets/illustrations/parcours-utilisateur.svg",
+    "assets/illustrations/architecture-application.svg",
+    "assets/illustrations/cycle-pack.svg",
+    "assets/illustrations/markdown-capacites.svg",
+    "manifest.json"
+  ]
+}

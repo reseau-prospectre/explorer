@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="620" viewBox="0 0 1200 620" role="img" aria-labelledby="title desc">
+  <title id="title">Architecture de PROSPECTRE</title>
+  <desc id="desc">Application statique, pack local, bibliothèques d'affichage, stockage navigateur et Firebase optionnel.</desc>
+  <rect width="1200" height="620" rx="28" fill="#071015"/>
+  <text x="60" y="68" fill="#edf7f6" font-family="Arial, sans-serif" font-size="34" font-weight="700">Architecture fonctionnelle</text>
+  <g font-family="Arial, sans-serif">
+    <rect x="70" y="130" width="280" height="160" rx="18" fill="#14242b" stroke="#4f8cff" stroke-width="3"/>
+    <text x="100" y="178" fill="#7dd3fc" font-size="22" font-weight="700">Pack de projet</text>
+    <text x="100" y="216" fill="#edf7f6" font-size="17">manifest.json</text><text x="100" y="246" fill="#edf7f6" font-size="17">fichiers Markdown</text><text x="100" y="276" fill="#edf7f6" font-size="17">images locales</text>
+    <rect x="460" y="110" width="300" height="210" rx="18" fill="#14242b" stroke="#a7f3d0" stroke-width="3"/>
+    <text x="495" y="158" fill="#a7f3d0" font-size="22" font-weight="700">Application statique</text>
+    <text x="495" y="198" fill="#edf7f6" font-size="17">HTML + CSS + JavaScript</text><text x="495" y="228" fill="#edf7f6" font-size="17">parseur YAML / Markdown</text><text x="495" y="258" fill="#edf7f6" font-size="17">graphe 3D et panneaux</text><text x="495" y="288" fill="#edf7f6" font-size="17">administration du modèle</text>
+    <rect x="870" y="130" width="260" height="160" rx="18" fill="#14242b" stroke="#9b6be8" stroke-width="3"/>
+    <text x="900" y="178" fill="#c4b5fd" font-size="22" font-weight="700">Navigateur</text>
+    <text x="900" y="216" fill="#edf7f6" font-size="17">session locale</text><text x="900" y="246" fill="#edf7f6" font-size="17">profil et brouillons</text><text x="900" y="276" fill="#edf7f6" font-size="17">exports ZIP</text>
+    <rect x="460" y="410" width="300" height="130" rx="18" fill="#14242b" stroke="#e5534b" stroke-width="3"/>
+    <text x="495" y="458" fill="#fca5a5" font-size="22" font-weight="700">Firebase optionnel</text>
+    <text x="495" y="496" fill="#edf7f6" font-size="17">présence, commentaires, activité</text><text x="495" y="526" fill="#edf7f6" font-size="17">authentification Google</text>
+  </g>
+  <g stroke="#71868d" stroke-width="4" fill="none" marker-end="url(#arrow)">
+    <path d="M350 210H450"/><path d="M760 210H860"/><path d="M610 320V400"/>
+  </g>
+  <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#71868d"/></marker></defs>
+</svg>

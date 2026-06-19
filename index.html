@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="fr">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>PROSPECTRE</title>
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='%23071015' stroke='%237dd3fc' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%23a7f3d0'/%3E%3C/svg%3E">
+    <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js">
+    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/i18n/fr.js">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/beercss@4.0.21/dist/cdn/beer.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
+    <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20260619-graph-help-1">
+  </head>
+  <body>
+    <div id="app" class="app-shell">
+      <section id="graph-stage" class="graph-stage" aria-label="Graphe prospectif"></section>
+      <div id="presence-layer" class="presence-layer"></div>
+
+      <header class="topbar">
+        <div class="topbar-left">
+          <div class="project-switcher-wrap">
+            <button id="project-switcher-toggle" class="project-switcher" type="button" aria-controls="project-switcher-menu" aria-expanded="false">
+              <span>
+                <small>Projet actif</small>
+                <strong id="active-project-name">Chargement…</strong>
+              </span>
+              <em id="active-project-version"></em>
+              <i>expand_more</i>
+            </button>
+            <div id="project-switcher-menu" class="project-menu hidden" role="menu" aria-label="Changer de projet"></div>
+          </div>
+          <div id="quick-type-filters" class="quick-type-filters" aria-label="Filtres rapides"></div>
+        </div>
+        <div id="mobile-menu" class="mobile-menu">
+          <div class="topbar-actions">
+            <div id="presence-strip" class="presence-strip" aria-label="Présences en ligne"></div>
+            <button id="toggle-avatars" class="presence-toggle icon-button" type="button" aria-label="Activer la coprésence">
+              <span class="presence-state-dot"></span>
+              <i>radar</i>
+              <span class="tooltip bottom">Activer la coprésence</span>
+              <span class="control-label">Coprésence</span>
+            </button>
+            <div id="activity-slot" class="activity-slot" aria-hidden="true">
+              <button id="activity-button" class="activity-button icon-button" type="button" aria-label="Ouvrir le fil d’activité" tabindex="-1">
+                <i>notifications</i>
+                <span id="activity-badge" class="activity-badge hidden">0</span>
+                <span class="tooltip bottom">Fil d’activité</span>
+                <span class="control-label">Fil d’activité</span>
+              </button>
+            </div>
+            <div class="transfer-menu-wrap">
+              <button id="transfer-menu-toggle" class="icon-button" type="button" aria-controls="transfer-menu" aria-expanded="false" aria-label="Importer ou exporter">
+                <i>import_export</i>
+                <span class="tooltip bottom">Importer ou exporter</span>
+                <span class="control-label">Importer / exporter</span>
+              </button>
+              <div id="transfer-menu" class="action-menu hidden" role="menu">
+                <button id="open-import" type="button" role="menuitem"><i>upload</i><span>Importer un projet</span></button>
+                <button id="export-current" type="button" role="menuitem"><i>download</i><span>Exporter la fiche</span></button>
+                <button id="export-all" type="button" role="menuitem"><i>inventory_2</i><span>Exporter le projet</span></button>
+                <button id="open-schema-admin" type="button" role="menuitem"><i>database</i><span>Administrer le modèle</span></button>
+              </div>
+            </div>
+            <button id="profile-button" class="profile-button" type="button" aria-label="Ouvrir le profil">
+              <span id="profile-avatar">V</span>
+              <span class="tooltip bottom">Profil</span>
+              <span class="control-label">Profil</span>
+            </button>
+          </div>
+        </div>
+        <button id="mobile-menu-toggle" class="mobile-menu-toggle icon-button" type="button" aria-controls="mobile-menu" aria-expanded="false" aria-label="Ouvrir le menu">
+          <i>menu</i>
+        </button>
+      </header>
+
+      <nav class="graph-toolbar" aria-label="Navigation du graphe">
+        <button id="graph-help-toggle" class="tool-button" type="button" aria-label="Aide rapide du graphe" aria-controls="graph-help-popover" aria-expanded="false">
+          <i>info</i>
+          <span class="tooltip right">Aide rapide</span>
+        </button>
+        <button id="filter-menu-toggle" class="tool-button" type="button" aria-controls="type-filters" aria-expanded="false" aria-label="Options d’affichage du graphe">
+          <i>tune</i>
+          <span class="tooltip right">Affichage du graphe</span>
+        </button>
+        <button id="graph-search-toggle" class="tool-button" type="button" aria-label="Rechercher dans le graphe" aria-controls="graph-search-popover" aria-expanded="false">
+          <i>search</i>
+          <span class="tooltip right">Rechercher dans le graphe</span>
+        </button>
+        <button id="zoom-in" class="tool-button" type="button" aria-label="Zoomer">
+          <i>add</i>
+          <span class="tooltip right">Zoomer</span>
+        </button>
+        <button id="zoom-out" class="tool-button" type="button" aria-label="Dézoomer">
+          <i>remove</i>
+          <span class="tooltip right">Dézoomer</span>
+        </button>
+        <button id="fit-view" class="tool-button" type="button" aria-label="Recadrer le graphe">
+          <i>fit_screen</i>
+          <span class="tooltip right">Recadrer les éléments visibles</span>
+        </button>
+        <button id="reset-view" class="tool-button" type="button" aria-label="Réinitialiser la vue" aria-controls="reset-view-popover" aria-expanded="false">
+          <i>restart_alt</i>
+          <span class="tooltip right">Réinitialiser la vue et les filtres</span>
+        </button>
+      </nav>
+
+      <div id="type-filters" class="graph-options-panel toolbar-popover hidden" aria-label="Options d’affichage du graphe"></div>
+
+      <section id="graph-search-popover" class="graph-search-popover toolbar-popover hidden" aria-label="Recherche dans le graphe">
+        <label class="graph-search-field">
+          <i>search</i>
+          <input id="search-input" type="search" placeholder="Rechercher dans les fiches" autocomplete="off">
+          <button id="clear-search" class="search-clear hidden" type="button" aria-label="Effacer la recherche">
+            <i>close</i>
+          </button>
+        </label>
+        <div id="graph-search-status" class="graph-search-status">Tapez un mot-clé, un titre ou un fragment de contenu.</div>
+        <div id="graph-search-results" class="graph-search-results" role="listbox" aria-label="Résultats de recherche"></div>
+      </section>
+
+      <section id="reset-view-popover" class="reset-view-popover toolbar-popover hidden" aria-label="Confirmer la réinitialisation">
+        <strong>Réinitialiser le graphe ?</strong>
+        <p>Cette action réactive tous les types, vide la recherche, ferme la fiche active, efface les positions libres de ce projet et relance le layout automatique.</p>
+        <div class="reset-popover-actions">
+          <button id="confirm-reset-view" class="danger-button compact" type="button">Réinitialiser</button>
+        </div>
+      </section>
+
+      <section id="graph-help-popover" class="graph-help-popover toolbar-popover hidden" aria-label="Aide rapide du graphe">
+        <header>
+          <span><i>info</i></span>
+          <div>
+            <strong>Explorer le graphe</strong>
+            <small>Gestes et raccourcis essentiels</small>
+          </div>
+        </header>
+        <div class="graph-help-grid">
+          <article>
+            <h3>Souris</h3>
+            <p><kbd>Clic gauche</kbd> sélectionne un nœud ou un lien.</p>
+            <p><kbd>Glisser</kbd> fige un nœud à sa position.</p>
+            <p><kbd>Molette</kbd> zoome ; le fond déplace la caméra.</p>
+          </article>
+          <article>
+            <h3>Clavier</h3>
+            <p><kbd>/</kbd> ou <kbd>Ctrl</kbd>+<kbd>K</kbd> ouvre la recherche.</p>
+            <p><kbd>↑</kbd><kbd>↓</kbd> naviguent les résultats ; <kbd>Entrée</kbd> ouvre.</p>
+            <p><kbd>Échap</kbd> ferme le panneau ouvert sans fermer la fiche.</p>
+          </article>
+          <article>
+            <h3>Focus</h3>
+            <p>Un nœud affiche son voisinage ; un lien sa chaîne principale.</p>
+            <p><strong>Voisinage</strong> règle la profondeur du contexte sélectionné.</p>
+            <p>Un clic dans le vide sort du focus visuel.</p>
+          </article>
+          <article>
+            <h3>Outils</h3>
+            <p><i>tune</i> filtres, labels, liens, animations et focus.</p>
+            <p><i>fit_screen</i> recadre les éléments visibles.</p>
+            <p><i>restart_alt</i> remet vue, filtres et positions libres à zéro.</p>
+          </article>
+        </div>
+      </section>
+
+      <aside id="right-panel" class="right-panel hidden" aria-label="Panneau contextuel">
+        <div class="panel-head">
+          <div>
+            <p id="panel-kicker" class="kicker">Sélection</p>
+            <h2 id="panel-title">Aucun élément sélectionné</h2>
+          </div>
+          <button id="close-right-panel" class="ghost-button panel-close" type="button" aria-label="Fermer le panneau">
+            <i>close</i>
+            <span class="tooltip left">Fermer</span>
+          </button>
+        </div>
+        <div id="panel-tabs" class="tabs compact-tabs" role="tablist">
+          <button class="tab active" data-tab="overview" type="button"><i>article</i>Détails</button>
+          <button class="tab" data-tab="discussion" type="button"><i>forum</i>Échanges</button>
+        </div>
+        <div id="panel-content" class="panel-content"></div>
+        <div id="right-resize" class="resize-handle resize-horizontal"></div>
+      </aside>
+
+      <section id="bottom-drawer" class="bottom-drawer" aria-label="Repères">
+        <div id="bottom-resize" class="resize-handle resize-vertical"></div>
+        <div class="drawer-head insight-head">
+          <nav id="insight-breadcrumb" class="insight-breadcrumb" aria-label="Navigation contextuelle"></nav>
+          <button id="toggle-drawer" class="ghost-button" type="button" aria-label="Afficher ou réduire les repères">
+            <i>expand_more</i>
+            <span class="tooltip left">Afficher ou réduire</span>
+          </button>
+        </div>
+        <div class="drawer-body">
+          <div id="timeline" class="timeline-panel"></div>
+          <div id="kpi-grid" class="kpi-grid"></div>
+          <div id="entity-table" class="entity-table"></div>
+          <div id="presence-summary" class="presence-summary"></div>
+        </div>
+      </section>
+
+      <section id="drop-overlay" class="drop-overlay hidden" aria-label="Importer">
+        <div class="drop-card">
+          <i>folder_open</i>
+          <h2>Déposer des contenus</h2>
+          <p>Fichiers ou archive</p>
+          <label class="primary-button">
+            Choisir sur l'ordinateur
+            <input id="pack-input" type="file" accept=".zip,.md,.png,.jpg,.jpeg,.gif,.webp,.svg" multiple>
+          </label>
+        </div>
+      </section>
+
+      <section id="profile-menu" class="profile-menu hidden" aria-label="Profil">
+        <div class="panel-head compact">
+          <div>
+            <p class="kicker">Préférences</p>
+            <h2>Profil</h2>
+          </div>
+          <button id="close-profile" class="ghost-button" type="button" aria-label="Fermer le profil">
+            <i>close</i>
+            <span class="tooltip left">Fermer</span>
+          </button>
+        </div>
+        <div class="panel-content">
+          <section id="gamification-card" class="gamification-card" aria-label="Cœurs de coprésence"></section>
+          <div id="profile-identity" class="profile-identity"></div>
+          <section class="profile-settings-shell">
+            <button id="profile-settings-toggle" class="profile-settings-toggle" type="button" aria-expanded="false" aria-controls="profile-settings-panel">
+              <span><i>tune</i> Identité, thème et connexion</span>
+              <i>expand_more</i>
+            </button>
+            <div id="profile-settings-panel" class="profile-settings-panel hidden">
+              <section class="profile-section identity-editor" aria-label="Identité affichée">
+                <label class="identity-color" aria-label="Couleur du profil">
+                  <span id="profile-color-preview" class="identity-color-preview">IC</span>
+                  <input id="profile-color" type="color">
+                  <i>palette</i>
+                </label>
+                <div class="identity-fields">
+                  <label class="compact-field"><span>Nom</span><input id="profile-name" class="text-field" type="text" maxlength="32"></label>
+                  <label class="compact-field initials-field"><span>Initiales</span><input id="profile-initial" class="text-field" type="text" maxlength="2"></label>
+                </div>
+              </section>
+              <fieldset class="avatar-choice">
+                <legend>Image du profil</legend>
+                <label><input type="radio" name="avatar-mode" value="initials"><span id="avatar-choice-initials" class="avatar-choice-preview"></span><span>Initiales</span></label>
+                <label id="avatar-photo-choice"><input type="radio" name="avatar-mode" value="google"><span id="avatar-choice-photo" class="avatar-choice-preview"></span><span>Avatar Google</span></label>
+              </fieldset>
+              <fieldset class="theme-choice profile-section">
+                <legend>Thème</legend>
+                <div class="segmented-control">
+                  <button type="button" data-theme-choice="system"><i>settings_brightness</i>Système</button>
+                  <button type="button" data-theme-choice="light"><i>light_mode</i>Clair</button>
+                  <button type="button" data-theme-choice="dark"><i>dark_mode</i>Sombre</button>
+                </div>
+              </fieldset>
+              <section class="profile-section connection-section" aria-label="Connexion">
+                <div class="switch-row">
+                  <span><span id="realtime-dot" class="status-dot offline"></span>Coprésence</span>
+                  <label class="switch">
+                    <input id="realtime-switch" type="checkbox">
+                    <span></span>
+                  </label>
+                </div>
+                <button id="google-login" class="secondary-button auth-button" type="button">
+                  <i>account_circle</i>
+                  <span>Connexion Google</span>
+                </button>
+                <div class="profile-status">
+                  <span id="realtime-mode">Local</span>
+                  <span aria-hidden="true">·</span>
+                  <span id="auth-mode">Non connecté</span>
+                  <span aria-hidden="true">·</span>
+                  <strong><span id="presence-count">1</span> en ligne</strong>
+                </div>
+              </section>
+              <button id="clear-local" class="secondary-button clear-local-button" type="button">Réinitialiser l’application et l’identité</button>
+            </div>
+          </section>
+        </div>
+      </section>
+
+      <section id="activity-panel" class="profile-menu activity-panel hidden" aria-label="Fil d’activité">
+        <div class="panel-head compact">
+          <div>
+            <p class="kicker">Coprésence</p>
+            <h2>Fil d’activité</h2>
+          </div>
+          <button id="close-activity" class="ghost-button" type="button" aria-label="Fermer le fil d’activité">
+            <i>close</i>
+            <span class="tooltip left">Fermer</span>
+          </button>
+        </div>
+        <div id="activity-tabs" class="tabs activity-tabs" role="tablist">
+          <button class="tab active" data-activity-tab="unread" type="button">Non vues</button>
+          <button class="tab" data-activity-tab="read" type="button">Vues</button>
+          <button class="tab admin-only hidden" data-activity-tab="trash" type="button">Corbeille</button>
+        </div>
+        <div id="activity-content" class="panel-content"></div>
+      </section>
+
+      <section id="schema-admin" class="schema-admin hidden" aria-label="Administration du modèle">
+        <header class="schema-admin-head">
+          <div>
+            <p class="kicker">Administration</p>
+            <h1>Administration du modèle</h1>
+            <p>Structure du projet, vocabulaire métier et règles d’export.</p>
+          </div>
+          <div class="schema-admin-actions">
+            <button id="reset-schema" class="secondary-button compact-action" type="button"><i>restart_alt</i>Réinitialiser</button>
+            <button id="save-schema" class="primary-button compact-action" type="button"><i>save</i>Enregistrer</button>
+            <button id="close-schema-admin" class="ghost-button" type="button" aria-label="Fermer l’administration"><i>close</i></button>
+          </div>
+        </header>
+        <div class="schema-admin-layout">
+          <nav class="schema-admin-nav" aria-label="Sections d’administration">
+            <button class="schema-nav-button active" data-schema-view="types" type="button"><i>layers</i><span>Types d’éléments</span></button>
+            <button class="schema-nav-button" data-schema-view="fields" type="button"><i>list_alt</i><span>Champs</span></button>
+            <button class="schema-nav-button" data-schema-view="transfer" type="button"><i>sync_alt</i><span>Import / export</span></button>
+            <div class="schema-project-card">
+              <span>Projet actif</span>
+              <strong id="schema-project-name">PROSPECTRE</strong>
+              <small id="schema-version-label">Schéma 1.0.0</small>
+            </div>
+          </nav>
+          <main id="schema-admin-content" class="schema-admin-content"></main>
+        </div>
+        <input id="schema-file-input" type="file" accept=".json" hidden>
+      </section>
+
+      <div id="emoji-picker-popover" class="emoji-picker-popover hidden" role="dialog" aria-label="Choisir une réaction">
+        <div class="emoji-picker-card">
+          <div class="emoji-picker-toolbar">
+            <span>Ajouter une réaction</span>
+            <button id="close-emoji-picker" class="emoji-picker-close" type="button" aria-label="Fermer">
+              <i>close</i>
+              <span class="tooltip left">Fermer</span>
+            </button>
+          </div>
+          <emoji-picker
+            id="emoji-picker"
+            locale="fr-FR"
+            data-source="https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1/fr/emojibase/data.json"
+          ></emoji-picker>
+        </div>
+      </div>
+
+      <div id="toast" class="toast hidden"></div>
+      <div id="link-preview-popover" class="link-preview-popover hidden" role="dialog" aria-label="Aperçu du lien"></div>
+      <section id="link-embed-modal" class="link-embed-modal hidden" aria-label="Intégration du lien">
+        <div class="link-embed-head">
+          <div>
+            <p class="kicker">Intégration</p>
+            <h2 id="link-embed-title">Lien</h2>
+          </div>
+          <button id="close-link-embed" class="ghost-button" type="button" aria-label="Fermer l’intégration"><i>close</i></button>
+        </div>
+        <iframe id="link-embed-frame" title="Aperçu intégré" loading="lazy" referrerpolicy="no-referrer"></iframe>
+      </section>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/3d-force-graph@1.73.0/dist/3d-force-graph.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/marked@12.0.2/marked.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dompurify@3.1.6/dist/purify.min.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
+    <script src="https://uicdn.toast.com/editor/latest/i18n/fr-fr.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/dayjs.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/plugin/relativeTime.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/locale/fr.js"></script>
+    <script>
+      window.Chart || document.write('<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"><\\/script>');
+      if (window.dayjs && window.dayjs_plugin_relativeTime) {
+        window.dayjs.extend(window.dayjs_plugin_relativeTime);
+        window.dayjs.locale("fr");
+      }
+    </script>
+    <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@4.0.21/dist/cdn/beer.min.js"></script>
+    <script type="module" src="./assets/js/emoji-picker-setup.js?v=20260610-fr-picker-3"></script>
+    <script src="./app.config.js"></script>
+  <script src="./assets/js/main.js?v=20260619-ui-polish-3" type="module"></script>
+  </body>
+</html>

@@ -1,0 +1,906 @@
+{
+  "id": "pack:neo-master-ingenierie-pedagogique",
+  "titre": "NEO — Master Ingénierie pédagogique numérique",
+  "version": "1.0.0",
+  "format_version": "1.0.0",
+  "date_generation": "2026-06-12",
+  "description": "Starter pack PROSPECTRE du Master MEEF PIF NEO : architecture curriculaire, référentiel de compétences, niveaux, UE, modules et SAE.",
+  "modele": {
+    "version": "1.0.2",
+    "updatedAt": "2026-06-15T09:06:13.751Z",
+    "relations": {
+      "related_to": {
+        "label": "Relie"
+      },
+      "derived_from": {
+        "label": "Dérive de"
+      },
+      "documented_by": {
+        "label": "Documente"
+      }
+    },
+    "types": [
+      {
+        "id": "formation",
+        "label": "Formation",
+        "singular": "Formation",
+        "folder": "formation",
+        "color": "#17365d",
+        "size": 27,
+        "order": 0,
+        "showLabel": true,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "ects_total",
+            "label": "ECTS",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "heures_total",
+            "label": "Heures",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "semestres",
+            "label": "Semestres",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "semester"
+          },
+          {
+            "key": "blocs",
+            "label": "Blocs de compétences",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "bcc"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "semester",
+        "label": "Semestres",
+        "singular": "Semestre",
+        "folder": "semestres",
+        "color": "#e0a336",
+        "size": 20,
+        "order": 1,
+        "showLabel": true,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "numero",
+            "label": "Numéro",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "annee",
+            "label": "Année",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "M1",
+              "M2"
+            ]
+          },
+          {
+            "key": "ects",
+            "label": "ECTS",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "heures",
+            "label": "Heures",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "stage",
+            "label": "Stage",
+            "kind": "textarea",
+            "required": false,
+            "multiple": false
+          },
+          {
+            "key": "formation",
+            "label": "Formation",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "formation"
+          },
+          {
+            "key": "ues",
+            "label": "UE",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "ue"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "bcc",
+        "label": "BCC",
+        "singular": "BCC",
+        "folder": "bcc",
+        "color": "#2f75b5",
+        "size": 22,
+        "order": 2,
+        "showLabel": true,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "resume",
+            "label": "Compétence intégrative",
+            "kind": "textarea",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "ects_total",
+            "label": "ECTS",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "heures_total",
+            "label": "Heures",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "formation",
+            "label": "Formation",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "formation"
+          },
+          {
+            "key": "apprentissages",
+            "label": "Apprentissages critiques",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "learning"
+          },
+          {
+            "key": "ues",
+            "label": "UE associées",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "ue"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "learning",
+        "label": "Attendus",
+        "singular": "Attendu",
+        "folder": "apprentissages",
+        "color": "#6fb85f",
+        "size": 14,
+        "order": 3,
+        "showLabel": false,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "numero",
+            "label": "Numéro",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "description",
+            "label": "Description",
+            "kind": "textarea",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "bcc",
+            "label": "BCC",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "bcc"
+          },
+          {
+            "key": "niveaux",
+            "label": "Niveaux",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "level"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "level",
+        "label": "Niveaux",
+        "singular": "Niveau",
+        "folder": "niveaux",
+        "color": "#9b6be8",
+        "size": 8,
+        "order": 4,
+        "showLabel": false,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "niveau",
+            "label": "Niveau",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "description",
+            "label": "Descripteur",
+            "kind": "textarea",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "ects",
+            "label": "ECTS",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "apprentissage",
+            "label": "Apprentissage critique",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "learning"
+          },
+          {
+            "key": "semestre",
+            "label": "Semestre",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "semester"
+          },
+          {
+            "key": "ue",
+            "label": "UE",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "ue"
+          },
+          {
+            "key": "sae",
+            "label": "SAE",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "sae"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "ue",
+        "label": "UE",
+        "singular": "UE",
+        "folder": "ues",
+        "color": "#0f6b78",
+        "size": 17,
+        "order": 5,
+        "showLabel": true,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "ects",
+            "label": "ECTS",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "heures",
+            "label": "Heures",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "semestre",
+            "label": "Semestre",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "semester"
+          },
+          {
+            "key": "bcc",
+            "label": "BCC",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "bcc"
+          },
+          {
+            "key": "modules",
+            "label": "Modules",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "module"
+          },
+          {
+            "key": "sae",
+            "label": "SAE",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "sae"
+          },
+          {
+            "key": "niveaux_competence",
+            "label": "Niveaux de compétence",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "level"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "module",
+        "label": "Modules",
+        "singular": "Module",
+        "folder": "modules",
+        "color": "#7f8c8d",
+        "size": 7,
+        "order": 6,
+        "showLabel": false,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "niveau_cible",
+            "label": "Niveau cible",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "semestre",
+            "label": "Semestre",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "semester"
+          },
+          {
+            "key": "ue",
+            "label": "UE",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "ue"
+          },
+          {
+            "key": "bcc",
+            "label": "BCC",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "bcc"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      },
+      {
+        "id": "sae",
+        "label": "SAÉ",
+        "singular": "SAÉ",
+        "folder": "sae",
+        "color": "#e5534b",
+        "size": 15,
+        "order": 7,
+        "showLabel": true,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "statut",
+            "label": "Statut",
+            "kind": "select",
+            "required": true,
+            "multiple": false,
+            "values": [
+              "officiel",
+              "proposition"
+            ]
+          },
+          {
+            "key": "resume",
+            "label": "Description",
+            "kind": "textarea",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "ects_bcc",
+            "label": "ECTS du BCC",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "niveau_cible",
+            "label": "Niveau cible",
+            "kind": "number",
+            "required": true,
+            "multiple": false
+          },
+          {
+            "key": "livrables_preconises",
+            "label": "Livrables préconisés",
+            "kind": "textarea",
+            "required": false,
+            "multiple": false
+          },
+          {
+            "key": "modalites_preconisees",
+            "label": "Modalités préconisées",
+            "kind": "textarea",
+            "required": false,
+            "multiple": false
+          },
+          {
+            "key": "semestre",
+            "label": "Semestre",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "semester"
+          },
+          {
+            "key": "ue",
+            "label": "UE",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "ue"
+          },
+          {
+            "key": "bcc",
+            "label": "BCC",
+            "kind": "reference",
+            "required": true,
+            "multiple": false,
+            "target": "bcc"
+          },
+          {
+            "key": "niveaux_evalues",
+            "label": "Niveaux évalués",
+            "kind": "reference",
+            "required": true,
+            "multiple": true,
+            "target": "level"
+          },
+          {
+            "key": "relations",
+            "label": "Relations libres",
+            "kind": "reference",
+            "required": false,
+            "multiple": true,
+            "target": "*"
+          }
+        ]
+      }
+    ]
+  },
+  "contenu": {
+    "formations": 1,
+    "semestres": 4,
+    "bcc": 4,
+    "apprentissages_critiques": 20,
+    "niveaux_competence": 75,
+    "ues": 15,
+    "modules": 49,
+    "sae": 15,
+    "fiches": 183
+  },
+  "sources": [
+    "Maquette détaillée M1 2025-2026",
+    "Maquette détaillée M2 2025-2026",
+    "BCC mention 4 NEO",
+    "Référentiel Moodle Master NEO MEEF PIF IPN"
+  ],
+  "fichiers": [
+    "README.md",
+    "apprentissages/bcc-neo-c1-p1.md",
+    "apprentissages/bcc-neo-c1-p2.md",
+    "apprentissages/bcc-neo-c1-p3.md",
+    "apprentissages/bcc-neo-c1-p4.md",
+    "apprentissages/bcc-neo-c1-p5.md",
+    "apprentissages/bcc-neo-c2-p1.md",
+    "apprentissages/bcc-neo-c2-p2.md",
+    "apprentissages/bcc-neo-c2-p3.md",
+    "apprentissages/bcc-neo-c2-p4.md",
+    "apprentissages/bcc-neo-c2-p5.md",
+    "apprentissages/bcc-neo-c3-p1.md",
+    "apprentissages/bcc-neo-c3-p2.md",
+    "apprentissages/bcc-neo-c3-p3.md",
+    "apprentissages/bcc-neo-c3-p4.md",
+    "apprentissages/bcc-neo-c3-p5.md",
+    "apprentissages/bcc-neo-c4-p1.md",
+    "apprentissages/bcc-neo-c4-p2.md",
+    "apprentissages/bcc-neo-c4-p3.md",
+    "apprentissages/bcc-neo-c4-p4.md",
+    "apprentissages/bcc-neo-c4-p5.md",
+    "bcc/bcc1-accompagnement.md",
+    "bcc/bcc2-conception.md",
+    "bcc/bcc3-pilotage.md",
+    "bcc/bcc4-expertise-et-recherche.md",
+    "formation/master-neo.md",
+    "modules/neo-s1-bcc1-m01-theories-et-methodologies-de-l-accompagnement-pedagogique.md",
+    "modules/neo-s1-bcc1-m02-approche-psychologique-de-l-apprentissage-de-l-etudiant.md",
+    "modules/neo-s1-bcc1-m03-pedagogie-universitaire-et-usage-critique-et-ethique-du-numerique.md",
+    "modules/neo-s1-bcc2-m01-e-formation-e-learning-et-ressources-pedagogiques-numeriques.md",
+    "modules/neo-s1-bcc2-m02-scenarisation-pedagogique-et-formes-d-engagement-cognitif.md",
+    "modules/neo-s1-bcc2-m03-accessibilite-numerique-pour-l-ingenierie-pedagogique.md",
+    "modules/neo-s1-bcc2-m04-informatique-et-outils-pour-la-conception-1.md",
+    "modules/neo-s1-bcc3-m01-introduction-a-la-gestion-de-projets-collaboratifs.md",
+    "modules/neo-s1-bcc3-m02-conception-collaborative-et-realite-virtuelle.md",
+    "modules/neo-s1-bcc3-m03-communication-professionnelle-dans-les-projets-de-formation.md",
+    "modules/neo-s1-bcc3-m04-ingenierie-de-formation-et-approche-par-competences-apc.md",
+    "modules/neo-s1-bcc4-m01-introduction-a-la-demarche-scientifique-en-ingenierie-pedagogique.md",
+    "modules/neo-s1-bcc4-m02-veille-et-exploration-documentaire-numerique.md",
+    "modules/neo-s1-bcc4-m03-approche-methodologique-analyse-quantitative-et-exercice-pratique.md",
+    "modules/neo-s1-bcc4-m04-approche-methodologique-analyse-qualitative-et-exercice-pratique.md",
+    "modules/neo-s1-bcc4-m05-eportfolio-reflexif-eclaire-par-la-recherche.md",
+    "modules/neo-s2-bcc1-m01-la-formation-des-adultes.md",
+    "modules/neo-s2-bcc1-m02-psychologie-sociale-et-sociologie-du-travail.md",
+    "modules/neo-s2-bcc1-m03-l-approche-inclusive-et-l-accompagnement-dedie-au-superieur.md",
+    "modules/neo-s2-bcc1-m04-dimension-internationale-communication-outillee.md",
+    "modules/neo-s2-bcc2-m01-accompagnement-ethique-propriete-intellectuelle-et-rgpd.md",
+    "modules/neo-s2-bcc2-m02-informatique-et-outils-pour-la-conception-2.md",
+    "modules/neo-s2-bcc2-m03-multimedia-1.md",
+    "modules/neo-s2-bcc3-m01-gestion-de-projet-et-outillage.md",
+    "modules/neo-s2-bcc3-m02-documents-d-un-projet-de-e-formation.md",
+    "modules/neo-s2-bcc3-m03-communication-de-la-e-formation.md",
+    "modules/neo-s2-bcc3-m04-communautes-de-pratiques-et-reseaux-sociaux-dans-la-formation.md",
+    "modules/neo-s2-bcc4-m01-entretien-observation-et-conduite-d-un-entretien.md",
+    "modules/neo-s2-bcc4-m02-entretien-avec-un-ingenieur-pedagogique-analyse-critique-des-pratiques-technopedagogiques.md",
+    "modules/neo-s2-bcc4-m03-rapport-technique-et-presentation-orale.md",
+    "modules/neo-s3-bcc1-m01-accompagner-le-changement-et-les-resistances-aux-pratiques-numeriques-innovantes.md",
+    "modules/neo-s3-bcc1-m02-pedagogies-innovantes-et-gamification.md",
+    "modules/neo-s3-bcc1-m03-pedagogie-inclusive-et-prise-en-compte-de-la-diversite-etudiante.md",
+    "modules/neo-s3-bcc1-m04-pix.md",
+    "modules/neo-s3-bcc2-m01-informatique-et-outils-pour-la-conception-3.md",
+    "modules/neo-s3-bcc2-m02-moodle.md",
+    "modules/neo-s3-bcc2-m03-multimedia-2.md",
+    "modules/neo-s3-bcc3-m01-environnement-metier-reglementation-acteurs-et-activites.md",
+    "modules/neo-s3-bcc3-m02-theories-de-l-evaluation-vue-d-ensemble.md",
+    "modules/neo-s3-bcc3-m03-accompagner-l-innovation-par-la-conception-creative-sotl-soad.md",
+    "modules/neo-s3-bcc4-m01-etre-chercheur-a-l-ere-du-numerique.md",
+    "modules/neo-s3-bcc4-m02-autoformation-veille-curation-et-zotero.md",
+    "modules/neo-s3-bcc4-m03-conduire-des-recherches-avec-et-sur-le-numerique-problematisation.md",
+    "modules/neo-s4-bcc2-m01-choisir-des-modalites-d-evaluation-adaptees.md",
+    "modules/neo-s4-bcc2-m02-concevoir-des-qcm-et-organiser-une-banque-de-questions.md",
+    "modules/neo-s4-bcc2-m03-evaluer-a-l-ere-de-l-ia-generative.md",
+    "modules/neo-s4-bcc3-m01-valorisation-de-sa-posture-professionnelle.md",
+    "modules/neo-s4-bcc4-m01-conduite-de-la-recherche.md",
+    "modules/neo-s4-bcc4-m02-redaction-du-memoire-de-recherche-et-soutenance.md",
+    "niveaux/bcc-neo-c1-p1-n1.md",
+    "niveaux/bcc-neo-c1-p1-n2.md",
+    "niveaux/bcc-neo-c1-p1-n3.md",
+    "niveaux/bcc-neo-c1-p2-n1.md",
+    "niveaux/bcc-neo-c1-p2-n2.md",
+    "niveaux/bcc-neo-c1-p2-n3.md",
+    "niveaux/bcc-neo-c1-p3-n1.md",
+    "niveaux/bcc-neo-c1-p3-n2.md",
+    "niveaux/bcc-neo-c1-p3-n3.md",
+    "niveaux/bcc-neo-c1-p4-n1.md",
+    "niveaux/bcc-neo-c1-p4-n2.md",
+    "niveaux/bcc-neo-c1-p4-n3.md",
+    "niveaux/bcc-neo-c1-p5-n1.md",
+    "niveaux/bcc-neo-c1-p5-n2.md",
+    "niveaux/bcc-neo-c1-p5-n3.md",
+    "niveaux/bcc-neo-c2-p1-n1.md",
+    "niveaux/bcc-neo-c2-p1-n2.md",
+    "niveaux/bcc-neo-c2-p1-n3.md",
+    "niveaux/bcc-neo-c2-p1-n4.md",
+    "niveaux/bcc-neo-c2-p2-n1.md",
+    "niveaux/bcc-neo-c2-p2-n2.md",
+    "niveaux/bcc-neo-c2-p2-n3.md",
+    "niveaux/bcc-neo-c2-p2-n4.md",
+    "niveaux/bcc-neo-c2-p3-n1.md",
+    "niveaux/bcc-neo-c2-p3-n2.md",
+    "niveaux/bcc-neo-c2-p3-n3.md",
+    "niveaux/bcc-neo-c2-p3-n4.md",
+    "niveaux/bcc-neo-c2-p4-n1.md",
+    "niveaux/bcc-neo-c2-p4-n2.md",
+    "niveaux/bcc-neo-c2-p4-n3.md",
+    "niveaux/bcc-neo-c2-p4-n4.md",
+    "niveaux/bcc-neo-c2-p5-n1.md",
+    "niveaux/bcc-neo-c2-p5-n2.md",
+    "niveaux/bcc-neo-c2-p5-n3.md",
+    "niveaux/bcc-neo-c2-p5-n4.md",
+    "niveaux/bcc-neo-c3-p1-n1.md",
+    "niveaux/bcc-neo-c3-p1-n2.md",
+    "niveaux/bcc-neo-c3-p1-n3.md",
+    "niveaux/bcc-neo-c3-p1-n4.md",
+    "niveaux/bcc-neo-c3-p2-n1.md",
+    "niveaux/bcc-neo-c3-p2-n2.md",
+    "niveaux/bcc-neo-c3-p2-n3.md",
+    "niveaux/bcc-neo-c3-p2-n4.md",
+    "niveaux/bcc-neo-c3-p3-n1.md",
+    "niveaux/bcc-neo-c3-p3-n2.md",
+    "niveaux/bcc-neo-c3-p3-n3.md",
+    "niveaux/bcc-neo-c3-p3-n4.md",
+    "niveaux/bcc-neo-c3-p4-n1.md",
+    "niveaux/bcc-neo-c3-p4-n2.md",
+    "niveaux/bcc-neo-c3-p4-n3.md",
+    "niveaux/bcc-neo-c3-p4-n4.md",
+    "niveaux/bcc-neo-c3-p5-n1.md",
+    "niveaux/bcc-neo-c3-p5-n2.md",
+    "niveaux/bcc-neo-c3-p5-n3.md",
+    "niveaux/bcc-neo-c3-p5-n4.md",
+    "niveaux/bcc-neo-c4-p1-n1.md",
+    "niveaux/bcc-neo-c4-p1-n2.md",
+    "niveaux/bcc-neo-c4-p1-n3.md",
+    "niveaux/bcc-neo-c4-p1-n4.md",
+    "niveaux/bcc-neo-c4-p2-n1.md",
+    "niveaux/bcc-neo-c4-p2-n2.md",
+    "niveaux/bcc-neo-c4-p2-n3.md",
+    "niveaux/bcc-neo-c4-p2-n4.md",
+    "niveaux/bcc-neo-c4-p3-n1.md",
+    "niveaux/bcc-neo-c4-p3-n2.md",
+    "niveaux/bcc-neo-c4-p3-n3.md",
+    "niveaux/bcc-neo-c4-p3-n4.md",
+    "niveaux/bcc-neo-c4-p4-n1.md",
+    "niveaux/bcc-neo-c4-p4-n2.md",
+    "niveaux/bcc-neo-c4-p4-n3.md",
+    "niveaux/bcc-neo-c4-p4-n4.md",
+    "niveaux/bcc-neo-c4-p5-n1.md",
+    "niveaux/bcc-neo-c4-p5-n2.md",
+    "niveaux/bcc-neo-c4-p5-n3.md",
+    "niveaux/bcc-neo-c4-p5-n4.md",
+    "sae/neo-s1-bcc1-sae-analyse-critique-des-enjeux-ethiques-et-societaux-du-numerique-en-vue-d-eclairer-la-conception-d-une-charte-de-bon-usage.md",
+    "sae/neo-s1-bcc2-sae-analyse-et-scenarisation-des-ressources-pedagogiques-d-une-e-formation-et-ou-formation-hybridee.md",
+    "sae/neo-s1-bcc3-sae-pilotage-d-un-projet-de-e-formation-mise-en-place-d-un-environnement-virtuel-d-apprentissage.md",
+    "sae/neo-s1-bcc4-sae-conception-d-un-e-portfolio-d-apprentissage-reflexif-adosse-a-la-recherche-tout-au-long-de-la-formation-neo-niveau-1.md",
+    "sae/neo-s2-bcc1-sae-conception-d-une-charte-de-bon-usage-eclaire-et-reflexif-du-numerique-et-de-l-ia-en-contexte-de-formation-universitaire.md",
+    "sae/neo-s2-bcc2-sae-creation-de-ressources-pedagogiques-multimedia-interactives-d-une-e-formation.md",
+    "sae/neo-s2-bcc3-sae-gestion-des-environnements-techniques-et-mise-en-uvre-des-outils-de-gestion-de-projet-specifiques.md",
+    "sae/neo-s2-bcc4-sae-conception-d-un-e-portfolio-reflexif-adosse-a-la-recherche-tout-au-long-de-la-formation-neo-niveau-2.md",
+    "sae/neo-s3-bcc1-sae-concevoir-et-animer-un-atelier-en-ligne-pour-sensibiliser-aux-usages-du-numerique-et-surmonter-les-resistances.md",
+    "sae/neo-s3-bcc2-sae-creation-de-ressources-pedagogiques-multimedia-interactives-d-une-e-formation-robots-educatifs.md",
+    "sae/neo-s3-bcc3-sae-pilotage-d-un-projet-innovant-de-e-formation-en-contexte-professionnel.md",
+    "sae/neo-s3-bcc4-sae-realisation-d-un-etat-de-l-art-et-problematisation-d-une-question-de-recherche-avec-une-approche-methodologique-recourant-au-numerique.md",
+    "sae/neo-s4-bcc2-sae-elaboration-d-un-dispositif-d-evaluation-pour-la-e-formation.md",
+    "sae/neo-s4-bcc3-sae-rapport-de-stage-m2.md",
+    "sae/neo-s4-bcc4-sae-memoire-de-recherche-m2.md",
+    "semestres/s1.md",
+    "semestres/s2.md",
+    "semestres/s3.md",
+    "semestres/s4.md",
+    "ues/s1-bcc1-pedagogie-du-numerique-et-de-l-innovation-niveau-1.md",
+    "ues/s1-bcc2-conception-de-ressources-et-de-e-formation-niveau-1.md",
+    "ues/s1-bcc3-pilotage-de-la-e-formation-et-developpement-professionnel-niveau-1.md",
+    "ues/s1-bcc4-expertise-pedagogique-et-demarche-scientifique-reflexive-niveau-1.md",
+    "ues/s2-bcc1-pedagogie-du-numerique-et-de-l-innovation-niveau-2.md",
+    "ues/s2-bcc2-conception-de-ressources-et-de-e-formation-niveau-2.md",
+    "ues/s2-bcc3-pilotage-de-la-e-formation-et-developpement-professionnel-niveau-2.md",
+    "ues/s2-bcc4-expertise-pedagogique-et-demarche-scientifique-reflexive-niveau-2.md",
+    "ues/s3-bcc1-pedagogie-du-numerique-et-de-l-innovation-niveau-3.md",
+    "ues/s3-bcc2-conception-de-ressources-et-de-e-formation-niveau-3.md",
+    "ues/s3-bcc3-pilotage-de-la-e-formation-et-developpement-professionnel-niveau-3.md",
+    "ues/s3-bcc4-expertise-pedagogique-et-demarche-scientifique-reflexive-niveau-3.md",
+    "ues/s4-bcc2-conception-de-ressources-et-de-e-formation-niveau-4.md",
+    "ues/s4-bcc3-pilotage-de-la-e-formation-et-developpement-professionnel-niveau-4.md",
+    "ues/s4-bcc4-expertise-pedagogique-et-demarche-scientifique-reflexive-niveau-4.md",
+    "manifest.json"
+  ],
+  "date_export": "2026-06-15T09:13:42.490Z"
+}

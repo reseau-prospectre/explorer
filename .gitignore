@@ -1,0 +1,18 @@
+# GitHub Pages publish set for PROSPECTRE.
+# Ignore everything by default, then allow only the static app files.
+*
+
+!.gitignore
+!.gitattributes
+
+!index.html
+!app.config.js
+
+!assets/
+!assets/**
+
+!data/
+!data/prospectre-documentation/
+!data/prospectre-documentation/**
+!data/neo/
+!data/neo/**
