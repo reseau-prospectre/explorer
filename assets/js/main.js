@@ -831,11 +831,13 @@ function setupGraph() {
       state.tick = (state.tick || 0) + 1;
       if (state.tick % 3 === 0) renderPresence();
     });
+  state.graphView.onNodeRightClick?.((node) => releaseNodeFreeformPosition(node));
   state.graphView.d3Force("charge").strength(-105);
   state.graphView.d3Force("link").distance((link) => getLinkDistance(link));
   state.graphView.d3AlphaDecay?.(0.055);
   state.graphView.d3VelocityDecay?.(0.46);
   window.addEventListener("resize", resizeGraph);
+  els.graphStage.addEventListener("contextmenu", (event) => event.preventDefault());
   resizeGraph();
 }
 
@@ -4737,6 +4739,16 @@ function persistNodePosition(node) {
   localStorage.setItem(GRAPH_LAYOUT_KEY, JSON.stringify(layouts));
 }
 
+function clearPersistedNodeLayout(nodeId) {
+  if (!nodeId) return;
+  const layouts = getStoredLayouts();
+  const key = getProjectSessionKey();
+  if (!layouts[key]?.[nodeId]) return;
+  delete layouts[key][nodeId];
+  if (!Object.keys(layouts[key]).length) delete layouts[key];
+  localStorage.setItem(GRAPH_LAYOUT_KEY, JSON.stringify(layouts));
+}
+
 function applyNodePosition(node) {
   if (!node?.id) return;
   const source = state.graph.nodes.find((item) => item.id === node.id);
@@ -4747,6 +4759,22 @@ function applyNodePosition(node) {
   source.fx = node.fx;
   source.fy = node.fy;
   source.fz = node.fz;
+}
+
+function releaseNodeFreeformPosition(node) {
+  const nodeId = node?.id;
+  if (!nodeId || node.type === "contribution") return;
+  clearPersistedNodeLayout(nodeId);
+  const targets = [node, state.graph.nodes.find((item) => item.id === nodeId), state.visibleGraph.nodes.find((item) => item.id === nodeId)];
+  for (const target of targets) {
+    if (!target) continue;
+    target.fx = undefined;
+    target.fy = undefined;
+    target.fz = undefined;
+  }
+  state.graphView?.d3ReheatSimulation?.();
+  updateVisibleGraph({ skipPositionSync: true });
+  showToast("Position libre relâchée");
 }
 
 function clearPersistedLayout() {
