@@ -110,10 +110,6 @@ const els = {
   graphSearchPopover: document.querySelector("#graph-search-popover"),
   graphSearchResults: document.querySelector("#graph-search-results"),
   graphSearchStatus: document.querySelector("#graph-search-status"),
-  resetViewButton: document.querySelector("#reset-view"),
-  resetViewPopover: document.querySelector("#reset-view-popover"),
-  confirmResetView: document.querySelector("#confirm-reset-view"),
-  cancelResetView: document.querySelector("#cancel-reset-view"),
   graphHelpToggle: document.querySelector("#graph-help-toggle"),
   graphHelpPopover: document.querySelector("#graph-help-popover"),
   projectSwitcherToggle: document.querySelector("#project-switcher-toggle"),
@@ -366,7 +362,6 @@ function setupControls() {
     if (els.projectSwitcherMenu && !event.target.closest(".project-switcher-wrap")) closeProjectMenu();
     if (els.graphSearchPopover && !event.target.closest("#graph-search-popover") && !event.target.closest("#graph-search-toggle")) closeGraphSearch();
     if (els.typeFilters && !event.target.closest("#type-filters") && !event.target.closest("#filter-menu-toggle")) closeFilterMenu();
-    if (els.resetViewPopover && !event.target.closest("#reset-view-popover") && !event.target.closest("#reset-view")) closeResetConfirm();
     if (els.graphHelpPopover && !event.target.closest("#graph-help-popover") && !event.target.closest("#graph-help-toggle")) closeGraphHelp();
     if (!event.target.closest("#emoji-picker-popover") && !event.target.closest("[data-reaction-picker]")) closeEmojiPicker();
     if (!event.target.closest("#link-preview-popover") && !event.target.closest("[data-smart-link]")) closeLinkPreview();
@@ -378,7 +373,6 @@ function setupControls() {
       closeProjectMenu();
       closeGraphSearch();
       closeFilterMenu();
-      closeResetConfirm();
       closeGraphHelp();
       closeEmojiPicker();
       closeSchemaAdmin();
@@ -397,12 +391,6 @@ function setupControls() {
     closeEmojiPicker();
     positionOpenToolbarPopover();
   });
-  els.resetViewButton?.addEventListener("click", toggleResetConfirm);
-  els.confirmResetView?.addEventListener("click", () => {
-    closeResetConfirm();
-    resetView();
-  });
-  els.cancelResetView?.addEventListener("click", closeResetConfirm);
   els.graphHelpToggle?.addEventListener("click", toggleGraphHelp);
   document.querySelector("#fit-view").addEventListener("click", () => fitVisibleGraph());
   document.querySelector("#zoom-in").addEventListener("click", () => zoomCamera(0.78));
@@ -612,7 +600,7 @@ async function commitHeartCycle() {
   };
   try {
     await state.provider?.commitHeartCycle?.(payload);
-    showToast(`Merci pour ces ${HEART_CYCLE_SECONDS}s d’attention 🫶</br>❤️➕${payload.points}`);
+    showToast(`Merci pour ces ${HEART_CYCLE_SECONDS}s d’attention 🫶 \n❤️➕${payload.points}`);
     state.gamification.cycle = createEmptyHeartCycle();
   } catch (error) {
     if (error?.partial) {
@@ -647,7 +635,6 @@ function toggleFilterMenu() {
   if (open) {
     closeProjectMenu();
     closeGraphSearch();
-    closeResetConfirm();
     closeGraphHelp();
   }
   els.typeFilters?.classList.toggle("hidden", !open);
@@ -685,7 +672,6 @@ function toggleProjectMenu() {
   if (open) {
     closeFilterMenu();
     closeGraphSearch();
-    closeResetConfirm();
     closeGraphHelp();
   }
   renderProjectSwitcher();
@@ -1003,7 +989,6 @@ function beginProjectSwitch(manifestUrl) {
   closeProjectMenu();
   closeGraphSearch();
   closeFilterMenu();
-  closeResetConfirm();
   hideRightPanel();
   destroyContentEditor();
   resetGraphInteractionState();
@@ -1391,11 +1376,17 @@ function renderTypeFilters() {
       <span class="graph-popover-icon"><i>tune</i></span>
       <div>
         <strong>Affichage du graphe</strong>
-        <small>Types, labels, relations et contexte</small>
+        <small>${enabledCount}/${entries.length} types visibles · labels, relations et contexte</small>
       </div>
     </header>
     <section class="graph-options-section">
-      <p class="graph-options-kicker"><i>category</i>Types d’éléments</p>
+      <div class="graph-options-section-head">
+        <p class="graph-options-kicker"><i>category</i>Types d’éléments</p>
+        <button class="graph-options-mini" type="button" data-filter-action="all">
+          <i>visibility</i>
+          <span>Tout afficher</span>
+        </button>
+      </div>
       <div class="graph-type-grid">
         ${entries.map(([type, config]) => `
           <button class="graph-type-toggle${state.activeTypes.has(type) ? " active" : ""}" type="button" data-type-filter="${escapeHtml(type)}" aria-pressed="${state.activeTypes.has(type)}">
@@ -1405,15 +1396,24 @@ function renderTypeFilters() {
         `).join("")}
       </div>
     </section>
-    <section class="graph-options-section">
+    <section class="graph-options-section graph-options-reading">
       <p class="graph-options-kicker"><i>visibility</i>Lecture</p>
-      <div class="graph-label-mode" role="group" aria-label="Mode d’affichage des labels">
-        ${labelModes.map(([value, label, icon]) => `
-          <button class="${state.graphPrefs.labelMode === value ? "active" : ""}" type="button" data-label-mode="${value}" aria-pressed="${state.graphPrefs.labelMode === value}">
-            <i>${icon}</i>
-            <span>${label}</span>
-          </button>
-        `).join("")}
+      <div class="graph-reading-block">
+        <div class="graph-reading-copy">
+          <i>subtitles</i>
+          <span>
+            <strong>Labels</strong>
+            <small>Choisit la densité de libellés visibles.</small>
+          </span>
+        </div>
+        <div class="graph-label-mode" role="group" aria-label="Mode d’affichage des labels">
+          ${labelModes.map(([value, label, icon]) => `
+            <button class="${state.graphPrefs.labelMode === value ? "active" : ""}" type="button" data-label-mode="${value}" aria-pressed="${state.graphPrefs.labelMode === value}">
+              <i>${icon}</i>
+              <span>${label}</span>
+            </button>
+          `).join("")}
+        </div>
       </div>
       <div class="graph-option-switches">
         ${renderGraphOptionSwitch("showLinks", "Liens visibles", "Affiche ou masque les relations", "polyline")}
@@ -1429,16 +1429,21 @@ function renderTypeFilters() {
         <input type="range" min="1" max="5" step="1" value="${getFocusDepth()}" data-focus-depth ${focusDepthDisabled ? "disabled" : ""}>
       </label>
     </section>
-    <footer class="graph-options-foot">
+    <section class="graph-options-section graph-options-actions">
+      <p class="graph-options-kicker"><i>restart_alt</i>Actions</p>
       <span>
-        <strong>Affichage du graphe</strong>
-        <small>${enabledCount}/${entries.length} types visibles</small>
+        <strong>Réinitialiser la vue</strong>
+        <small>Réactive les types, vide la recherche, ferme la fiche et efface les positions libres.</small>
       </span>
-      <button class="graph-options-mini" type="button" data-filter-action="all">
-        <i>visibility</i>
-        <span>Tout afficher</span>
+      <button class="graph-reset-inline" type="button" data-reset-arm>
+        <i>restart_alt</i>
+        <span>Réinitialiser</span>
       </button>
-    </footer>
+      <div class="graph-reset-confirm hidden" data-reset-confirm>
+        <p>Cette action relance le layout automatique du projet courant.</p>
+        <button class="danger-button compact" type="button" data-reset-confirm-action>Confirmer la réinitialisation</button>
+      </div>
+    </section>
   `;
   els.typeFilters.querySelector("[data-filter-action='all']")?.addEventListener("click", () => {
     state.activeTypes = new Set(entries.map(([type]) => type));
@@ -1485,6 +1490,15 @@ function renderTypeFilters() {
       updateVisibleGraph();
       updateFocusDepthLabel();
     }, 120);
+  });
+  const resetArm = els.typeFilters.querySelector("[data-reset-arm]");
+  const resetConfirm = els.typeFilters.querySelector("[data-reset-confirm]");
+  resetArm?.addEventListener("click", () => {
+    resetConfirm?.classList.toggle("hidden");
+  });
+  els.typeFilters.querySelector("[data-reset-confirm-action]")?.addEventListener("click", () => {
+    closeFilterMenu();
+    resetView();
   });
 }
 
@@ -3813,7 +3827,7 @@ function renderGamificationCard() {
         <div class="heart-copy">
           <p class="kicker">Coprésence</p>
           <h3><span data-heart-counter="cycle">${cycle.points}</span> ❤️</h3>
-          <span>${active ? "✨ Attention active" : "⏸️ En pause douce"} </br>⏲️ prochain cycle : ${formatHeartTime(remaining)}</span>
+          <span>${active ? "✨ Attention active" : "⏸️ En pause douce"} ⏲️ prochain cycle : ${formatHeartTime(remaining)}</span>
         </div>
       </div>
       <div class="heart-score-grid">
@@ -4093,31 +4107,12 @@ function resetView() {
   fitVisibleGraph(800, RESET_FIT_PADDING);
 }
 
-function toggleResetConfirm() {
-  const open = els.resetViewPopover?.classList.contains("hidden");
-  if (open) {
-    closeProjectMenu();
-    closeFilterMenu();
-    closeGraphSearch();
-    closeGraphHelp();
-  }
-  els.resetViewPopover?.classList.toggle("hidden", !open);
-  els.resetViewButton?.setAttribute("aria-expanded", String(open));
-  if (open) requestAnimationFrame(() => positionToolbarPopover(els.resetViewPopover, els.resetViewButton));
-}
-
-function closeResetConfirm() {
-  els.resetViewPopover?.classList.add("hidden");
-  els.resetViewButton?.setAttribute("aria-expanded", "false");
-}
-
 function toggleGraphHelp() {
   const open = els.graphHelpPopover?.classList.contains("hidden");
   if (open) {
     closeProjectMenu();
     closeFilterMenu();
     closeGraphSearch();
-    closeResetConfirm();
   }
   els.graphHelpPopover?.classList.toggle("hidden", !open);
   els.graphHelpToggle?.setAttribute("aria-expanded", String(open));
@@ -4150,7 +4145,6 @@ function toggleGraphSearch() {
 
 function openGraphSearch() {
   closeFilterMenu();
-  closeResetConfirm();
   closeGraphHelp();
   closeProjectMenu();
   els.graphSearchPopover?.classList.remove("hidden");
@@ -4170,7 +4164,6 @@ function closeGraphSearch() {
 function positionOpenToolbarPopover() {
   if (els.typeFilters && !els.typeFilters.classList.contains("hidden")) positionToolbarPopover(els.typeFilters, els.filterMenuToggle);
   if (els.graphSearchPopover && !els.graphSearchPopover.classList.contains("hidden")) positionToolbarPopover(els.graphSearchPopover, els.graphSearchToggle);
-  if (els.resetViewPopover && !els.resetViewPopover.classList.contains("hidden")) positionToolbarPopover(els.resetViewPopover, els.resetViewButton);
   if (els.graphHelpPopover && !els.graphHelpPopover.classList.contains("hidden")) positionToolbarPopover(els.graphHelpPopover, els.graphHelpToggle);
 }
 

@@ -331,10 +331,10 @@ label::after {
   top: calc(var(--topbar-height) + 90px);
   left: 82px;
   display: grid;
-  grid-template-columns: minmax(270px, 1fr) minmax(270px, 0.9fr);
-  gap: 12px;
-  width: min(760px, calc(100vw - 104px));
-  max-height: min(560px, calc(100vh - var(--topbar-height) - 24px));
+  grid-template-columns: minmax(0, 1fr);
+  gap: 13px;
+  width: min(590px, calc(100vw - 104px));
+  max-height: min(560px, calc(100vh - var(--topbar-height) - var(--graph-bottom) - 24px));
   padding: 12px;
   overflow-x: hidden;
   overflow-y: auto;
@@ -352,6 +352,7 @@ label::after {
 
 .graph-options-head {
   grid-column: 1 / -1;
+  grid-row: auto !important;
   padding-bottom: 8px;
   border-bottom: 1px solid var(--line);
 }
@@ -417,7 +418,19 @@ label::after {
 .graph-options-section {
   display: grid;
   align-content: start;
-  gap: 9px;
+  gap: 10px;
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 44%, transparent);
+}
+
+.graph-options-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
   min-width: 0;
 }
 
@@ -437,7 +450,7 @@ label::after {
 
 .graph-type-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   gap: 7px;
 }
 
@@ -482,6 +495,50 @@ label::after {
   border: 1px solid var(--line);
   border-radius: 8px;
   background: var(--soft);
+}
+
+.graph-reading-block {
+  display: grid;
+  gap: 8px;
+}
+
+.graph-reading-copy {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid color-mix(in srgb, var(--line) 78%, transparent);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 62%, transparent);
+}
+
+.graph-reading-copy > i {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--text);
+  font-size: 17px;
+}
+
+.graph-reading-copy span {
+  display: grid;
+  min-width: 0;
+  gap: 2px;
+}
+
+.graph-reading-copy strong {
+  font-size: 12px;
+}
+
+.graph-reading-copy small {
+  color: var(--muted);
+  font-size: 11px;
 }
 
 .graph-label-mode button {
@@ -624,28 +681,77 @@ label::after {
   opacity: 0;
 }
 
-.graph-options-foot {
-  grid-column: 1 / -1;
-  display: flex;
-  align-items: end;
-  justify-content: space-between;
-  gap: 12px;
-  padding-top: 8px;
-  border-top: 1px solid var(--line);
+.graph-options-actions {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
 }
 
-.graph-options-foot > span {
+.graph-options-actions .graph-options-kicker,
+.graph-reset-confirm {
+  grid-column: 1 / -1;
+}
+
+.graph-options-actions > span {
   display: grid;
   gap: 2px;
+  min-width: 0;
 }
 
-.graph-options-foot strong {
+.graph-options-actions strong {
   font-size: 13px;
 }
 
-.graph-options-foot small {
+.graph-options-actions small,
+.graph-reset-confirm p {
   color: var(--muted);
   font-size: 11px;
+}
+
+.graph-reset-inline {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 36px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, #ef4444 36%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 84%, #ef4444);
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.graph-reset-inline:hover,
+.graph-reset-inline:focus-visible {
+  border-color: color-mix(in srgb, #ef4444 80%, var(--line));
+  background: color-mix(in srgb, #ef4444 22%, var(--soft));
+  color: #fee2e2;
+}
+
+.graph-reset-inline i {
+  font-size: 16px;
+}
+
+.graph-reset-confirm {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 8px;
+  border: 1px solid color-mix(in srgb, #ef4444 34%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, #ef4444 8%, var(--soft));
+}
+
+.graph-reset-confirm.hidden {
+  display: none;
+}
+
+.graph-reset-confirm p {
+  margin: 0;
+  line-height: 1.35;
 }
 
 .project-menu.hidden {
@@ -1067,60 +1173,6 @@ label::after {
 
 .graph-search-popover.hidden {
   display: none;
-}
-
-.reset-view-popover {
-  display: grid;
-  gap: 10px;
-  width: min(340px, calc(100vw - 92px));
-  padding: 12px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
-  backdrop-filter: blur(14px);
-  box-shadow: var(--shadow);
-}
-
-.reset-view-popover.hidden {
-  display: none;
-}
-
-.reset-view-popover strong {
-  font-size: 14px;
-}
-
-.reset-view-popover p {
-  margin: 0;
-  color: var(--muted);
-  font-size: 12px;
-  line-height: 1.45;
-}
-
-.reset-popover-actions {
-  display: flex;
-  justify-content: flex-start;
-}
-
-.reset-popover-actions .danger-button {
-  width: auto;
-  min-width: 118px;
-  height: 34px;
-  min-height: 34px;
-  flex-basis: auto;
-  padding-inline: 14px;
-  border: 1px solid color-mix(in srgb, #ef4444 48%, var(--line));
-  border-radius: 7px;
-  background: var(--soft);
-  color: var(--text);
-  font-size: 12px;
-  font-weight: 850;
-}
-
-.reset-popover-actions .danger-button:hover,
-.reset-popover-actions .danger-button:focus-visible {
-  border-color: color-mix(in srgb, #ef4444 80%, var(--line));
-  background: color-mix(in srgb, #ef4444 24%, var(--soft));
-  color: #fee2e2;
 }
 
 .graph-help-popover {
@@ -2984,7 +3036,7 @@ emoji-picker {
 .gamification-card {
   position: relative;
   overflow: hidden;
-  min-height: 55vh !important;
+  min-height: 56vh !important;
   padding: 16px;
   border: 1px solid color-mix(in srgb, #fb7185 34%, var(--line));
   border-radius: 18px;
@@ -3162,11 +3214,43 @@ emoji-picker {
   z-index: 1;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
-  margin-top: 12px;
+  gap: 10px;
+  margin-top: 14px;
 }
 
-.heart-score-grid span,
+.heart-score-grid span {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px 13px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #fb7185 38%, var(--line));
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(251, 113, 133, 0.2), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--soft) 74%, #351827), color-mix(in srgb, var(--panel) 80%, #082a35));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 28px rgba(0, 0, 0, 0.14);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.heart-score-grid span::after {
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.12) 48%, transparent 76%);
+  opacity: 0.24;
+  pointer-events: none;
+  content: "";
+  transform: translateX(-36%) rotate(8deg);
+  animation: heart-score-sheen 5.5s ease-in-out infinite;
+}
+
+.heart-score-grid span:hover {
+  border-color: color-mix(in srgb, #fb7185 62%, #67e8f9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 28px rgba(251, 113, 133, 0.18);
+  transform: translateY(-1px);
+}
+
 .heart-breakdown span {
   display: grid;
   min-width: 0;
@@ -3186,8 +3270,12 @@ emoji-picker {
 }
 
 .heart-score-grid strong {
+  align-self: end;
   color: var(--text);
-  font-size: 18px;
+  font-size: clamp(23px, 4vw, 34px);
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-shadow: 0 0 18px rgba(251, 113, 133, 0.26), 0 0 28px rgba(103, 232, 249, 0.12);
 }
 
 .heart-breakdown {
@@ -3226,6 +3314,18 @@ emoji-picker {
   }
   100% {
     background-position: 100% 78%, 0% 38%, center;
+  }
+}
+
+@keyframes heart-score-sheen {
+  0%,
+  46% {
+    transform: translateX(-58%) rotate(8deg);
+  }
+
+  72%,
+  100% {
+    transform: translateX(58%) rotate(8deg);
   }
 }
 
@@ -4448,6 +4548,7 @@ emoji-picker {
 }
 
 .toast-content span {
+  white-space: pre-line;
   color: var(--text);
   font-size: 13px;
   font-weight: 720;
