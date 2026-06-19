@@ -612,7 +612,7 @@ async function commitHeartCycle() {
   };
   try {
     await state.provider?.commitHeartCycle?.(payload);
-    showToast(`Merci pour ${HEART_CYCLE_SECONDS} secondes d’attention · +${payload.points} ❤️`);
+    showToast(`Merci pour ces ${HEART_CYCLE_SECONDS}s d’attention · ❤️➕${payload.points}`);
     state.gamification.cycle = createEmptyHeartCycle();
   } catch (error) {
     if (error?.partial) {
@@ -3795,9 +3795,9 @@ function renderGamificationCard() {
           <span class="heart-cycle">${formatHeartTime(remaining)}</span>
         </div>
         <div class="heart-copy">
-          <p class="kicker">Coprésence vivante</p>
+          <p class="kicker">Coprésence</p>
           <h3><span data-heart-counter="cycle">${cycle.points}</span> ❤️</h3>
-          <span>${active ? "Attention active" : "En pause douce"} · prochain cycle dans ${formatHeartTime(remaining)}</span>
+          <span>${active ? "🟢 Attention active" : "⏸️ En pause douce"} </br>⏲️ prochain cycle dans ${formatHeartTime(remaining)}</span>
         </div>
       </div>
       <div class="heart-score-grid">
