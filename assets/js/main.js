@@ -227,6 +227,7 @@ const state = {
   authEmail: null,
   authProvider: "local",
   isAdmin: false,
+  availableProjectManifests: null,
   modelSchema: structuredClone(DEFAULT_MODEL_SCHEMA),
   schemaDraft: null,
   schemaView: "types",
@@ -300,7 +301,9 @@ async function init() {
   setupGlobalTooltips();
   setupRelativeTimes();
   setupGraph();
+  const projectDiscovery = discoverAvailableProjectManifests();
   await loadDefaultProject();
+  await projectDiscovery;
   applyInitialDeepLink();
   await setupPresence();
   const adminView = new URLSearchParams(window.location.search).get("admin");
@@ -701,9 +704,11 @@ function renderProjectSwitcher() {
   if (els.activeProjectVersion) els.activeProjectVersion.textContent = manifest.version ? `v${manifest.version}` : "";
   if (!els.projectSwitcherMenu) return;
   const recent = loadJson(RECENT_PROJECTS_KEY, []);
+  const knownProjects = state.availableProjectManifests
+    || KNOWN_PROJECT_MANIFESTS.filter((entry) => sameProjectUrl(entry.url, DEFAULT_PROJECT_MANIFEST_URL));
   const projects = [
-    ...KNOWN_PROJECT_MANIFESTS,
-    ...recent.filter((item) => !KNOWN_PROJECT_MANIFESTS.some((known) => known.id === item.id))
+    ...knownProjects,
+    ...recent.filter((item) => !knownProjects.some((known) => known.id === item.id))
   ];
   const grouped = projects.reduce((groups, item) => {
     const group = item.group || "Imports récents";
@@ -929,7 +934,38 @@ function createRealtimeProvider(useFirebase) {
 
 async function loadDefaultProject() {
   const requestedManifest = new URLSearchParams(window.location.search).get("project");
-  await loadProject(requestedManifest || DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: false });
+  try {
+    await loadProject(requestedManifest || DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: false });
+  } catch (error) {
+    if (!requestedManifest) throw error;
+    console.warn("Projet demandé indisponible, retour au projet par défaut.", error);
+    showToast("Projet demandé indisponible · retour au projet par défaut");
+    await loadProject(DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: true });
+  }
+}
+
+async function discoverAvailableProjectManifests() {
+  const discovered = await Promise.all(KNOWN_PROJECT_MANIFESTS.map(async (entry) => {
+    if (!entry.url) return null;
+    try {
+      const response = await fetch(entry.url, { cache: "no-store" });
+      if (!response.ok) return null;
+      const manifest = await response.json();
+      return {
+        ...entry,
+        id: manifest.id || entry.id,
+        title: manifest.titre || entry.title,
+        version: manifest.version || entry.version || "",
+        description: manifest.description || entry.description || ""
+      };
+    } catch (error) {
+      console.info(`Pack local absent ou indisponible: ${entry.url}`, error);
+      return null;
+    }
+  }));
+  state.availableProjectManifests = discovered.filter(Boolean);
+  renderProjectSwitcher();
+  return state.availableProjectManifests;
 }
 
 async function loadProject(manifestUrl, options = {}) {
