@@ -4,6 +4,7 @@
 
 !.gitignore
 !.gitattributes
+!.nojekyll
 
 !index.html
 !app.config.js
