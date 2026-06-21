@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s3-bcc4-sae"
 type: "sae"
-titre: "S3 · BCC4 · SAE"
+titre: "État de l’art et problématisation"
 statut: "officiel"
 resume: "Réalisation d’un état de l’art et problématisation d’une question de recherche, avec une approche méthodologique recourant au numérique"
 ects_bcc: 8

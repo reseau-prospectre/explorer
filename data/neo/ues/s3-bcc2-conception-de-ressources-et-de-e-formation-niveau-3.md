@@ -1,7 +1,7 @@
 ---
 id: "ue:s3-bcc2"
 type: "ue"
-titre: "S3 · Conception de ressources et de e-formation niveau 3"
+titre: "Conception de ressources et de e-formation — niveau 3"
 statut: "officiel"
 ects: 9
 heures: 50

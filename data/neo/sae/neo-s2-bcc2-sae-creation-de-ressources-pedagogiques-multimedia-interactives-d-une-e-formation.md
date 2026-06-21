@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s2-bcc2-sae"
 type: "sae"
-titre: "S2 · BCC2 · SAE"
+titre: "Ressources multimédias interactives"
 statut: "officiel"
 resume: "Création de ressources pédagogiques multimédia interactives d'une e-formation"
 ects_bcc: 8

@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s1-bcc4-sae"
 type: "sae"
-titre: "S1 · BCC4 · SAE"
+titre: "E-portfolio réflexif — niveau 1"
 statut: "officiel"
 resume: "Conception d’un e-portfolio d’apprentissage réflexif, adossé à la recherche, tout au long de la formation NEO (niveau 1)"
 ects_bcc: 9

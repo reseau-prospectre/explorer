@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s1-bcc3-sae"
 type: "sae"
-titre: "S1 · BCC3 · SAE"
+titre: "Environnement virtuel d’apprentissage"
 statut: "officiel"
 resume: "Pilotage d’un projet de e-formation : mise en place d’un environnement virtuel d’apprentissage"
 ects_bcc: 5

@@ -6,18 +6,17 @@
     <title>PROSPECTRE</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='26' fill='%23071015' stroke='%237dd3fc' stroke-width='5'/%3E%3Ccircle cx='32' cy='32' r='8' fill='%23a7f3d0'/%3E%3C/svg%3E">
     <link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js">
-    <link rel="modulepreload" href="https://cdn.jsdelivr.net/npm/emoji-picker-element@1/i18n/fr.js">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/beercss@4.0.21/dist/cdn/beer.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
-  <link rel="stylesheet" href="./assets/css/app.css?v=20260619-display-profile-3">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20260621-v3-insights-resize-1">
   </head>
   <body>
     <div id="app" class="app-shell">
       <section id="graph-stage" class="graph-stage" aria-label="Graphe prospectif"></section>
       <div id="presence-layer" class="presence-layer"></div>
+      <div id="panel-host"></div>
 
       <header class="topbar">
         <div class="topbar-left">
@@ -76,7 +75,7 @@
         </button>
       </header>
 
-      <nav class="graph-toolbar" aria-label="Navigation du graphe">
+      <nav class="graph-toolbar" aria-label="Navigation du graphe" data-mode="dock" data-edge="left">
         <button id="graph-help-toggle" class="tool-button" type="button" aria-label="Aide rapide du graphe" aria-controls="graph-help-popover" aria-expanded="false">
           <i>info</i>
           <span class="tooltip right">Aide rapide</span>
@@ -100,6 +99,18 @@
         <button id="fit-view" class="tool-button" type="button" aria-label="Recadrer le graphe">
           <i>fit_screen</i>
           <span class="tooltip right">Recadrer les éléments visibles</span>
+        </button>
+        <button id="insights-toggle" class="tool-button" type="button" aria-label="Afficher les repères" aria-controls="panel-host" aria-expanded="true">
+          <i>analytics</i>
+          <span class="tooltip right">Repères</span>
+        </button>
+        <button id="open-graph-window" class="tool-button" type="button" aria-label="Ouvrir le graphe en fenêtre externe">
+          <i>open_in_new</i>
+          <span class="tooltip right">Fenêtre graphe</span>
+        </button>
+        <button id="fullscreen-graph" class="tool-button" type="button" aria-label="Afficher le graphe en plein écran">
+          <i>fullscreen</i>
+          <span class="tooltip right">Plein écran</span>
         </button>
       </nav>
 
@@ -334,11 +345,7 @@
               <span class="tooltip left">Fermer</span>
             </button>
           </div>
-          <emoji-picker
-            id="emoji-picker"
-            locale="fr-FR"
-            data-source="https://cdn.jsdelivr.net/npm/emoji-picker-element-data@1/fr/emojibase/data.json"
-          ></emoji-picker>
+          <div id="emoji-picker" class="emoji-picker-native" role="listbox" aria-label="Réactions rapides"></div>
         </div>
       </div>
 
@@ -377,8 +384,7 @@
       }
     </script>
     <script type="module" src="https://cdn.jsdelivr.net/npm/beercss@4.0.21/dist/cdn/beer.min.js"></script>
-    <script type="module" src="./assets/js/emoji-picker-setup.js?v=20260610-fr-picker-3"></script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260619-display-profile-3" type="module"></script>
+  <script src="./assets/js/main.js?v=20260621-v3-insights-resize-1" type="module"></script>
   </body>
 </html>

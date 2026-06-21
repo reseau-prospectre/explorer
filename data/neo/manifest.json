@@ -4,7 +4,7 @@
   "version": "1.0.0",
   "format_version": "1.0.0",
   "date_generation": "2026-06-12",
-  "description": "Starter pack PROSPECTRE du Master MEEF PIF NEO : architecture curriculaire, référentiel de compétences, niveaux, UE, modules et SAE.",
+  "description": "Pack PROSPECTRE du Master MEEF PIF NEO : architecture curriculaire, référentiel de compétences, niveaux, UE, modules et SAE.",
   "modele": {
     "version": "1.0.2",
     "updatedAt": "2026-06-15T09:06:13.751Z",

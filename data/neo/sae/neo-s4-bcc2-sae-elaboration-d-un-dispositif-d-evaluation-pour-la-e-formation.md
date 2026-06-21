@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s4-bcc2-sae"
 type: "sae"
-titre: "S4 · BCC2 · SAE"
+titre: "Dispositif d’évaluation e-formation"
 statut: "officiel"
 resume: "Élaboration d’un dispositif d’évaluation pour la e-formation"
 ects_bcc: 5

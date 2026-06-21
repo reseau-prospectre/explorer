@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s1-bcc2-sae"
 type: "sae"
-titre: "S1 · BCC2 · SAE"
+titre: "Scénariser une e-formation hybride"
 statut: "officiel"
 resume: "Analyse et scénarisation des ressources pédagogiques d'une e-formation et/ou formation hybridée"
 ects_bcc: 8

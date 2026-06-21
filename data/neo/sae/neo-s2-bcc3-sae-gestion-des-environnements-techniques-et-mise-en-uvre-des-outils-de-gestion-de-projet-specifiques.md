@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s2-bcc3-sae"
 type: "sae"
-titre: "S2 · BCC3 · SAE"
+titre: "Outillage technique du projet"
 statut: "officiel"
 resume: "Gestion des environnements techniques et mise en œuvre des outils de gestion de projet spécifiques"
 ects_bcc: 5

@@ -1,7 +1,7 @@
 ---
 id: "ue:s1-bcc4"
 type: "ue"
-titre: "S1 · Expertise pédagogique et démarche scientifique réflexive niveau 1"
+titre: "Expertise pédagogique et démarche scientifique réflexive — niveau 1"
 statut: "officiel"
 ects: 9
 heures: 55

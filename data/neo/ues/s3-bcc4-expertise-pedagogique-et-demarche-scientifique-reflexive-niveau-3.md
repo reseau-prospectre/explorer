@@ -1,7 +1,7 @@
 ---
 id: "ue:s3-bcc4"
 type: "ue"
-titre: "S3 · Expertise pédagogique et démarche scientifique réflexive niveau 3"
+titre: "Expertise pédagogique et démarche scientifique réflexive — niveau 3"
 statut: "officiel"
 ects: 8
 heures: 50

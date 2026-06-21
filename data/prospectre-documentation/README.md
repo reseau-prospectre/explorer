@@ -1,44 +1,17 @@
-# PROSPECTRE 1.0 — Documentation officielle et laboratoire
+# PROSPECTRE — Documentation vivante
 
-Ce dossier est à la fois :
+Ce dossier est la documentation de PROSPECTRE et un pack de démonstration.
 
-- la documentation complète de l’application ;
-- un starter pack importable dans PROSPECTRE ;
-- une démonstration d’un modèle métier entièrement personnalisé ;
-- un laboratoire des possibilités Markdown et YAML.
-
-Il documente le périmètre stabilisé de la v1, le contrat des packs, la
-migration des corpus et l’architecture modulaire du moteur.
+Il ne présente pas seulement des fonctions : il montre comment un corpus peut devenir un graphe lisible, discutable et exportable.
 
 ## Parcours recommandé
 
-1. Importer le dossier compressé ou son archive ZIP dans PROSPECTRE.
-2. Ouvrir la fiche **Bienvenue dans PROSPECTRE**.
-3. Parcourir les guides bleus pour apprendre l’usage courant.
-4. Parcourir les procédures jaunes pour administrer un projet.
-5. Parcourir les fiches vertes pour comprendre l’architecture.
-6. Ouvrir **Cheat sheet Markdown** puis **Fiche Markdown complète**.
-7. Consulter **PROSPECTRE 1.0 — Capacités et périmètre** et la
-   **Spécification d’un pack PROSPECTRE 1.0**.
-
-## Structure
-
-```text
-guides/          documentation utilisateur et animation
-administration/  administration du modèle et gouvernance
-technique/       architecture, sécurité, déploiement et dépannage
-references/      spécifications YAML et aide-mémoire Markdown
-demos/           contenus conçus pour tester le rendu
-assets/          illustrations locales embarquées dans le pack
-manifest.json    index, modèle documentaire et liste des fichiers
-```
+1. Ouvrir [Entrer dans la machine](entity:porte:entrer).
+2. Lire [Le jeu de l’exploration](entity:geste:explorer).
+3. Tester [Fabriquer un pack](entity:recette:fabriquer-pack).
+4. Copier un des prompts de la section Prompts.
+5. Revenir au graphe et vérifier si la structure raconte déjà quelque chose.
 
 ## Principe
 
-Les fichiers Markdown sont la source documentaire. Le front matter YAML décrit
-les métadonnées et les relations du graphe. Les illustrations utilisent des
-chemins relatifs et restent incluses lors d’un export ZIP.
-
-## Version
-
-Pack documentaire 1.0.0, généré le 11 juin 2026.
+La documentation sérieuse n’a pas besoin d’être solennelle. Elle doit être vérifiable, utile et assez nette pour que l’utilisateur sache quoi faire ensuite.

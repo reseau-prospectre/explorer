@@ -1,7 +1,7 @@
 ---
 id: "ue:s4-bcc4"
 type: "ue"
-titre: "S4 · Expertise pédagogique et démarche scientifique réflexive niveau 4"
+titre: "Expertise pédagogique et démarche scientifique réflexive — niveau 4"
 statut: "officiel"
 ects: 13
 heures: 80

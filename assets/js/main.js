@@ -35,6 +35,8 @@ import {
 import { createNodeRenderer } from "./graph/node-renderer.js";
 import { createRealtimeProviders } from "./services/realtime.js";
 import { createMarkdownRenderer } from "./ui/markdown.js";
+import { bootstrapProspectre } from "./app/bootstrap.js";
+import { PanelManager } from "./panels/panel-manager.js";
 
 const {
   session: SESSION_KEY,
@@ -61,6 +63,42 @@ const INITIAL_FIT_DELAY = 900;
 const SEARCH_RESULT_LIMIT = 30;
 const LINK_FOCUS_MAX_LINKS = 96;
 const OVERVIEW_CONTEXT_PREFIX = "__overview__";
+const GRAPH_TOOLBAR_PREFS_KEY = "prospectre.ui.v3.graphToolbar";
+const EMOJI_RECENTS_KEY = "prospectre.ui.v3.emojiRecents";
+const QUICK_REACTIONS = Object.freeze([
+  { emoji: "👍", annotation: "Valider", category: "essentiel", terms: "ok accord oui" },
+  { emoji: "❤️", annotation: "Aimer", category: "essentiel", terms: "coeur amour" },
+  { emoji: "👏", annotation: "Applaudir", category: "essentiel", terms: "bravo" },
+  { emoji: "✨", annotation: "Souligner", category: "essentiel", terms: "sparkles important" },
+  { emoji: "👀", annotation: "À revoir", category: "analyse", terms: "voir regarder verifier" },
+  { emoji: "💡", annotation: "Idée", category: "analyse", terms: "idee suggestion" },
+  { emoji: "❓", annotation: "Question", category: "analyse", terms: "interroger doute" },
+  { emoji: "⚠️", annotation: "Attention", category: "analyse", terms: "alerte risque" },
+  { emoji: "🔥", annotation: "Important", category: "priorite", terms: "feu priorite" },
+  { emoji: "🚀", annotation: "Accélérer", category: "priorite", terms: "lancer vite" },
+  { emoji: "🧠", annotation: "Réflexion", category: "analyse", terms: "cerveau penser" },
+  { emoji: "🧩", annotation: "Connexion", category: "analyse", terms: "puzzle lien" },
+  { emoji: "📝", annotation: "Note", category: "travail", terms: "ecrire annotation" },
+  { emoji: "✅", annotation: "Fait", category: "travail", terms: "done valide" },
+  { emoji: "⏳", annotation: "À suivre", category: "travail", terms: "temps attente" },
+  { emoji: "🔗", annotation: "Lien", category: "travail", terms: "link relation" },
+  { emoji: "🎯", annotation: "Cible", category: "priorite", terms: "objectif focus" },
+  { emoji: "🧪", annotation: "Tester", category: "travail", terms: "test verifier" },
+  { emoji: "🛠️", annotation: "À corriger", category: "travail", terms: "outil fix" },
+  { emoji: "🌱", annotation: "À développer", category: "priorite", terms: "germe evolution" },
+  { emoji: "💬", annotation: "Discussion", category: "essentiel", terms: "chat parler" },
+  { emoji: "📌", annotation: "Épingler", category: "priorite", terms: "pin retenir" },
+  { emoji: "🤝", annotation: "Accord", category: "essentiel", terms: "main accord" },
+  { emoji: "🧭", annotation: "Orientation", category: "analyse", terms: "boussole direction" }
+]);
+const EMOJI_CATEGORIES = Object.freeze([
+  { id: "all", label: "Tout" },
+  { id: "recent", label: "Récents" },
+  { id: "essentiel", label: "Essentiel" },
+  { id: "analyse", label: "Analyse" },
+  { id: "priorite", label: "Priorité" },
+  { id: "travail", label: "Travail" }
+]);
 const HEART_CYCLE_SECONDS = 180;
 const HEART_IDLE_LIMIT = 60000;
 const HEART_CLICK_CAP = 60;
@@ -112,6 +150,10 @@ const els = {
   graphSearchStatus: document.querySelector("#graph-search-status"),
   graphHelpToggle: document.querySelector("#graph-help-toggle"),
   graphHelpPopover: document.querySelector("#graph-help-popover"),
+  graphToolbar: document.querySelector(".graph-toolbar"),
+  openGraphWindow: document.querySelector("#open-graph-window"),
+  fullscreenGraph: document.querySelector("#fullscreen-graph"),
+  insightsToggle: document.querySelector("#insights-toggle"),
   projectSwitcherToggle: document.querySelector("#project-switcher-toggle"),
   projectSwitcherMenu: document.querySelector("#project-switcher-menu"),
   activeProjectName: document.querySelector("#active-project-name"),
@@ -216,6 +258,11 @@ const state = {
   presence: [],
   avatarsVisible: true,
   provider: null,
+  panelManager: null,
+  appStore: null,
+  windowBridge: null,
+  externalWindow: null,
+  toolbarDrag: null,
   providerVersion: 0,
   datasetId: "local",
   realtimeStatus: "local",
@@ -288,6 +335,7 @@ async function init() {
     showToast("Chargement incomplet. Vérifiez la connexion.");
     return;
   }
+  bootstrapV3Runtime();
   applyTheme(loadJson(THEME_KEY, "system"));
   window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
     if (loadJson(THEME_KEY, "system") === "system") applyTheme("system");
@@ -297,6 +345,7 @@ async function init() {
   setupGlobalTooltips();
   setupRelativeTimes();
   setupGraph();
+  setupPanelManager();
   const projectDiscovery = discoverAvailableProjectManifests();
   await loadDefaultProject();
   await projectDiscovery;
@@ -305,6 +354,36 @@ async function init() {
   const adminView = new URLSearchParams(window.location.search).get("admin");
   if (["modele", "champs", "transfert"].includes(adminView)) {
     openSchemaAdmin(adminView === "champs" ? "fields" : adminView === "transfert" ? "transfer" : "types");
+  }
+}
+
+function bootstrapV3Runtime() {
+  const runtime = bootstrapProspectre({
+    state,
+    theme: loadJson(THEME_KEY, "system"),
+    onBridgeMessage: handleBridgeMessage
+  });
+  state.appStore = runtime.store;
+  state.windowBridge = runtime.bridge;
+  state.externalWindow = runtime.externalWindow;
+}
+
+function handleBridgeMessage(message) {
+  const { type, payload } = message;
+  if (type === "selection:set" && payload?.id && state.entities.has(payload.id)) {
+    if (state.selectedId === payload.id) return;
+    state.bridgeApplying = true;
+    selectNode(payload.id, Boolean(payload.moveCamera));
+    state.bridgeApplying = false;
+  }
+  if (type === "theme:set" && payload?.theme) {
+    applyTheme(payload.theme, { broadcast: false });
+  }
+  if (type === "graph:fit") {
+    fitVisibleGraph();
+  }
+  if (type === "state:request") {
+    state.windowBridge?.publish("state:hydrate", state.windowBridge.getState());
   }
 }
 
@@ -348,7 +427,6 @@ function hideGlobalTooltip() {
 }
 
 function setupControls() {
-  document.querySelector("#app").classList.add("drawer-open");
   els.mobileMenuToggle?.addEventListener("click", toggleMobileMenu);
   els.filterMenuToggle?.addEventListener("click", toggleFilterMenu);
   els.transferMenuToggle?.addEventListener("click", toggleTransferMenu);
@@ -392,9 +470,13 @@ function setupControls() {
     positionOpenToolbarPopover();
   });
   els.graphHelpToggle?.addEventListener("click", toggleGraphHelp);
+  setupGraphToolbar();
   document.querySelector("#fit-view").addEventListener("click", () => fitVisibleGraph());
   document.querySelector("#zoom-in").addEventListener("click", () => zoomCamera(0.78));
   document.querySelector("#zoom-out").addEventListener("click", () => zoomCamera(1.22));
+  els.insightsToggle?.addEventListener("click", toggleInsightsPanel);
+  els.openGraphWindow?.addEventListener("click", openGraphExternalWindow);
+  els.fullscreenGraph?.addEventListener("click", toggleGraphFullscreen);
   document.querySelector("#close-right-panel").addEventListener("click", () => hideRightPanel());
   els.graphSearchToggle?.addEventListener("click", () => toggleGraphSearch());
   els.projectSwitcherToggle?.addEventListener("click", toggleProjectMenu);
@@ -429,6 +511,7 @@ function setupControls() {
   els.activityButton?.addEventListener("click", openActivityPanel);
   document.querySelector("#close-activity")?.addEventListener("click", closeActivityPanel);
   document.querySelector("#close-profile").addEventListener("click", closeProfile);
+  document.addEventListener("click", handleWidgetExternalAction);
   els.profileSettingsToggle?.addEventListener("click", toggleProfileSettings);
   document.querySelector("#clear-local").addEventListener("click", clearLocalData);
   els.googleLogin?.addEventListener("click", toggleGoogleAccount);
@@ -441,7 +524,7 @@ function setupControls() {
   });
   els.profileColor?.addEventListener("change", saveProfile);
   document.querySelector("#close-emoji-picker")?.addEventListener("click", closeEmojiPicker);
-  els.emojiPicker?.addEventListener("emoji-click", handleEmojiSelection);
+  setupNativeEmojiPicker();
   document.querySelectorAll("[name='avatar-mode']").forEach((input) => {
     input.addEventListener("change", saveProfile);
   });
@@ -452,11 +535,6 @@ function setupControls() {
       renderThemeChoice();
     });
   });
-  document.querySelector("#right-resize").addEventListener("pointerdown", startRightResize);
-  document.querySelector("#bottom-resize").addEventListener("pointerdown", startBottomResize);
-  document.addEventListener("pointermove", resizePanels);
-  document.addEventListener("pointerup", stopResize);
-
   els.packInput.addEventListener("change", (event) => importUserFiles([...event.target.files]));
   els.search.addEventListener("input", (event) => {
     runGraphSearch(event.target.value);
@@ -639,12 +717,14 @@ function toggleFilterMenu() {
   }
   els.typeFilters?.classList.toggle("hidden", !open);
   els.filterMenuToggle?.setAttribute("aria-expanded", String(open));
+  syncToolbarActiveStates();
   if (open) requestAnimationFrame(() => positionToolbarPopover(els.typeFilters, els.filterMenuToggle));
 }
 
 function closeFilterMenu() {
   els.typeFilters?.classList.add("hidden");
   els.filterMenuToggle?.setAttribute("aria-expanded", "false");
+  syncToolbarActiveStates();
 }
 
 function toggleTransferMenu() {
@@ -736,6 +816,311 @@ function renderProjectSwitcher() {
       }
     });
   });
+}
+
+function setupPanelManager() {
+  const app = document.querySelector("#app");
+  let host = document.querySelector("#panel-host");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "panel-host";
+    app?.append(host);
+  }
+  els.rightPanel?.classList.add("legacy-panel-source", "hidden");
+  els.bottomDrawer?.classList.add("legacy-panel-source");
+  els.profileMenu?.classList.add("legacy-panel-source", "hidden");
+  els.activityPanel?.classList.add("legacy-panel-source", "hidden");
+  state.panelManager = new PanelManager({
+    host,
+    store: state.appStore,
+    windowBridge: state.windowBridge,
+    onLayoutChange: syncAdaptivePanelLayout
+  });
+  state.panelManager.register({
+    id: "context",
+    title: "Aucun élément sélectionné",
+    icon: "panel",
+    defaultPrefs: { mode: "dock", edge: "right", size: 430, width: 430, x: 96, y: 92, height: 620 },
+    render: renderContextPanelBody,
+    canExternalize: true,
+    onClose: closeContextPanelState
+  });
+  state.panelManager.register({
+    id: "insights",
+    title: "Repères",
+    headerSlot: "insights",
+    icon: "analytics",
+    defaultPrefs: { mode: "dock", edge: "bottom", size: 300, width: 720, x: 120, y: 120, height: 420, collapsed: false },
+    className: "adaptive-panel--insights",
+    collapsible: true,
+    render: renderInsightsPanelBody,
+    canExternalize: true,
+    onClose: syncToolbarActiveStates
+  });
+  state.panelManager.register({
+    id: "profile",
+    title: "Profil",
+    icon: "profile",
+    defaultPrefs: { mode: "dock", edge: "right", size: 390, width: 390, x: 116, y: 104, height: 650 },
+    className: "adaptive-panel--profile",
+    render: renderProfilePanelBody,
+    canExternalize: true,
+    onClose: closeProfileState
+  });
+  state.panelManager.register({
+    id: "activity",
+    title: "Fil d’activité",
+    icon: "activity",
+    defaultPrefs: { mode: "dock", edge: "right", size: 460, width: 460, x: 136, y: 118, height: 650 },
+    className: "adaptive-panel--activity",
+    render: renderActivityPanelBody,
+    canExternalize: true,
+    onClose: closeActivityPanelState
+  });
+  state.panelManager.register({
+    id: "gamification",
+    title: "Coprésence",
+    icon: "favorite",
+    defaultPrefs: { mode: "float", edge: "right", size: 380, width: 380, x: 140, y: 110, height: 640 },
+    className: "adaptive-panel--gamification",
+    render: renderGamificationPanelBody,
+    canExternalize: true
+  });
+  if (state.externalWindow?.kind === "panel") {
+    state.panelManager.open(state.externalWindow.panelId || "insights");
+  } else if (state.externalWindow?.kind !== "graph") {
+    state.panelManager.open("insights");
+  }
+  syncAdaptivePanelLayout(state.panelManager.getLayout());
+  syncToolbarActiveStates();
+}
+
+function renderContextPanelBody() {
+  if (!state.contextPanelBody) {
+    state.contextPanelBody = document.createElement("div");
+    state.contextPanelBody.className = "adaptive-panel__context";
+    document.querySelector("#panel-tabs")?.removeAttribute("hidden");
+    [document.querySelector("#panel-tabs"), els.panelContent].filter(Boolean).forEach((element) => state.contextPanelBody.append(element));
+  }
+  return state.contextPanelBody;
+}
+
+function renderInsightsPanelBody(_context, { panel } = {}) {
+  const breadcrumb = document.querySelector("#insight-breadcrumb");
+  const titleSlot = panel?.querySelector("[data-panel-title-slot='insights']");
+  if (breadcrumb && titleSlot && breadcrumb.parentElement !== titleSlot) {
+    titleSlot.append(breadcrumb);
+  }
+  if (!state.insightsPanelBody) {
+    state.insightsPanelBody = document.createElement("div");
+    state.insightsPanelBody.className = "adaptive-panel__insights";
+    const drawerBody = document.createElement("div");
+    drawerBody.className = "drawer-body";
+    [els.timeline, els.kpiGrid, els.entityTable, els.presenceSummary].filter(Boolean).forEach((element) => drawerBody.append(element));
+    state.insightsPanelBody.append(drawerBody);
+  }
+  return state.insightsPanelBody;
+}
+
+function renderProfilePanelBody() {
+  if (!state.profilePanelBody) {
+    state.profilePanelBody = document.createElement("div");
+    state.profilePanelBody.className = "adaptive-panel__profile";
+    const content = els.profileMenu?.querySelector(".panel-content");
+    if (content) state.profilePanelBody.append(content);
+  }
+  renderProfileControls();
+  if (els.realtimeSwitch) els.realtimeSwitch.checked = state.realtimeStatus === "firebase";
+  return state.profilePanelBody;
+}
+
+function renderActivityPanelBody() {
+  if (!state.activityPanelBody) {
+    state.activityPanelBody = document.createElement("div");
+    state.activityPanelBody.className = "adaptive-panel__activity";
+    [document.querySelector("#activity-tabs"), els.activityContent].filter(Boolean).forEach((element) => state.activityPanelBody.append(element));
+  }
+  renderActivityPanel();
+  return state.activityPanelBody;
+}
+
+function renderGamificationPanelBody() {
+  if (!state.gamificationPanelBody) {
+    state.gamificationPanelBody = document.createElement("div");
+    state.gamificationPanelBody.className = "adaptive-panel__gamification";
+    if (els.gamificationCard) state.gamificationPanelBody.append(els.gamificationCard);
+  }
+  renderGamificationCard();
+  return state.gamificationPanelBody;
+}
+
+function syncAdaptivePanelLayout(layout = state.panelManager?.getLayout?.() || {}) {
+  const app = document.querySelector("#app");
+  if (!app) return;
+  app.style.setProperty("--graph-left", "0px");
+  app.style.setProperty("--graph-top-offset", "0px");
+  app.style.setProperty("--graph-right", "0px");
+  app.style.setProperty("--graph-bottom", "0px");
+  app.classList.toggle("has-adaptive-panels", Object.values(layout).some((panel) => panel?.open));
+  app.classList.remove("right-open", "drawer-open", "drawer-collapsed");
+  syncToolbarActiveStates(layout);
+  positionOpenToolbarPopover();
+}
+
+function toggleInsightsPanel() {
+  const open = Boolean(state.panelManager?.getLayout?.().insights?.open);
+  if (open) state.panelManager?.close("insights");
+  else state.panelManager?.open("insights");
+  syncToolbarActiveStates();
+}
+
+function syncToolbarActiveStates(layout = state.panelManager?.getLayout?.() || {}) {
+  setToolActive(els.insightsToggle, Boolean(layout.insights?.open));
+  setToolActive(els.filterMenuToggle, !els.typeFilters?.classList.contains("hidden"));
+  setToolActive(els.graphSearchToggle, !els.graphSearchPopover?.classList.contains("hidden"));
+  setToolActive(els.graphHelpToggle, !els.graphHelpPopover?.classList.contains("hidden"));
+}
+
+function setToolActive(button, active) {
+  if (!button) return;
+  button.classList.toggle("is-active", Boolean(active));
+  button.setAttribute("aria-pressed", active ? "true" : "false");
+}
+
+function setupGraphToolbar() {
+  const toolbar = els.graphToolbar;
+  if (!toolbar) return;
+  const prefs = normalizeGraphToolbarPrefs(loadJson(GRAPH_TOOLBAR_PREFS_KEY, null));
+  applyGraphToolbarPrefs(prefs);
+  toolbar.addEventListener("pointerdown", beginGraphToolbarDrag);
+}
+
+function applyGraphToolbarPrefs(prefs) {
+  const toolbar = els.graphToolbar;
+  if (!toolbar) return;
+  toolbar.dataset.mode = prefs.mode;
+  toolbar.dataset.edge = prefs.edge;
+  toolbar.style.setProperty("--toolbar-x", `${Math.round(prefs.x)}px`);
+  toolbar.style.setProperty("--toolbar-y", `${Math.round(prefs.y)}px`);
+  localStorage.setItem(GRAPH_TOOLBAR_PREFS_KEY, JSON.stringify(prefs));
+  positionOpenToolbarPopover();
+}
+
+function beginGraphToolbarDrag(event) {
+  if (event.button !== 0 || !els.graphToolbar || state.toolbarDrag) return;
+  if (event.target.closest("button, a, input, textarea, select, [role='button']")) return;
+  event.preventDefault();
+  const rect = els.graphToolbar.getBoundingClientRect();
+  state.toolbarDrag = {
+    pointerId: event.pointerId,
+    target: els.graphToolbar,
+    initial: { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, width: rect.width, height: rect.height },
+    prefs: normalizeGraphToolbarPrefs(loadJson(GRAPH_TOOLBAR_PREFS_KEY, null))
+  };
+  els.graphToolbar.classList.add("is-dragging");
+  els.graphToolbar.dataset.mode = "float";
+  els.graphToolbar.setPointerCapture?.(event.pointerId);
+  els.graphToolbar.addEventListener("pointermove", moveGraphToolbarDrag);
+  els.graphToolbar.addEventListener("pointerup", commitGraphToolbarDrag);
+  els.graphToolbar.addEventListener("pointercancel", cancelGraphToolbarDrag);
+  els.graphToolbar.addEventListener("lostpointercapture", cancelGraphToolbarDrag);
+}
+
+function moveGraphToolbarDrag(event) {
+  const drag = state.toolbarDrag;
+  if (!drag || event.pointerId !== drag.pointerId || !els.graphToolbar) return;
+  const x = Math.max(8, Math.min(window.innerWidth - drag.initial.width - 8, drag.initial.left + event.clientX - drag.initial.x));
+  const y = Math.max(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 74, Math.min(window.innerHeight - drag.initial.height - 8, drag.initial.top + event.clientY - drag.initial.y));
+  els.graphToolbar.style.setProperty("--toolbar-x", `${Math.round(x)}px`);
+  els.graphToolbar.style.setProperty("--toolbar-y", `${Math.round(y)}px`);
+  els.graphToolbar.dataset.edge = graphToolbarEdgeAt(event.clientX, event.clientY) || "free";
+  positionOpenToolbarPopover();
+}
+
+function commitGraphToolbarDrag(event) {
+  const drag = state.toolbarDrag;
+  if (!drag || (event.pointerId !== undefined && event.pointerId !== drag.pointerId) || !els.graphToolbar) return;
+  const rect = els.graphToolbar.getBoundingClientRect();
+  const edge = graphToolbarEdgeAt(event.clientX, event.clientY);
+  const prefs = edge
+    ? { ...drag.prefs, mode: "dock", edge, x: Math.round(rect.left), y: Math.round(rect.top) }
+    : { ...drag.prefs, mode: "float", edge: "free", x: Math.round(rect.left), y: Math.round(rect.top) };
+  finishGraphToolbarDrag();
+  applyGraphToolbarPrefs(normalizeGraphToolbarPrefs(prefs));
+}
+
+function cancelGraphToolbarDrag() {
+  const drag = state.toolbarDrag;
+  if (!drag) return;
+  finishGraphToolbarDrag();
+  applyGraphToolbarPrefs(drag.prefs);
+}
+
+function finishGraphToolbarDrag() {
+  const target = state.toolbarDrag?.target || els.graphToolbar;
+  els.graphToolbar?.classList.remove("is-dragging");
+  target?.removeEventListener("pointermove", moveGraphToolbarDrag);
+  target?.removeEventListener("pointerup", commitGraphToolbarDrag);
+  target?.removeEventListener("pointercancel", cancelGraphToolbarDrag);
+  target?.removeEventListener("lostpointercapture", cancelGraphToolbarDrag);
+  if (target?.hasPointerCapture?.(state.toolbarDrag?.pointerId)) {
+    target.releasePointerCapture(state.toolbarDrag.pointerId);
+  }
+  state.toolbarDrag = null;
+}
+
+function graphToolbarEdgeAt(x, y) {
+  const topbar = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 74;
+  const threshold = 88;
+  if (y <= topbar + threshold) return "top";
+  if (y >= window.innerHeight - threshold) return "bottom";
+  if (x <= threshold) return "left";
+  if (x >= window.innerWidth - threshold) return "right";
+  return "";
+}
+
+function normalizeGraphToolbarPrefs(prefs = {}) {
+  const edge = ["left", "right", "top", "bottom", "free"].includes(prefs?.edge) ? prefs.edge : "left";
+  const mode = prefs?.mode === "float" ? "float" : "dock";
+  return {
+    mode: edge === "free" ? "float" : mode,
+    edge,
+    x: Number(prefs?.x) || 10,
+    y: Number(prefs?.y) || 92
+  };
+}
+
+function openGraphExternalWindow() {
+  state.windowBridge?.openExternal({ kind: "graph", title: "PROSPECTRE — Graphe" });
+  showToast("Graphe ouvert en fenêtre externe");
+}
+
+async function toggleGraphFullscreen() {
+  try {
+    if (document.fullscreenElement) {
+      await document.exitFullscreen();
+      return;
+    }
+    await (els.graphStage || document.documentElement).requestFullscreen();
+    setTimeout(() => fitVisibleGraph(), 120);
+  } catch {
+    showToast("Plein écran indisponible");
+  }
+}
+
+function openContextPanel() {
+  state.panelManager?.open("context");
+}
+
+function closeContextPanelState() {
+  document.querySelector("#app")?.classList.remove("right-open");
+  state.selectedId = null;
+  state.highlightedCommentId = null;
+  state.provider?.updatePresence({ selectedNodeId: null });
+  renderAnalysis();
+  updateVisibleGraph();
+  updateDeepLink(null);
+  scheduleGraphResize();
 }
 
 function sameProjectUrl(a, b) {
@@ -983,6 +1368,23 @@ async function loadProject(manifestUrl, options = {}) {
   state.projectManifest = canRestore && saved?.manifest ? { ...manifest, ...saved.manifest } : manifest;
   if (options.updateUrl !== false) updateProjectUrl(manifestUrl);
   loadFiles(canRestore ? saved.files : canonicalFiles, canRestore ? "Contenus restaurés" : "Exploration prête", { resetFilters: true });
+  state.appStore?.dispatch({
+    type: "state:patch",
+    scope: "project",
+    patch: {
+      project: {
+        manifest: state.projectManifest,
+        manifestUrl,
+        datasetId: state.datasetId,
+        restored: Boolean(canRestore)
+      }
+    }
+  });
+  state.windowBridge?.publish("project:loaded", {
+    manifest: state.projectManifest,
+    manifestUrl,
+    datasetId: state.datasetId
+  });
 }
 
 function beginProjectSwitch(manifestUrl) {
@@ -1179,6 +1581,7 @@ function updateVisibleGraph(options = {}) {
   updateFocusDepthLabel();
   renderPresence();
   renderPresenceStrip();
+  renderAnalysis();
   setTimeout(renderPresence, 300);
 }
 
@@ -1574,12 +1977,13 @@ function selectNode(id, moveCamera = false) {
   state.provider?.updatePresence({ selectedNodeId: id });
   renderRightPanel();
   renderAnalysis();
-  document.querySelector("#app").classList.add("right-open");
-  els.rightPanel.classList.remove("hidden");
+  openContextPanel();
   updateVisibleGraph();
   scheduleGraphResize();
   if (moveCamera) fitFocusedSelection(id);
   updateDeepLink();
+  state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: id, selectedLinkKey: null, activeTab: state.activeTab } } });
+  if (!state.bridgeApplying) state.windowBridge?.publish("selection:set", { id, moveCamera: false, activeTab: state.activeTab });
 }
 
 function selectContributionNode(node, moveCamera = false) {
@@ -1595,12 +1999,13 @@ function selectContributionNode(node, moveCamera = false) {
   state.provider?.updatePresence({ selectedNodeId: node.entityId });
   renderRightPanel();
   renderAnalysis();
-  document.querySelector("#app").classList.add("right-open");
-  els.rightPanel.classList.remove("hidden");
+  openContextPanel();
   updateVisibleGraph();
   scheduleGraphResize();
   if (moveCamera) fitFocusedSelection(node.entityId || node.id);
   updateDeepLink(node.commentId);
+  state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: node.entityId, selectedLinkKey: null, activeTab: state.activeTab, commentId: node.commentId } } });
+  if (!state.bridgeApplying) state.windowBridge?.publish("selection:set", { id: node.entityId, moveCamera: false, activeTab: state.activeTab, commentId: node.commentId });
   requestAnimationFrame(() => {
     els.panelContent.querySelector(`[data-comment-id="${cssEscape(node.commentId)}"], [data-thread="${cssEscape(node.commentId)}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
   });
@@ -1615,6 +2020,7 @@ function selectLink(link) {
   updateVisibleGraph();
   renderAnalysis();
   focusSelectedLinkPath(sourceId, targetId);
+  state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: null, selectedLinkKey: state.selectedLinkKey, activeTab: state.activeTab } } });
 }
 
 function exitGraphFocus() {
@@ -1682,8 +2088,12 @@ async function copyDeepLink(options = {}) {
 function renderRightPanel() {
   const entity = state.entities.get(state.selectedId);
   if (!entity) return;
-  els.panelKicker.textContent = TYPE_CONFIG[entity.type]?.singular || TYPE_LABELS[entity.type] || "Sélection";
+  const kicker = TYPE_CONFIG[entity.type]?.singular || TYPE_LABELS[entity.type] || "Sélection";
+  const badgeColor = TYPE_CONFIG[entity.type]?.color || "#7dd3fc";
+  els.panelKicker.textContent = kicker;
   els.panelTitle.textContent = entity.label;
+  state.panelManager?.update("context", { title: entity.label, badge: { label: kicker, color: badgeColor } });
+  openContextPanel();
   if (state.activeTab === "overview") renderOverview(entity);
   if (state.activeTab === "discussion") renderDiscussion(entity);
 }
@@ -1708,12 +2118,12 @@ function openOverviewDiscussion() {
   state.activeTab = "discussion";
   state.replyTo = null;
   state.highlightedCommentId = null;
-  els.rightPanel.classList.remove("hidden");
-  document.querySelector("#app")?.classList.add("right-open");
   document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === "discussion"));
   const entity = getOverviewDiscussionEntity();
   els.panelKicker.textContent = "Vue d’ensemble";
   els.panelTitle.textContent = entity.label;
+  state.panelManager?.update("context", { title: entity.label, badge: { label: "Vue d’ensemble", color: "var(--accent)" } });
+  openContextPanel();
   renderDiscussion(entity);
   updateDeepLink();
   scheduleGraphResize();
@@ -2047,15 +2457,267 @@ function destroyContentEditor() {
   state.contentEditorAssetMap = new Map();
 }
 
+function getAnalysisGraphScope() {
+  if (state.visibleGraph.nodes.length || !state.graph.nodes.length || !state.activeTypes.size) {
+    return state.visibleGraph;
+  }
+  return state.graph;
+}
+
+function renderGraphQualityCard(focusNodes, selected, selectedLink, scopeLinks) {
+  const metrics = computeGraphQualityMetrics(focusNodes, scopeLinks);
+  const scopeLabel = selected
+    ? "Sélection"
+    : selectedLink
+      ? "Chemin"
+      : "Vue active";
+  return `
+    <article class="project-meta-card graph-quality-card">
+      <div class="graph-quality-header">
+        <div>
+          <p class="kicker">Diagnostic graphe</p>
+          <strong>${escapeHtml(scopeLabel)}</strong>
+        </div>
+        <div class="graph-quality-overall">
+          <span>Score global</span>
+          ${renderGraphScoreBadge(metrics.overall.grade, "Score global", "large")}
+        </div>
+      </div>
+      <div class="graph-quality-scores">
+        ${renderGraphQualityScore("Lisibilité", metrics.readability, "Évalue si le volume visible reste lisible sans filtrage immédiat.")}
+        ${renderGraphQualityScore("Cohésion", metrics.cohesion, "Mesure la part du graphe réellement reliée au groupe principal.")}
+        ${renderGraphQualityScore("Maillage", metrics.mesh, "Observe si le degré moyen donne assez de chemins sans saturer la lecture.")}
+        ${renderGraphQualityScore("Équilibre", metrics.balance, "Repère les graphes trop dominés par un seul hub ou des degrés très dispersés.")}
+      </div>
+      <div class="graph-quality-facts">
+        ${renderGraphQualityFact(formatCompactNumber(metrics.nodeCount), "éléments")}
+        ${renderGraphQualityFact(formatCompactNumber(metrics.linkCount), "liens")}
+        ${renderGraphQualityFact(formatCompactNumber(metrics.typeCount), "types")}
+        ${renderGraphQualityFact(formatGraphNumber(metrics.averageDegree), "degré moyen")}
+        ${renderGraphQualityFact(`${Math.round(metrics.largestRatio * 100)}%`, "couverture")}
+        ${renderGraphQualityFact(formatCompactNumber(metrics.maxDegree), "hub max")}
+        ${metrics.isolateCount ? renderGraphQualityFact(formatCompactNumber(metrics.isolateCount), "isolats", true) : ""}
+      </div>
+    </article>
+  `;
+}
+
+function renderGraphQualityScore(label, metric, hint) {
+  return `
+    <div class="graph-quality-score grade-${metric.grade}">
+      <div class="graph-quality-score-head">
+        <strong>${escapeHtml(label)}</strong>
+        <button class="graph-quality-info" type="button" aria-label="${escapeHtml(`Information : ${label}`)}">
+          <i>info</i>
+          <span class="tooltip top max">${escapeHtml(hint)}</span>
+        </button>
+      </div>
+      ${renderGraphScoreBadge(metric.grade, label)}
+    </div>
+  `;
+}
+
+function renderGraphQualityFact(value, label, danger = false) {
+  return `
+    <span class="graph-quality-fact${danger ? " is-warning" : ""}">
+      <strong>${escapeHtml(value)}</strong>
+      <small>${escapeHtml(label)}</small>
+    </span>
+  `;
+}
+
+function renderGraphScoreBadge(grade, label, variant = "") {
+  const grades = ["A", "B", "C", "D", "E"];
+  const activeIndex = Math.max(0, grades.indexOf(grade));
+  const colors = ["#038141", "#85bb2f", "#fecb02", "#ee8100", "#e63e11"];
+  const segments = grades.map((item, index) => {
+    const active = index === activeIndex;
+    const x = 2 + index * 22;
+    const y = active ? 1 : 5;
+    const height = active ? 24 : 16;
+    const width = active ? 26 : 22;
+    const textX = x + width / 2;
+    return `
+      <g class="${active ? "is-active" : ""}">
+        <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="4" fill="${colors[index]}"></rect>
+        <text x="${textX}" y="${active ? "18" : "17"}" text-anchor="middle">${item}</text>
+      </g>
+    `;
+  }).join("");
+  return `
+    <svg class="graph-score-badge ${variant ? `is-${variant}` : ""} grade-${grade}" viewBox="0 0 116 28" role="img" aria-label="${escapeHtml(`${label} ${grade}`)}">
+      <title>${escapeHtml(`${label} ${grade}`)}</title>
+      ${segments}
+    </svg>
+  `;
+}
+
+function computeGraphQualityMetrics(focusNodes, scopeLinks) {
+  const nodeIds = new Set(focusNodes.map((node) => node.id));
+  const typeCount = new Set(focusNodes.map((node) => node.type).filter(Boolean)).size;
+  const links = scopeLinks.filter((link) => nodeIds.has(getId(link.source)) && nodeIds.has(getId(link.target)));
+  const nodeCount = nodeIds.size;
+  const linkCount = links.length;
+  const maxUndirectedLinks = nodeCount > 1 ? nodeCount * (nodeCount - 1) / 2 : 0;
+  const densityValue = maxUndirectedLinks ? linkCount / maxUndirectedLinks : 0;
+  const averageDegree = nodeCount ? (2 * linkCount) / nodeCount : 0;
+  const { componentCount, largestComponentSize, isolateCount, maxDegree, degreeStdDev } = computeVisibleComponents(nodeIds, links);
+  const largestRatio = nodeCount ? largestComponentSize / nodeCount : 0;
+  const isolateRatio = nodeCount ? isolateCount / nodeCount : 0;
+  const hubDominance = averageDegree ? maxDegree / averageDegree : 0;
+  const degreeVariation = averageDegree ? degreeStdDev / averageDegree : 0;
+  const idealDegree = idealAverageDegree(nodeCount);
+  const densityLimit = idealDensityLimit(nodeCount);
+  const visualLoad = nodeCount * Math.max(1, averageDegree);
+
+  const readabilityScore = clampScore(
+    100
+    - Math.max(0, nodeCount - 70) * 0.26
+    - Math.max(0, nodeCount - 160) * 0.34
+    - Math.max(0, visualLoad - 520) * 0.018
+    - Math.max(0, densityValue - densityLimit) * 85
+  );
+  const cohesionScore = clampScore(
+    largestRatio * 82
+    + (isolateCount === 0 ? 12 : 0)
+    + (componentCount === 1 ? 6 : 0)
+    - Math.max(0, componentCount - 1) * 7
+    - isolateRatio * 55
+  );
+  const meshScore = clampScore(
+    100
+    - Math.abs(averageDegree - idealDegree) * 8
+    - Math.max(0, averageDegree - idealDegree * 1.9) * 10
+    - Math.max(0, densityValue - densityLimit) * 80
+    - isolateRatio * 35
+  );
+  const balanceScore = clampScore(
+    100
+    - Math.max(0, hubDominance - 3.6) * 12
+    - Math.max(0, degreeVariation - 0.9) * 24
+    - isolateRatio * 35
+  );
+  const overallScore = Math.round(readabilityScore * 0.30 + cohesionScore * 0.30 + meshScore * 0.22 + balanceScore * 0.18);
+
+  return {
+    nodeCount,
+    linkCount,
+    typeCount,
+    componentCount,
+    isolateCount,
+    densityValue,
+    averageDegree,
+    largestComponentSize,
+    largestRatio,
+    maxDegree,
+    degreeStdDev,
+    hubDominance,
+    readability: gradeMetric(readabilityScore),
+    cohesion: gradeMetric(cohesionScore),
+    mesh: gradeMetric(meshScore),
+    balance: gradeMetric(balanceScore),
+    overall: gradeMetric(overallScore)
+  };
+}
+
+function computeVisibleComponents(nodeIds, links) {
+  const adjacency = new Map([...nodeIds].map((id) => [id, new Set()]));
+  for (const link of links) {
+    const source = getId(link.source);
+    const target = getId(link.target);
+    if (!nodeIds.has(source) || !nodeIds.has(target)) continue;
+    adjacency.get(source).add(target);
+    adjacency.get(target).add(source);
+  }
+  const seen = new Set();
+  let componentCount = 0;
+  let largestComponentSize = 0;
+  let isolateCount = 0;
+  let degreeTotal = 0;
+  let maxDegree = 0;
+  const degrees = [];
+  for (const id of nodeIds) {
+    const degree = adjacency.get(id)?.size || 0;
+    degrees.push(degree);
+    degreeTotal += degree;
+    maxDegree = Math.max(maxDegree, degree);
+    if (degree === 0) isolateCount += 1;
+    if (seen.has(id)) continue;
+    componentCount += 1;
+    const queue = [id];
+    let size = 0;
+    seen.add(id);
+    while (queue.length) {
+      const current = queue.shift();
+      size += 1;
+      for (const next of adjacency.get(current) || []) {
+        if (seen.has(next)) continue;
+        seen.add(next);
+        queue.push(next);
+      }
+    }
+    largestComponentSize = Math.max(largestComponentSize, size);
+  }
+  const meanDegree = nodeIds.size ? degreeTotal / nodeIds.size : 0;
+  const degreeVariance = nodeIds.size
+    ? degrees.reduce((sum, degree) => sum + (degree - meanDegree) ** 2, 0) / nodeIds.size
+    : 0;
+  return { componentCount, largestComponentSize, isolateCount, maxDegree, degreeStdDev: Math.sqrt(degreeVariance) };
+}
+
+function idealAverageDegree(nodeCount) {
+  if (nodeCount < 25) return 5;
+  if (nodeCount < 60) return 4.2;
+  if (nodeCount < 120) return 3.5;
+  if (nodeCount < 220) return 3.1;
+  return 2.8;
+}
+
+function idealDensityLimit(nodeCount) {
+  if (nodeCount < 25) return 0.34;
+  if (nodeCount < 60) return 0.18;
+  if (nodeCount < 120) return 0.10;
+  if (nodeCount < 220) return 0.065;
+  return 0.04;
+}
+
+function clampScore(value) {
+  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
+}
+
+function gradeMetric(score) {
+  if (score >= 85) return { score, grade: "A" };
+  if (score >= 70) return { score, grade: "B" };
+  if (score >= 55) return { score, grade: "C" };
+  if (score >= 40) return { score, grade: "D" };
+  return { score, grade: "E" };
+}
+
+function formatGraphNumber(value) {
+  if (!Number.isFinite(value)) return "0";
+  return value >= 10 ? String(Math.round(value)) : value.toFixed(1).replace(".", ",");
+}
+
+function formatCompactNumber(value) {
+  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value) || 0);
+}
+
 function renderAnalysis() {
   const selected = state.entities.get(state.selectedId);
   const selectedLink = state.selectedLinkKey ? state.graph.links.find((link) => getLinkKey(link) === state.selectedLinkKey) : null;
+  const graphScope = getAnalysisGraphScope();
   const relatedIds = state.selectedId ? getSelectedPathIds() : new Set();
   const linkPath = selectedLink ? getSelectedLinkPath() : { nodeIds: new Set(), linkKeys: new Set() };
   const linkPathIds = linkPath.nodeIds;
-  const relatedNodes = [...state.graph.nodes].filter((node) => relatedIds.has(node.id) && node.id !== state.selectedId);
+  const visibleNodeById = new Map(graphScope.nodes.map((node) => [node.id, node]));
+  const relatedNodes = [...graphScope.nodes].filter((node) => relatedIds.has(node.id) && node.id !== state.selectedId);
   renderInsightBreadcrumb(selected);
-  const focusNodes = selected ? relatedNodes : selectedLink ? [...state.graph.nodes].filter((node) => linkPathIds.has(node.id)) : [...state.graph.nodes];
+  const focusNodes = selected
+    ? [visibleNodeById.get(selected.id), ...relatedNodes].filter(Boolean)
+    : selectedLink
+      ? [...graphScope.nodes].filter((node) => linkPathIds.has(node.id))
+      : [...graphScope.nodes];
+  const graphQualityCard = renderGraphQualityCard(focusNodes, selected, selectedLink, graphScope.links);
   const linkedCount = selected
     ? state.graph.links.filter((link) => getId(link.source) === selected.id || getId(link.target) === selected.id).length
     : state.graph.links.length;
@@ -2063,6 +2725,7 @@ function renderAnalysis() {
     const metadata = getEntityMetadataEntries(selected, relatedNodes.length, linkedCount);
     els.kpiGrid.classList.add("project-metadata");
     els.kpiGrid.innerHTML = `
+      ${graphQualityCard}
       <article class="project-meta-card entity-meta-card">
         <p class="kicker">Métadonnées</p>
         <dl>
@@ -2092,6 +2755,7 @@ function renderAnalysis() {
     `;
     els.kpiGrid.classList.add("project-metadata");
     els.kpiGrid.innerHTML = `
+      ${graphQualityCard}
       <article class="project-meta-card">
         <p class="kicker">Relation</p>
         <dl>
@@ -2118,6 +2782,7 @@ function renderAnalysis() {
     `;
     els.kpiGrid.classList.add("project-metadata");
     els.kpiGrid.innerHTML = `
+      ${graphQualityCard}
       <article class="project-meta-card">
         <p class="kicker">Métadonnées</p>
         <dl>
@@ -2660,9 +3325,9 @@ function openEmojiPicker(entityId, commentId, anchor) {
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow > cardHeight + 8 ? rect.bottom + 8 : Math.max(10, rect.top - cardHeight - 8);
     card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
+      card.style.top = `${Math.round(top)}px`;
   }
-  requestAnimationFrame(() => els.emojiPicker?.shadowRoot?.querySelector("input")?.focus());
+  requestAnimationFrame(() => els.emojiPicker?.querySelector("[data-emoji-choice]")?.focus());
 }
 
 function openEntityEmojiPicker(entityId, anchor) {
@@ -2677,9 +3342,9 @@ function openEntityEmojiPicker(entityId, anchor) {
     const spaceBelow = window.innerHeight - rect.bottom;
     const top = spaceBelow > cardHeight + 8 ? rect.bottom + 8 : Math.max(10, rect.top - cardHeight - 8);
     card.style.left = `${Math.round(left)}px`;
-    card.style.top = `${Math.round(top)}px`;
+      card.style.top = `${Math.round(top)}px`;
   }
-  requestAnimationFrame(() => els.emojiPicker?.shadowRoot?.querySelector("input")?.focus());
+  requestAnimationFrame(() => els.emojiPicker?.querySelector("[data-emoji-choice]")?.focus());
 }
 
 function closeEmojiPicker() {
@@ -2687,14 +3352,110 @@ function closeEmojiPicker() {
   state.emojiPickerTarget = null;
 }
 
-function handleEmojiSelection(event) {
-  const detail = event.detail || {};
-  const emoji = detail.unicode || detail.emoji?.unicode;
-  if (!emoji) return;
-  selectEmojiReaction({
-    emoji,
-    annotation: detail.emoji?.annotation || detail.emoji?.shortcodes?.[0] || emoji
+function setupNativeEmojiPicker() {
+  if (!els.emojiPicker) return;
+  state.emojiPickerState = { category: "all", query: "" };
+  renderNativeEmojiPicker();
+  els.emojiPicker.addEventListener("click", (event) => {
+    const category = event.target.closest("[data-emoji-category]")?.dataset.emojiCategory;
+    if (category) {
+      state.emojiPickerState.category = category;
+      renderNativeEmojiPicker();
+      return;
+    }
+    const button = event.target.closest("[data-emoji-choice]");
+    if (!button) return;
+    commitEmojiChoice(button.dataset.emojiChoice, button.dataset.annotation);
   });
+  els.emojiPicker.addEventListener("input", (event) => {
+    if (event.target.matches("[data-emoji-search]")) {
+      state.emojiPickerState.query = event.target.value;
+      renderNativeEmojiChoices();
+    }
+    if (event.target.matches("[data-emoji-custom]")) {
+      event.target.value = [...event.target.value].slice(0, 2).join("");
+    }
+  });
+  els.emojiPicker.addEventListener("keydown", (event) => {
+    const choices = [...els.emojiPicker.querySelectorAll("[data-emoji-choice]")];
+    const index = choices.indexOf(document.activeElement);
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeEmojiPicker();
+      return;
+    }
+    if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
+    event.preventDefault();
+    const columns = 6;
+    const nextIndex = event.key === "Home" ? 0
+      : event.key === "End" ? choices.length - 1
+        : event.key === "ArrowRight" ? index + 1
+          : event.key === "ArrowLeft" ? index - 1
+            : event.key === "ArrowDown" ? index + columns
+              : index - columns;
+    choices[Math.max(0, Math.min(choices.length - 1, nextIndex))]?.focus();
+  });
+  els.emojiPicker.addEventListener("submit", (event) => {
+    event.preventDefault();
+    const custom = els.emojiPicker.querySelector("[data-emoji-custom]")?.value?.trim();
+    if (!custom) return;
+    commitEmojiChoice(custom, "Réaction personnalisée");
+  });
+}
+
+function renderNativeEmojiPicker() {
+  els.emojiPicker.innerHTML = `
+    <form class="emoji-native-search">
+      <label>
+        <i>search</i>
+        <input data-emoji-search type="search" placeholder="Filtrer" value="${escapeHtml(state.emojiPickerState?.query || "")}">
+      </label>
+      <label class="emoji-custom-field">
+        <input data-emoji-custom type="text" inputmode="text" autocomplete="off" placeholder="🙂" maxlength="4" aria-label="Emoji personnalisé">
+        <button type="submit" aria-label="Ajouter l’emoji personnalisé"><i>keyboard_return</i></button>
+      </label>
+    </form>
+    <div class="emoji-native-tabs" role="tablist">
+      ${EMOJI_CATEGORIES.map((category) => `<button type="button" data-emoji-category="${category.id}" class="${category.id === state.emojiPickerState.category ? "active" : ""}">${escapeHtml(category.label)}</button>`).join("")}
+    </div>
+    <div class="emoji-native-grid" role="listbox" aria-label="Réactions rapides"></div>
+  `;
+  renderNativeEmojiChoices();
+}
+
+function renderNativeEmojiChoices() {
+  const grid = els.emojiPicker?.querySelector(".emoji-native-grid");
+  if (!grid) return;
+  const reactions = getFilteredEmojiChoices();
+  grid.innerHTML = reactions.length ? reactions.map((reaction) => `
+    <button type="button" role="option" data-emoji-choice="${escapeHtml(reaction.emoji)}" data-annotation="${escapeHtml(reaction.annotation)}" aria-label="${escapeHtml(reaction.annotation)}">
+      <span>${escapeHtml(reaction.emoji)}</span>
+      <small>${escapeHtml(reaction.annotation)}</small>
+    </button>
+  `).join("") : `<p class="emoji-native-empty">Aucune réaction.</p>`;
+}
+
+function getFilteredEmojiChoices() {
+  const query = normalizeSearchText(state.emojiPickerState?.query || "");
+  const recents = loadJson(EMOJI_RECENTS_KEY, []);
+  const recentChoices = recents.map((emoji) => QUICK_REACTIONS.find((reaction) => reaction.emoji === emoji) || { emoji, annotation: emoji, category: "recent", terms: "" });
+  const base = state.emojiPickerState?.category === "recent" ? recentChoices : QUICK_REACTIONS;
+  const scoped = state.emojiPickerState?.category && !["all", "recent"].includes(state.emojiPickerState.category)
+    ? base.filter((reaction) => reaction.category === state.emojiPickerState.category)
+    : base;
+  if (!query) return scoped;
+  return scoped.filter((reaction) => normalizeSearchText(`${reaction.emoji} ${reaction.annotation} ${reaction.terms || ""}`).includes(query));
+}
+
+function commitEmojiChoice(emoji, annotation = emoji) {
+  if (!emoji) return;
+  rememberEmojiChoice(emoji);
+  selectEmojiReaction({ emoji, annotation: annotation || emoji });
+}
+
+function rememberEmojiChoice(emoji) {
+  const recents = [emoji, ...loadJson(EMOJI_RECENTS_KEY, []).filter((item) => item !== emoji)].slice(0, 12);
+  localStorage.setItem(EMOJI_RECENTS_KEY, JSON.stringify(recents));
 }
 
 function selectEmojiReaction(reaction) {
@@ -3424,23 +4185,18 @@ function bumpPatchVersion(version) {
 }
 
 function hideRightPanel() {
-  els.rightPanel.classList.add("hidden");
-  document.querySelector("#app").classList.remove("right-open");
-  state.selectedId = null;
-  state.highlightedCommentId = null;
-  state.provider?.updatePresence({ selectedNodeId: null });
-  renderAnalysis();
-  updateVisibleGraph();
-  updateDeepLink(null);
-  scheduleGraphResize();
+  if (state.panelManager?.getLayout?.().context?.open) {
+    state.panelManager.close("context");
+    return;
+  }
+  closeContextPanelState();
 }
 
 function toggleDrawer() {
-  els.bottomDrawer.classList.toggle("collapsed");
-  document.querySelector("#app").classList.toggle("drawer-open", !els.bottomDrawer.classList.contains("collapsed"));
-  document.querySelector("#app").classList.toggle("drawer-collapsed", els.bottomDrawer.classList.contains("collapsed"));
+  state.panelManager?.toggleCollapsed("insights");
   const icon = document.querySelector("#toggle-drawer i");
-  icon.textContent = els.bottomDrawer.classList.contains("collapsed") ? "expand_less" : "expand_more";
+  const collapsed = Boolean(state.panelManager?.getPreferences?.("insights")?.collapsed);
+  if (icon) icon.textContent = collapsed ? "expand_less" : "expand_more";
   scheduleGraphResize();
 }
 
@@ -3558,16 +4314,19 @@ function hasFirebaseConfig() {
 }
 
 function openProfile() {
-  renderProfileControls();
-  if (els.realtimeSwitch) els.realtimeSwitch.checked = state.realtimeStatus === "firebase";
-  const willOpen = els.profileMenu.classList.contains("hidden");
   closeActivityPanel();
-  els.profileMenu.classList.toggle("hidden", !willOpen);
-  document.querySelector("#app").classList.toggle("profile-open", willOpen);
+  const open = Boolean(state.panelManager?.getLayout?.().profile?.open);
+  if (open) closeProfile();
+  else state.panelManager?.open("profile");
 }
 
 function closeProfile() {
-  els.profileMenu.classList.add("hidden");
+  state.panelManager?.close("profile");
+  closeProfileState();
+}
+
+function closeProfileState() {
+  els.profileMenu?.classList.add("hidden");
   document.querySelector("#app").classList.remove("profile-open");
   pauseGamificationVisual();
 }
@@ -3581,13 +4340,17 @@ function toggleProfileSettings() {
 
 function openActivityPanel() {
   closeProfile();
-  const willOpen = els.activityPanel.classList.contains("hidden");
-  els.activityPanel.classList.toggle("hidden", !willOpen);
-  document.querySelector("#app").classList.toggle("activity-open", willOpen);
-  if (willOpen) renderActivityPanel();
+  const open = Boolean(state.panelManager?.getLayout?.().activity?.open);
+  if (open) closeActivityPanel();
+  else state.panelManager?.open("activity");
 }
 
 function closeActivityPanel() {
+  state.panelManager?.close("activity");
+  closeActivityPanelState();
+}
+
+function closeActivityPanelState() {
   els.activityPanel?.classList.add("hidden");
   document.querySelector("#app").classList.remove("activity-open");
 }
@@ -3661,8 +4424,7 @@ function openActivityItem(activityId) {
     document.querySelectorAll(".tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === "discussion"));
     renderRightPanel();
     renderAnalysis();
-    document.querySelector("#app").classList.add("right-open");
-    els.rightPanel.classList.remove("hidden");
+    openContextPanel();
     updateVisibleGraph();
   }
   closeActivityPanel();
@@ -3828,6 +4590,17 @@ function renderGamificationCard() {
           <p class="kicker">Coprésence</p>
           <h3><span data-heart-counter="cycle">${cycle.points}</span> ❤️</h3>
           <span>${active ? "✨ Attention active" : "⏸️ En pause douce"} ⏲️ prochain cycle : ${formatHeartTime(remaining)}</span>
+          <div class="heart-actions">
+            <button class="heart-menu-toggle" type="button" data-widget-menu="gamification" aria-label="Actions de la coprésence">
+              <i>more_vert</i>
+            </button>
+            <div class="heart-menu-popover" hidden>
+              <button type="button" data-external-widget="gamification">
+                <i>open_in_new</i>
+                <span>Ouvrir en popup</span>
+              </button>
+            </div>
+          </div>
         </div>
       </div>
       <div class="heart-score-grid">
@@ -3862,6 +4635,45 @@ function renderGamificationCard() {
 
 function heartBreakdownItem(icon, label, value) {
   return `<span><i aria-hidden="true">${icon}</i><small>${escapeHtml(label)}</small><strong>${Number(value || 0)}</strong></span>`;
+}
+
+function handleWidgetExternalAction(event) {
+  const menuButton = event.target.closest("[data-widget-menu]");
+  if (menuButton) {
+    event.preventDefault();
+    event.stopPropagation();
+    const actions = menuButton.closest(".heart-actions");
+    const menu = actions?.querySelector(".heart-menu-popover");
+    const open = Boolean(menu?.hidden);
+    document.querySelectorAll(".heart-menu-popover").forEach((item) => {
+      item.hidden = true;
+      item.previousElementSibling?.setAttribute("aria-expanded", "false");
+    });
+    if (menu) {
+      menu.hidden = !open;
+      menuButton.setAttribute("aria-expanded", String(open));
+    }
+    return;
+  }
+  const button = event.target.closest("[data-external-widget]");
+  if (!button) {
+    if (!event.target.closest(".heart-actions")) {
+      document.querySelectorAll(".heart-menu-popover").forEach((item) => {
+        item.hidden = true;
+        item.previousElementSibling?.setAttribute("aria-expanded", "false");
+      });
+    }
+    return;
+  }
+  event.preventDefault();
+  event.stopPropagation();
+  const widgetId = button.dataset.externalWidget;
+  if (!widgetId) return;
+  document.querySelectorAll(".heart-menu-popover").forEach((item) => {
+    item.hidden = true;
+    item.previousElementSibling?.setAttribute("aria-expanded", "false");
+  });
+  state.windowBridge?.openExternal({ kind: "panel", panelId: widgetId, title: "PROSPECTRE — Coprésence" });
 }
 
 function formatHeartTime(seconds) {
@@ -3901,7 +4713,9 @@ function animateHeartCounter(name, target) {
 
 function syncGamificationVisual({ online, active, progress, cyclePoints }) {
   const reactor = els.gamificationCard?.querySelector(".heart-reactor");
-  const shouldRun = Boolean(online && reactor && !els.profileMenu?.classList.contains("hidden") && !document.hidden);
+  const layout = state.panelManager?.getLayout?.() || {};
+  const visibleInPanel = Boolean(layout.profile?.open || layout.gamification?.open || state.externalWindow?.panelId === "gamification");
+  const shouldRun = Boolean(online && reactor && visibleInPanel && !document.hidden);
   if (!shouldRun) {
     pauseGamificationVisual();
     return;
@@ -4001,11 +4815,13 @@ function renderThemeChoice() {
   });
 }
 
-function applyTheme(theme) {
+function applyTheme(theme, options = {}) {
   const resolved = theme === "system"
     ? (window.matchMedia("(prefers-color-scheme: light)").matches ? "light" : "dark")
     : theme;
   document.documentElement.dataset.theme = resolved;
+  state.appStore?.dispatch({ type: "state:patch", scope: "theme", patch: { theme: resolved } });
+  if (options.broadcast !== false) state.windowBridge?.publish("theme:set", { theme });
   if (state.graphView) updateVisibleGraph();
 }
 
@@ -4055,41 +4871,13 @@ function rebuildGraph() {
   renderAnalysis();
 }
 
-function startRightResize(event) {
-  state.resize = { type: "right", startX: event.clientX, startWidth: els.rightPanel.getBoundingClientRect().width };
-  event.preventDefault();
-}
-
-function startBottomResize(event) {
-  els.bottomDrawer.classList.remove("collapsed");
-  document.querySelector("#app").classList.add("drawer-open");
-  document.querySelector("#app").classList.remove("drawer-collapsed");
-  state.resize = { type: "bottom", startY: event.clientY, startHeight: els.bottomDrawer.getBoundingClientRect().height };
-  event.preventDefault();
-}
-
-function resizePanels(event) {
-  if (!state.resize) return;
-  if (state.resize.type === "right") {
-    const width = Math.min(
-      Math.max(state.resize.startWidth + state.resize.startX - event.clientX, 340),
-      Math.max(340, window.innerWidth * 0.9)
-    );
-    document.documentElement.style.setProperty("--right-panel-width", `${Math.round(width)}px`);
-  }
-  if (state.resize.type === "bottom") {
-    const height = Math.min(Math.max(state.resize.startHeight + state.resize.startY - event.clientY, 180), Math.min(560, window.innerHeight - 180));
-    document.documentElement.style.setProperty("--bottom-drawer-height", `${Math.round(height)}px`);
-  }
-  resizeGraph();
-}
-
-function stopResize() {
-  state.resize = null;
-}
-
 function resetView() {
   hideRightPanel();
+  closeFilterMenu();
+  closeGraphSearch();
+  closeGraphHelp();
+  state.panelManager?.resetAllPreferences?.();
+  applyGraphToolbarPrefs(normalizeGraphToolbarPrefs({ mode: "dock", edge: "left", x: 10, y: 92 }));
   resetGraphInteractionState();
   state.activeTypes = new Set(Object.keys(TYPE_CONFIG));
   if (state.realtimeStatus === "firebase") state.activeTypes.add("contribution");
@@ -4116,16 +4904,18 @@ function toggleGraphHelp() {
   }
   els.graphHelpPopover?.classList.toggle("hidden", !open);
   els.graphHelpToggle?.setAttribute("aria-expanded", String(open));
+  syncToolbarActiveStates();
   if (open) requestAnimationFrame(() => positionToolbarPopover(els.graphHelpPopover, els.graphHelpToggle));
 }
 
 function closeGraphHelp() {
   els.graphHelpPopover?.classList.add("hidden");
   els.graphHelpToggle?.setAttribute("aria-expanded", "false");
+  syncToolbarActiveStates();
 }
 
 function clearSelection() {
-  if (!state.selectedId && els.rightPanel.classList.contains("hidden")) return;
+  if (!state.selectedId && !state.panelManager?.getLayout?.().context?.open) return;
   hideRightPanel();
 }
 
@@ -4149,6 +4939,7 @@ function openGraphSearch() {
   closeProjectMenu();
   els.graphSearchPopover?.classList.remove("hidden");
   els.graphSearchToggle?.setAttribute("aria-expanded", "true");
+  syncToolbarActiveStates();
   requestAnimationFrame(() => {
     positionToolbarPopover(els.graphSearchPopover, els.graphSearchToggle);
     els.search?.focus();
@@ -4159,6 +4950,7 @@ function openGraphSearch() {
 function closeGraphSearch() {
   els.graphSearchPopover?.classList.add("hidden");
   els.graphSearchToggle?.setAttribute("aria-expanded", "false");
+  syncToolbarActiveStates();
 }
 
 function positionOpenToolbarPopover() {
@@ -4169,16 +4961,54 @@ function positionOpenToolbarPopover() {
 
 function positionToolbarPopover(popover, anchor) {
   if (!popover || popover.classList.contains("hidden")) return;
-  const toolbar = document.querySelector(".graph-toolbar");
-  const anchorRect = toolbar?.getBoundingClientRect() || anchor?.getBoundingClientRect();
+  const toolbar = els.graphToolbar || document.querySelector(".graph-toolbar");
+  const anchorRect = anchor?.getBoundingClientRect() || toolbar?.getBoundingClientRect();
   if (!anchorRect) return;
+  const toolbarEdge = toolbar?.dataset.edge || "left";
   const popoverRect = popover.getBoundingClientRect();
   const gap = 10;
   const minMargin = 10;
   const maxLeft = window.innerWidth - popoverRect.width - minMargin;
   const maxTop = window.innerHeight - popoverRect.height - minMargin;
-  const left = Math.max(minMargin, Math.min(maxLeft, anchorRect.right + gap));
-  const top = Math.max(minMargin, Math.min(maxTop, anchorRect.top));
+  const candidates = {
+    right: {
+      placement: "right",
+      left: anchorRect.right + gap,
+      top: anchorRect.top + (anchorRect.height - popoverRect.height) / 2
+    },
+    left: {
+      placement: "left",
+      left: anchorRect.left - popoverRect.width - gap,
+      top: anchorRect.top + (anchorRect.height - popoverRect.height) / 2
+    },
+    bottom: {
+      placement: "bottom",
+      left: anchorRect.left + (anchorRect.width - popoverRect.width) / 2,
+      top: anchorRect.bottom + gap
+    },
+    top: {
+      placement: "top",
+      left: anchorRect.left + (anchorRect.width - popoverRect.width) / 2,
+      top: anchorRect.top - popoverRect.height - gap
+    }
+  };
+  const orderByEdge = {
+    left: ["right", "left", "bottom", "top"],
+    right: ["left", "right", "bottom", "top"],
+    top: ["bottom", "top", "right", "left"],
+    bottom: ["top", "bottom", "right", "left"]
+  };
+  const order = orderByEdge[toolbarEdge] || orderByEdge.left;
+  const fits = (candidate) => (
+    candidate.left >= minMargin &&
+    candidate.top >= minMargin &&
+    candidate.left + popoverRect.width <= window.innerWidth - minMargin &&
+    candidate.top + popoverRect.height <= window.innerHeight - minMargin
+  );
+  const selected = order.map((key) => candidates[key]).find(fits) || candidates[order[0]];
+  const left = Math.max(minMargin, Math.min(maxLeft, selected.left));
+  const top = Math.max(minMargin, Math.min(maxTop, selected.top));
+  popover.dataset.placement = selected.placement;
   popover.style.left = `${Math.round(left)}px`;
   popover.style.top = `${Math.round(top)}px`;
 }
@@ -4448,6 +5278,7 @@ function getGraphAspectRatio() {
 }
 
 function resizeGraph() {
+  if (!state.graphView) return;
   const rect = els.graphStage.getBoundingClientRect();
   state.graphView.width(Math.max(320, rect.width)).height(Math.max(240, rect.height));
   renderPresence();

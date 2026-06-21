@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s3-bcc1-sae"
 type: "sae"
-titre: "S3 · BCC1 · SAE"
+titre: "Atelier en ligne et résistances"
 statut: "officiel"
 resume: "Concevoir et animer un atelier en ligne pour sensibiliser aux usages du numérique et surmonter les résistances"
 ects_bcc: 6

@@ -1,7 +1,7 @@
 ---
 id: "ue:s3-bcc1"
 type: "ue"
-titre: "S3 · Pédagogie du numérique et de l'innovation niveau 3"
+titre: "Pédagogie du numérique et de l'innovation — niveau 3"
 statut: "officiel"
 ects: 6
 heures: 50

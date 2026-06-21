@@ -1,7 +1,7 @@
 ---
 id: "ue:s2-bcc1"
 type: "ue"
-titre: "S2 · Pédagogie du numérique et de l'innovation niveau 2"
+titre: "Pédagogie du numérique et de l'innovation — niveau 2"
 statut: "officiel"
 ects: 8
 heures: 55

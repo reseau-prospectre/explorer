@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s2-bcc1-sae"
 type: "sae"
-titre: "S2 · BCC1 · SAE"
+titre: "Charte IA et numérique responsable"
 statut: "officiel"
 resume: "Conception d'une charte de bon usage éclairé et réflexif du numérique et de l'IA en contexte de formation universitaire"
 ects_bcc: 8

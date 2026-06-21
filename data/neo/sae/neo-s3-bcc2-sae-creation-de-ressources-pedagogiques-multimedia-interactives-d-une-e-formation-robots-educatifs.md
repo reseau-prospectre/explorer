@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s3-bcc2-sae"
 type: "sae"
-titre: "S3 · BCC2 · SAE"
+titre: "Ressources interactives et robots éducatifs"
 statut: "officiel"
 resume: "Création de ressources pédagogiques multimédia interactives d'une e-formation (robots éducatifs)"
 ects_bcc: 9

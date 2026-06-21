@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s3-bcc3-sae"
 type: "sae"
-titre: "S3 · BCC3 · SAE"
+titre: "Projet innovant de e-formation"
 statut: "officiel"
 resume: "Pilotage d'un projet innovant de e-formation en contexte professionnel"
 ects_bcc: 7

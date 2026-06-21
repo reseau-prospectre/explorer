@@ -1,7 +1,7 @@
 ---
 id: "ue:s1-bcc2"
 type: "ue"
-titre: "S1 · Conception de ressources et de e-formation niveau 1"
+titre: "Conception de ressources et de e-formation — niveau 1"
 statut: "officiel"
 ects: 8
 heures: 50

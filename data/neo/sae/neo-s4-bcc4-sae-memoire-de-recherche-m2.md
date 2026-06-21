@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s4-bcc4-sae"
 type: "sae"
-titre: "S4 · BCC4 · SAE"
+titre: "Mémoire de recherche M2"
 statut: "officiel"
 resume: "Mémoire de recherche M2"
 ects_bcc: 13

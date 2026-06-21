@@ -1,4 +1,4 @@
-# NEO — Pack métier PROSPECTRE 1.0
+# NEO — Master Ingénierie pédagogique numérique
 
 Ce pack rend explorable dans PROSPECTRE le Master MEEF PIF, parcours
 Ingénierie pédagogique numérique NEO.
@@ -39,15 +39,14 @@ les fiches SAE sont explicitement signalés comme propositions.
 
 ## Ouvrir dans PROSPECTRE
 
-- importer l’archive ZIP depuis l’interface ;
-- ou ouvrir directement :
+- ouvrir directement :
 
 ```text
-index.html?project=./data/neo-master/manifest.json
+index.html?project=./data/neo/manifest.json
 ```
 
 ## Contrat
 
-Pack conforme au format PROSPECTRE `1.0.0`. Les identifiants sont stables,
+Pack conforme au format PROSPECTRE. Les identifiants sont stables,
 les dossiers d’export sont déclarés dans le modèle et tous les fichiers
 indexables sont listés dans le manifeste.

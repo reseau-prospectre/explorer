@@ -1,7 +1,7 @@
 ---
 id: "ue:s4-bcc3"
 type: "ue"
-titre: "S4 · Pilotage de la e-formation et développement professionnel niveau 4"
+titre: "Pilotage de la e-formation et développement professionnel — niveau 4"
 statut: "officiel"
 ects: 12
 heures: 74

@@ -1,7 +1,7 @@
 ---
 id: "ue:s3-bcc3"
 type: "ue"
-titre: "S3 · Pilotage de la e-formation et développement professionnel niveau 3"
+titre: "Pilotage de la e-formation et développement professionnel — niveau 3"
 statut: "officiel"
 ects: 7
 heures: 50

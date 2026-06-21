@@ -3,8 +3,8 @@ export const DEFAULT_PROJECT_MANIFEST_URL = "./data/prospectre-documentation/man
 export const KNOWN_PROJECT_MANIFESTS = Object.freeze([
   {
     id: "pack:prospectre-documentation",
-    title: "PROSPECTRE — Documentation et laboratoire",
-    version: "1.0.0",
+    title: "PROSPECTRE — Documentation vivante",
+    version: "2.0.0",
     url: "./data/prospectre-documentation/manifest.json",
     group: "Bibliothèque interne"
   },
@@ -22,21 +22,21 @@ export const KNOWN_PROJECT_MANIFESTS = Object.freeze([
   },
   {
     id: "pack:gt-snt-2040-v010",
-    title: "GT-SNT 2040 — Starter pack v0.1.0",
+    title: "GT-SNT 2040 — variante condensée",
     version: "0.1.0",
     url: "./data/gt-snt-2040-v0.1.0/manifest.json",
-    group: "Projets locaux"
+    group: "Archives internes"
   },
   {
     id: "pack:gt-snt-2040-v020",
-    title: "GT-SNT 2040 — Starter pack v0.2.0",
+    title: "GT-SNT 2040 — variante exhaustive",
     version: "0.2.0",
     url: "./data/gt-snt-2040-v0.2.0/manifest.json",
-    group: "Projets locaux"
+    group: "Archives internes"
   },
   {
     id: "pack:gt-snt-2040-v030",
-    title: "GT-SNT 2040 — Starter pack v0.3.0",
+    title: "GT-SNT 2040",
     version: "0.3.0",
     url: "./data/gt-snt-2040-v0.3.0/manifest.json",
     group: "Projets locaux"
@@ -110,15 +110,7 @@ export const FALLBACK_MODEL_SCHEMA = Object.freeze({
   ]
 });
 
-export const HIDDEN_NODE_TYPES = new Set([
-  "source",
-  "source_fragment",
-  "relation",
-  "relation_set",
-  "note",
-  "template",
-  "model"
-]);
+export const HIDDEN_NODE_TYPES = new Set();
 
 export const TECHNICAL_TYPE_LABELS = Object.freeze({
   source: "Source",

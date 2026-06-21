@@ -1,7 +1,7 @@
 ---
 id: "ue:s4-bcc2"
 type: "ue"
-titre: "S4 · Conception de ressources et de e-formation niveau 4"
+titre: "Conception de ressources et de e-formation — niveau 4"
 statut: "officiel"
 ects: 5
 heures: 50

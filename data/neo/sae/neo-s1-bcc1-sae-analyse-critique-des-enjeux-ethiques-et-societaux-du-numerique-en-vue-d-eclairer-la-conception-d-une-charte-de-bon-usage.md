@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s1-bcc1-sae"
 type: "sae"
-titre: "S1 · BCC1 · SAE"
+titre: "Charte de bon usage numérique"
 statut: "officiel"
 resume: "Analyse critique des enjeux éthiques et sociétaux du numérique en vue d’éclairer la conception d’une charte de bon usage"
 ects_bcc: 8

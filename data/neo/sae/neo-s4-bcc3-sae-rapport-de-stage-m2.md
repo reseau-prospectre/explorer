@@ -1,7 +1,7 @@
 ---
 id: "sae:neo-s4-bcc3-sae"
 type: "sae"
-titre: "S4 · BCC3 · SAE"
+titre: "Rapport de stage M2"
 statut: "officiel"
 resume: "Rapport de stage M2"
 ects_bcc: 12

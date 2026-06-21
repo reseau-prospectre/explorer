@@ -1,7 +1,7 @@
 ---
 id: "ue:s2-bcc4"
 type: "ue"
-titre: "S2 · Expertise pédagogique et démarche scientifique réflexive niveau 2"
+titre: "Expertise pédagogique et démarche scientifique réflexive — niveau 2"
 statut: "officiel"
 ects: 9
 heures: 45

@@ -1,7 +1,7 @@
 ---
 id: "ue:s1-bcc1"
 type: "ue"
-titre: "S1 · Pédagogie du numérique et de l'innovation niveau 1"
+titre: "Pédagogie du numérique et de l'innovation — niveau 1"
 statut: "officiel"
 ects: 8
 heures: 50

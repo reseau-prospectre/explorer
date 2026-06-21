@@ -12,6 +12,9 @@
 !assets/
 !assets/**
 
+!docs/
+!docs/**
+
 !data/
 !data/prospectre-documentation/
 !data/prospectre-documentation/**
