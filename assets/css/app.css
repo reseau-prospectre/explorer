@@ -18,6 +18,12 @@
   --quiet: #71868d;
   --accent: #7dd3fc;
   --topbar-height: 76px;
+  --z-graph: 1;
+  --z-chrome: 40;
+  --z-panels: 90;
+  --z-panel-menus: 190;
+  --z-overlays: 220;
+  --z-modals: 260;
   --right-panel-width: 430px;
   --bottom-drawer-height: 300px;
   --md-sys-color-primary: #7dd3fc;
@@ -53,6 +59,10 @@
   box-sizing: border-box;
 }
 
+*:where(section, article, header, footer, nav, aside, main, div, p, h1, h2, h3, h4, h5, h6, ul, ol, li, figure, fieldset, legend, label, button, input, textarea, select) {
+  margin-block-start: 0;
+}
+
 html,
 body,
 .app-shell {
@@ -73,7 +83,69 @@ select {
 }
 
 button {
+  appearance: none;
+  border: 0;
+  background: none;
+  color: inherit;
   cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+  opacity: 0.54;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+ul,
+ol,
+figure,
+fieldset {
+  margin: 0;
+}
+
+fieldset {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+}
+
+input,
+textarea,
+select {
+  min-width: 0;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--glass-card);
+  color: var(--text);
+}
+
+input::placeholder,
+textarea::placeholder {
+  color: color-mix(in srgb, var(--muted) 76%, transparent);
+}
+
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+button:focus-visible,
+[role="button"]:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--accent) 76%, transparent);
+  outline-offset: 2px;
+}
+
+input[type="checkbox"],
+input[type="radio"] {
+  accent-color: var(--accent);
+}
+
+a {
+  color: inherit;
 }
 
 i {
@@ -137,7 +209,7 @@ label::after {
 
 .topbar {
   position: fixed;
-  z-index: 40;
+  z-index: var(--z-chrome);
   top: 0;
   right: 0;
   left: 0;
@@ -2243,6 +2315,69 @@ label::after {
   background: color-mix(in srgb, var(--chip) 16%, transparent);
 }
 
+.switch {
+  position: relative;
+  display: inline-flex;
+  width: 52px;
+  height: 30px;
+  flex: 0 0 auto;
+  align-items: center;
+  margin: 0;
+  cursor: pointer;
+}
+
+.switch input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.switch > span {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 100%;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--glass-card) 74%, transparent);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.switch > span::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 4px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--muted) 82%, white);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.24);
+  transform: translateY(-50%);
+  transition: transform 160ms ease, background 160ms ease;
+}
+
+.switch input:checked + span {
+  border-color: color-mix(in srgb, #a78bfa 58%, var(--line));
+  background: color-mix(in srgb, #6d4bd2 52%, var(--glass-card));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 12%, transparent), 0 0 0 3px color-mix(in srgb, #8b5cf6 12%, transparent);
+}
+
+.switch input:checked + span::after {
+  background: #f3e8ff;
+  transform: translate(21px, -50%);
+}
+
+.switch input:focus-visible + span {
+  outline: 2px solid color-mix(in srgb, var(--accent) 76%, transparent);
+  outline-offset: 2px;
+}
+
 .comment-box {
   position: relative;
   margin: 12px 0 14px;
@@ -2257,8 +2392,24 @@ select.text-field {
   border: 1px solid var(--line);
   border-radius: 8px;
   outline: 0;
-  background: var(--card);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 3%, transparent), transparent),
+    var(--glass-card);
   color: var(--text);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+  transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease;
+}
+
+.comment-box textarea:focus,
+.field-label textarea:focus,
+.text-field:focus,
+.color-field:focus,
+select.text-field:focus {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--accent) 5%, transparent), transparent),
+    var(--glass-card);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 9%, transparent), 0 0 0 3px color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 .comment-box textarea {
@@ -2313,10 +2464,20 @@ select.text-field {
 
 .primary-button,
 .secondary-button {
+  display: inline-flex;
   width: 90%;
   min-height: 40px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   margin-top: 9px;
   padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--glass-card);
+  color: var(--text);
+  font-weight: 850;
+  line-height: 1;
 }
 
 .auth-button {
@@ -2330,6 +2491,13 @@ select.text-field {
 
 .secondary-button {
   color: var(--muted);
+}
+
+.primary-button:hover,
+.secondary-button:hover {
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--glass-card));
+  color: var(--text);
 }
 
 .sync-card {
@@ -2866,7 +3034,7 @@ select.text-field {
 .adaptive-panel-host {
   position: fixed;
   inset: 0;
-  z-index: 30;
+  z-index: var(--z-panels);
   pointer-events: none;
 }
 
@@ -2875,7 +3043,7 @@ select.text-field {
   --panel-glass-fill: var(--glass-panel);
   --panel-glass-fill-strong: var(--glass-panel-strong);
   position: fixed;
-  z-index: 31;
+  z-index: var(--z-panels);
   display: flex;
   min-width: 300px;
   min-height: 160px;
@@ -3125,6 +3293,7 @@ select.text-field {
   backdrop-filter: blur(var(--glass-blur)) saturate(1.16);
   margin: 0 !important;
   margin-block: 0 !important;
+  z-index: var(--z-panel-menus);
 }
 
 .adaptive-panel__edge-options button {
@@ -3167,6 +3336,7 @@ select.text-field {
   backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
   margin: 0 !important;
   margin-block: 0 !important;
+  z-index: var(--z-panel-menus);
 }
 
 .adaptive-panel--bottom .adaptive-panel__edge-options,
@@ -7057,4 +7227,108 @@ button:focus-visible > .tooltip,
   .adaptive-panel__insights .drawer-body > * {
     grid-column: auto !important;
   }
+}
+
+/* Native UI authority after BeerCSS removal. */
+.action-menu,
+.project-menu,
+.toolbar-popover,
+.emoji-picker-popover,
+.link-preview-popover,
+.heart-menu-popover,
+.adaptive-panel__edge-options,
+.adaptive-panel__overflow-menu,
+.prospectre-overlay {
+  z-index: var(--z-overlays) !important;
+}
+
+.prospectre-overlay {
+  position: fixed;
+  max-width: min(420px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--glass-panel-strong);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.34);
+  color: var(--text);
+  overflow: auto;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.16);
+}
+
+.topbar button,
+.graph-toolbar button,
+.adaptive-panel button,
+.toolbar-popover button,
+.action-menu button,
+.project-menu button,
+.emoji-picker-popover button,
+.heart-menu-popover button {
+  margin: 0;
+  margin-block: 0;
+}
+
+/* Native control polish: keep flat/material controls inside translucent PROSPECTRE surfaces. */
+.readable-card,
+.sync-card,
+.context-card,
+.project-meta-card,
+.graph-quality-card,
+.chart-card,
+.presence-summary-card,
+.node-reaction-summary,
+.activity-card,
+.comment-card,
+.kpi-card,
+.metric-card,
+.meta-item,
+.trash-item {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 4%, transparent), transparent 72px),
+    var(--glass-card) !important;
+  border-color: color-mix(in srgb, var(--line) 76%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+:root[data-theme="light"] .readable-card,
+:root[data-theme="light"] .sync-card,
+:root[data-theme="light"] .context-card,
+:root[data-theme="light"] .project-meta-card,
+:root[data-theme="light"] .graph-quality-card,
+:root[data-theme="light"] .chart-card,
+:root[data-theme="light"] .presence-summary-card,
+:root[data-theme="light"] .node-reaction-summary,
+:root[data-theme="light"] .activity-card,
+:root[data-theme="light"] .comment-card,
+:root[data-theme="light"] .kpi-card,
+:root[data-theme="light"] .metric-card,
+:root[data-theme="light"] .meta-item,
+:root[data-theme="light"] .trash-item {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), transparent 78px),
+    color-mix(in srgb, var(--glass-card) 88%, transparent) !important;
+}
+
+select.text-field {
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, white 3%, transparent), transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%,
+    0 0;
+  background-size: 6px 6px, 6px 6px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.toast {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 5%, transparent), transparent),
+    var(--glass-panel-strong) !important;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.24), inset 0 1px 0 color-mix(in srgb, white 9%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
 }

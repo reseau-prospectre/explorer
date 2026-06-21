@@ -37,6 +37,18 @@ import { createRealtimeProviders } from "./services/realtime.js";
 import { createMarkdownRenderer } from "./ui/markdown.js";
 import { bootstrapProspectre } from "./app/bootstrap.js";
 import { PanelManager } from "./panels/panel-manager.js";
+import {
+  createGraphToolbarController,
+  GRAPH_TOOLBAR_PREFS_KEY,
+  normalizeGraphToolbarPrefs
+} from "./ui/graph-toolbar.js";
+import {
+  createDiscussionRenderer,
+  createNativeEmojiPickerController,
+  QUICK_REACTIONS
+} from "./controllers/comments-controller.js";
+import { createGraphController } from "./controllers/graph-controller.js";
+import { overlays } from "./ui/overlay-manager.js";
 
 const {
   session: SESSION_KEY,
@@ -63,42 +75,6 @@ const INITIAL_FIT_DELAY = 900;
 const SEARCH_RESULT_LIMIT = 30;
 const LINK_FOCUS_MAX_LINKS = 96;
 const OVERVIEW_CONTEXT_PREFIX = "__overview__";
-const GRAPH_TOOLBAR_PREFS_KEY = "prospectre.ui.v3.graphToolbar";
-const EMOJI_RECENTS_KEY = "prospectre.ui.v3.emojiRecents";
-const QUICK_REACTIONS = Object.freeze([
-  { emoji: "👍", annotation: "Valider", category: "essentiel", terms: "ok accord oui" },
-  { emoji: "❤️", annotation: "Aimer", category: "essentiel", terms: "coeur amour" },
-  { emoji: "👏", annotation: "Applaudir", category: "essentiel", terms: "bravo" },
-  { emoji: "✨", annotation: "Souligner", category: "essentiel", terms: "sparkles important" },
-  { emoji: "👀", annotation: "À revoir", category: "analyse", terms: "voir regarder verifier" },
-  { emoji: "💡", annotation: "Idée", category: "analyse", terms: "idee suggestion" },
-  { emoji: "❓", annotation: "Question", category: "analyse", terms: "interroger doute" },
-  { emoji: "⚠️", annotation: "Attention", category: "analyse", terms: "alerte risque" },
-  { emoji: "🔥", annotation: "Important", category: "priorite", terms: "feu priorite" },
-  { emoji: "🚀", annotation: "Accélérer", category: "priorite", terms: "lancer vite" },
-  { emoji: "🧠", annotation: "Réflexion", category: "analyse", terms: "cerveau penser" },
-  { emoji: "🧩", annotation: "Connexion", category: "analyse", terms: "puzzle lien" },
-  { emoji: "📝", annotation: "Note", category: "travail", terms: "ecrire annotation" },
-  { emoji: "✅", annotation: "Fait", category: "travail", terms: "done valide" },
-  { emoji: "⏳", annotation: "À suivre", category: "travail", terms: "temps attente" },
-  { emoji: "🔗", annotation: "Lien", category: "travail", terms: "link relation" },
-  { emoji: "🎯", annotation: "Cible", category: "priorite", terms: "objectif focus" },
-  { emoji: "🧪", annotation: "Tester", category: "travail", terms: "test verifier" },
-  { emoji: "🛠️", annotation: "À corriger", category: "travail", terms: "outil fix" },
-  { emoji: "🌱", annotation: "À développer", category: "priorite", terms: "germe evolution" },
-  { emoji: "💬", annotation: "Discussion", category: "essentiel", terms: "chat parler" },
-  { emoji: "📌", annotation: "Épingler", category: "priorite", terms: "pin retenir" },
-  { emoji: "🤝", annotation: "Accord", category: "essentiel", terms: "main accord" },
-  { emoji: "🧭", annotation: "Orientation", category: "analyse", terms: "boussole direction" }
-]);
-const EMOJI_CATEGORIES = Object.freeze([
-  { id: "all", label: "Tout" },
-  { id: "recent", label: "Récents" },
-  { id: "essentiel", label: "Essentiel" },
-  { id: "analyse", label: "Analyse" },
-  { id: "priorite", label: "Priorité" },
-  { id: "travail", label: "Travail" }
-]);
 const HEART_CYCLE_SECONDS = 180;
 const HEART_IDLE_LIMIT = 60000;
 const HEART_CLICK_CAP = 60;
@@ -259,10 +235,10 @@ const state = {
   avatarsVisible: true,
   provider: null,
   panelManager: null,
+  graphController: null,
   appStore: null,
   windowBridge: null,
   externalWindow: null,
-  toolbarDrag: null,
   providerVersion: 0,
   datasetId: "local",
   realtimeStatus: "local",
@@ -285,6 +261,20 @@ state.contentEditorAssetMap = new Map();
 state.schemaDraggedType = null;
 state.schemaDragArmedType = null;
 state.emojiPickerTarget = null;
+state.discussionRenderer = createDiscussionRenderer({
+  getState: () => state,
+  escapeHtml,
+  avatarMarkup,
+  relativeTimeMarkup,
+  renderSmartText,
+  getCommentReactions,
+  reactionEmojiMarkup,
+  getDraft,
+  renderEntityReactionBlock,
+  getEntityReactions,
+  renderPresenceChips,
+  overviewPrefix: OVERVIEW_CONTEXT_PREFIX
+});
 
 window.__prospectreState = state;
 window.__prospectreSelectNode = (id, moveCamera = false) => selectNode(id, moveCamera);
@@ -346,6 +336,7 @@ async function init() {
   setupRelativeTimes();
   setupGraph();
   setupPanelManager();
+  setupGraphController();
   const projectDiscovery = discoverAvailableProjectManifests();
   await loadDefaultProject();
   await projectDiscovery;
@@ -471,12 +462,12 @@ function setupControls() {
   });
   els.graphHelpToggle?.addEventListener("click", toggleGraphHelp);
   setupGraphToolbar();
-  document.querySelector("#fit-view").addEventListener("click", () => fitVisibleGraph());
+  document.querySelector("#fit-view").addEventListener("click", () => state.graphController?.fit?.() || fitVisibleGraph());
   document.querySelector("#zoom-in").addEventListener("click", () => zoomCamera(0.78));
   document.querySelector("#zoom-out").addEventListener("click", () => zoomCamera(1.22));
   els.insightsToggle?.addEventListener("click", toggleInsightsPanel);
-  els.openGraphWindow?.addEventListener("click", openGraphExternalWindow);
-  els.fullscreenGraph?.addEventListener("click", toggleGraphFullscreen);
+  els.openGraphWindow?.addEventListener("click", () => state.graphController?.externalize?.() || openGraphExternalWindow());
+  els.fullscreenGraph?.addEventListener("click", () => state.graphController?.fullscreen?.() || toggleGraphFullscreen());
   document.querySelector("#close-right-panel").addEventListener("click", () => hideRightPanel());
   els.graphSearchToggle?.addEventListener("click", () => toggleGraphSearch());
   els.projectSwitcherToggle?.addEventListener("click", toggleProjectMenu);
@@ -990,104 +981,28 @@ function setToolActive(button, active) {
 function setupGraphToolbar() {
   const toolbar = els.graphToolbar;
   if (!toolbar) return;
-  const prefs = normalizeGraphToolbarPrefs(loadJson(GRAPH_TOOLBAR_PREFS_KEY, null));
-  applyGraphToolbarPrefs(prefs);
-  toolbar.addEventListener("pointerdown", beginGraphToolbarDrag);
+  state.graphToolbarController = createGraphToolbarController({
+    toolbar,
+    storageKey: GRAPH_TOOLBAR_PREFS_KEY,
+    onChange: positionOpenToolbarPopover
+  });
+  state.graphToolbarController.mount();
+}
+
+function setupGraphController() {
+  state.graphController = createGraphController({
+    resetView,
+    fitVisibleGraph,
+    scheduleGraphResize,
+    openExternal: openGraphExternalWindow,
+    requestFullscreen: toggleGraphFullscreen,
+    panelManager: state.panelManager
+  });
+  state.graphController.mount();
 }
 
 function applyGraphToolbarPrefs(prefs) {
-  const toolbar = els.graphToolbar;
-  if (!toolbar) return;
-  toolbar.dataset.mode = prefs.mode;
-  toolbar.dataset.edge = prefs.edge;
-  toolbar.style.setProperty("--toolbar-x", `${Math.round(prefs.x)}px`);
-  toolbar.style.setProperty("--toolbar-y", `${Math.round(prefs.y)}px`);
-  localStorage.setItem(GRAPH_TOOLBAR_PREFS_KEY, JSON.stringify(prefs));
-  positionOpenToolbarPopover();
-}
-
-function beginGraphToolbarDrag(event) {
-  if (event.button !== 0 || !els.graphToolbar || state.toolbarDrag) return;
-  if (event.target.closest("button, a, input, textarea, select, [role='button']")) return;
-  event.preventDefault();
-  const rect = els.graphToolbar.getBoundingClientRect();
-  state.toolbarDrag = {
-    pointerId: event.pointerId,
-    target: els.graphToolbar,
-    initial: { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, width: rect.width, height: rect.height },
-    prefs: normalizeGraphToolbarPrefs(loadJson(GRAPH_TOOLBAR_PREFS_KEY, null))
-  };
-  els.graphToolbar.classList.add("is-dragging");
-  els.graphToolbar.dataset.mode = "float";
-  els.graphToolbar.setPointerCapture?.(event.pointerId);
-  els.graphToolbar.addEventListener("pointermove", moveGraphToolbarDrag);
-  els.graphToolbar.addEventListener("pointerup", commitGraphToolbarDrag);
-  els.graphToolbar.addEventListener("pointercancel", cancelGraphToolbarDrag);
-  els.graphToolbar.addEventListener("lostpointercapture", cancelGraphToolbarDrag);
-}
-
-function moveGraphToolbarDrag(event) {
-  const drag = state.toolbarDrag;
-  if (!drag || event.pointerId !== drag.pointerId || !els.graphToolbar) return;
-  const x = Math.max(8, Math.min(window.innerWidth - drag.initial.width - 8, drag.initial.left + event.clientX - drag.initial.x));
-  const y = Math.max(Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 74, Math.min(window.innerHeight - drag.initial.height - 8, drag.initial.top + event.clientY - drag.initial.y));
-  els.graphToolbar.style.setProperty("--toolbar-x", `${Math.round(x)}px`);
-  els.graphToolbar.style.setProperty("--toolbar-y", `${Math.round(y)}px`);
-  els.graphToolbar.dataset.edge = graphToolbarEdgeAt(event.clientX, event.clientY) || "free";
-  positionOpenToolbarPopover();
-}
-
-function commitGraphToolbarDrag(event) {
-  const drag = state.toolbarDrag;
-  if (!drag || (event.pointerId !== undefined && event.pointerId !== drag.pointerId) || !els.graphToolbar) return;
-  const rect = els.graphToolbar.getBoundingClientRect();
-  const edge = graphToolbarEdgeAt(event.clientX, event.clientY);
-  const prefs = edge
-    ? { ...drag.prefs, mode: "dock", edge, x: Math.round(rect.left), y: Math.round(rect.top) }
-    : { ...drag.prefs, mode: "float", edge: "free", x: Math.round(rect.left), y: Math.round(rect.top) };
-  finishGraphToolbarDrag();
-  applyGraphToolbarPrefs(normalizeGraphToolbarPrefs(prefs));
-}
-
-function cancelGraphToolbarDrag() {
-  const drag = state.toolbarDrag;
-  if (!drag) return;
-  finishGraphToolbarDrag();
-  applyGraphToolbarPrefs(drag.prefs);
-}
-
-function finishGraphToolbarDrag() {
-  const target = state.toolbarDrag?.target || els.graphToolbar;
-  els.graphToolbar?.classList.remove("is-dragging");
-  target?.removeEventListener("pointermove", moveGraphToolbarDrag);
-  target?.removeEventListener("pointerup", commitGraphToolbarDrag);
-  target?.removeEventListener("pointercancel", cancelGraphToolbarDrag);
-  target?.removeEventListener("lostpointercapture", cancelGraphToolbarDrag);
-  if (target?.hasPointerCapture?.(state.toolbarDrag?.pointerId)) {
-    target.releasePointerCapture(state.toolbarDrag.pointerId);
-  }
-  state.toolbarDrag = null;
-}
-
-function graphToolbarEdgeAt(x, y) {
-  const topbar = Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 74;
-  const threshold = 88;
-  if (y <= topbar + threshold) return "top";
-  if (y >= window.innerHeight - threshold) return "bottom";
-  if (x <= threshold) return "left";
-  if (x >= window.innerWidth - threshold) return "right";
-  return "";
-}
-
-function normalizeGraphToolbarPrefs(prefs = {}) {
-  const edge = ["left", "right", "top", "bottom", "free"].includes(prefs?.edge) ? prefs.edge : "left";
-  const mode = prefs?.mode === "float" ? "float" : "dock";
-  return {
-    mode: edge === "free" ? "float" : mode,
-    edge,
-    x: Number(prefs?.x) || 10,
-    y: Number(prefs?.y) || 92
-  };
+  state.graphToolbarController?.apply(normalizeGraphToolbarPrefs(prefs));
 }
 
 function openGraphExternalWindow() {
@@ -1901,7 +1816,7 @@ function renderTypeFilters() {
   });
   els.typeFilters.querySelector("[data-reset-confirm-action]")?.addEventListener("click", () => {
     closeFilterMenu();
-    resetView();
+    state.graphController?.reset?.({ resetPanels: true }) || resetView();
   });
 }
 
@@ -2255,45 +2170,7 @@ function escapeRegExp(value) {
 function renderDiscussion(entity = state.entities.get(state.selectedId)) {
   if (!entity) return;
   state.currentDiscussionEntityId = entity.id;
-  const online = state.realtimeStatus === "firebase";
-  const comments = (state.comments[entity.id] || []).filter((comment) => !comment.deletedAt && !comment.systemKind);
-  const presence = entity.id?.startsWith(`${OVERVIEW_CONTEXT_PREFIX}:`)
-    ? state.presence
-    : state.presence.filter((item) => item.selectedNodeId === entity.id);
-  const threads = comments
-    .filter((comment) => !comment.parentId)
-    .sort((a, b) => b.createdAt - a.createdAt);
-  const entityReactions = getEntityReactions(entity.id);
-  const mainDraft = getDraft(entity.id, null);
-  const composer = online ? `
-    <div class="comment-box compact-composer">
-      <textarea id="comment-input" rows="3" placeholder="Partager une contribution">${escapeHtml(mainDraft)}</textarea>
-      <button id="send-comment" class="send-button" type="button" aria-label="Publier"><i>send</i></button>
-    </div>
-  ` : `
-    <article class="sync-card">
-      <div>
-        <strong>Coprésence inactive</strong>
-        <p>Activez la coprésence pour contribuer et voir les échanges partagés.</p>
-      </div>
-      <label class="switch">
-        <input id="discussion-sync-switch" type="checkbox">
-        <span></span>
-      </label>
-    </article>
-  `;
-  els.panelContent.innerHTML = `
-    <div class="discussion-panel">
-      <section class="node-reaction-summary discussion-reaction-summary">
-        ${renderEntityReactionBlock(entity.id, entityReactions)}
-      </section>
-      ${presence.length ? `<div class="discussion-presence" aria-label="Coprésences sur cette fiche">${renderPresenceChips(presence, 8)}</div>` : ""}
-      ${composer}
-      <div class="activity-feed">
-        ${threads.length ? threads.map((comment) => renderCommentThread(comment, comments)).join("") : `<p class="empty-state">Aucun échange pour le moment.</p>`}
-      </div>
-    </div>
-  `;
+  els.panelContent.innerHTML = state.discussionRenderer.renderPanel(entity);
   els.panelContent.querySelector("#send-comment")?.addEventListener("click", addComment);
   els.panelContent.querySelector("#send-reply")?.addEventListener("click", addComment);
   els.panelContent.querySelector("#comment-input")?.addEventListener("input", (event) => saveDraft(entity.id, null, event.target.value));
@@ -3195,62 +3072,6 @@ function followUser(clientId) {
   selectNode(user.selectedNodeId, true);
 }
 
-function renderCommentCard(comment) {
-  const canDelete = state.isAdmin || comment.clientId === state.profile.clientId || comment.ownerId === state.authUid;
-  const isOwn = comment.clientId === state.profile.clientId || comment.ownerId === state.authUid;
-  const reactionGroups = getCommentReactions(comment);
-  return `<article class="comment-card${comment.parentId ? " reply" : ""}${isOwn ? " own" : ""}${comment.id === state.highlightedCommentId ? " highlighted" : ""}" data-comment-id="${escapeHtml(comment.id)}">
-    <div class="comment-head">
-      ${avatarMarkup(comment)}
-      <div><strong>${escapeHtml(comment.displayName)}</strong></div>
-      <span class="comment-meta">
-        ${isOwn ? `<small class="comment-owner">Vous</small>` : ""}
-        ${relativeTimeMarkup(comment.createdAt)}
-        <button class="comment-permalink" data-copy-comment-link="${escapeHtml(comment.id)}" type="button" aria-label="Copier le lien de cet échange">
-          <i>link</i><span class="tooltip top">Copier le lien</span>
-        </button>
-      </span>
-    </div>
-    <p class="comment-body">${renderSmartText(comment.text)}</p>
-    <div class="comment-actions social-actions">
-      <button class="comment-action" data-reply="${escapeHtml(comment.id)}" type="button"><i>reply</i><span>Répondre</span></button>
-      <div class="reaction-bar">
-        ${reactionGroups.map((reaction) => `<button class="reaction-button${reaction.selected ? " active" : ""}${reaction.isDefault ? " default-reaction" : ""}" data-reaction="${escapeHtml(reaction.emoji)}" data-annotation="${escapeHtml(reaction.annotation || "")}" data-comment-id="${escapeHtml(comment.id)}" type="button" aria-label="Réagir avec ${escapeHtml(reaction.annotation || reaction.emoji)}">${reactionEmojiMarkup(reaction)}${reaction.count ? `<strong>${reaction.count}</strong>` : ""}</button>`).join("")}
-        <button class="reaction-picker-toggle" data-reaction-picker="${escapeHtml(comment.id)}" type="button" aria-label="Ajouter une réaction"><i>add_reaction</i><span class="tooltip top">Ajouter une réaction</span></button>
-      </div>
-      ${canDelete ? `<button class="comment-action danger-action" data-delete-comment="${escapeHtml(comment.id)}" aria-label="Mettre à la corbeille" type="button"><i>delete</i><span class="tooltip top">Mettre à la corbeille</span></button>` : ""}
-    </div>
-  </article>`;
-}
-
-function renderCommentThread(comment, allComments) {
-  const replies = allComments.filter((item) => item.parentId === comment.id).sort((a, b) => a.createdAt - b.createdAt);
-  const highlighted = comment.id === state.highlightedCommentId;
-  return `<section class="thread${highlighted ? " highlighted" : ""}" data-thread="${escapeHtml(comment.id)}">
-    ${renderCommentCard(comment)}
-    ${replies.length ? `<div class="thread-count">${replies.length} réponse${replies.length > 1 ? "s" : ""}</div>` : ""}
-    ${state.replyTo === comment.id ? renderInlineReplyBox(comment) : ""}
-    ${replies.length ? `<div class="reply-list">${replies.map((reply) => `
-      ${renderCommentCard(reply, true)}
-      ${state.replyTo === reply.id ? renderInlineReplyBox(reply) : ""}
-    `).join("")}</div>` : ""}
-  </section>`;
-}
-
-function renderInlineReplyBox(comment) {
-  const draft = getDraft(state.currentDiscussionEntityId || state.selectedId, comment.id);
-  return `<div class="reply-composer">
-    <div class="reply-context">
-      <span><i>subdirectory_arrow_right</i> Réponse à ${escapeHtml(comment.displayName || "Anonyme")}</span>
-      <button id="cancel-reply" class="text-action" type="button">Annuler</button>
-    </div>
-    <div class="comment-box">
-      <textarea id="reply-input" rows="2" placeholder="Écrire une réponse">${escapeHtml(draft)}</textarea>
-      <button id="send-reply" class="send-button" type="button" aria-label="Répondre"><i>send</i></button>
-    </div>
-  </div>`;
-}
-
 async function reactToComment(entityId, commentId, reaction) {
   if (state.realtimeStatus !== "firebase") return;
   try {
@@ -3316,146 +3137,40 @@ function openEmojiPicker(entityId, commentId, anchor) {
   if (state.realtimeStatus !== "firebase") return;
   state.emojiPickerTarget = { entityId, commentId };
   els.emojiPickerPopover?.classList.remove("hidden");
-  const rect = anchor?.getBoundingClientRect();
   const card = els.emojiPickerPopover?.querySelector(".emoji-picker-card");
-  if (rect && card) {
-    const cardWidth = card.offsetWidth || 326;
-    const cardHeight = card.offsetHeight || Math.min(398, window.innerHeight - 20);
-    const left = Math.max(10, Math.min(window.innerWidth - cardWidth - 10, rect.right - cardWidth));
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top = spaceBelow > cardHeight + 8 ? rect.bottom + 8 : Math.max(10, rect.top - cardHeight - 8);
-    card.style.left = `${Math.round(left)}px`;
-      card.style.top = `${Math.round(top)}px`;
-  }
-  requestAnimationFrame(() => els.emojiPicker?.querySelector("[data-emoji-choice]")?.focus());
+  state.emojiPickerPositionCleanup?.();
+  state.emojiPickerPositionCleanup = anchor && card ? overlays.position(anchor, card, { placement: "auto", distance: 8 }) : null;
+  state.emojiPickerController?.focusFirst();
 }
 
 function openEntityEmojiPicker(entityId, anchor) {
   state.emojiPickerTarget = { entityId, entityReaction: true };
   els.emojiPickerPopover?.classList.remove("hidden");
-  const rect = anchor?.getBoundingClientRect();
   const card = els.emojiPickerPopover?.querySelector(".emoji-picker-card");
-  if (rect && card) {
-    const cardWidth = card.offsetWidth || 326;
-    const cardHeight = card.offsetHeight || Math.min(398, window.innerHeight - 20);
-    const left = Math.max(10, Math.min(window.innerWidth - cardWidth - 10, rect.right - cardWidth));
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const top = spaceBelow > cardHeight + 8 ? rect.bottom + 8 : Math.max(10, rect.top - cardHeight - 8);
-    card.style.left = `${Math.round(left)}px`;
-      card.style.top = `${Math.round(top)}px`;
-  }
-  requestAnimationFrame(() => els.emojiPicker?.querySelector("[data-emoji-choice]")?.focus());
+  state.emojiPickerPositionCleanup?.();
+  state.emojiPickerPositionCleanup = anchor && card ? overlays.position(anchor, card, { placement: "auto", distance: 8 }) : null;
+  state.emojiPickerController?.focusFirst();
 }
 
 function closeEmojiPicker() {
   els.emojiPickerPopover?.classList.add("hidden");
+  state.emojiPickerPositionCleanup?.();
+  state.emojiPickerPositionCleanup = null;
   state.emojiPickerTarget = null;
 }
 
 function setupNativeEmojiPicker() {
   if (!els.emojiPicker) return;
-  state.emojiPickerState = { category: "all", query: "" };
-  renderNativeEmojiPicker();
-  els.emojiPicker.addEventListener("click", (event) => {
-    const category = event.target.closest("[data-emoji-category]")?.dataset.emojiCategory;
-    if (category) {
-      state.emojiPickerState.category = category;
-      renderNativeEmojiPicker();
-      return;
-    }
-    const button = event.target.closest("[data-emoji-choice]");
-    if (!button) return;
-    commitEmojiChoice(button.dataset.emojiChoice, button.dataset.annotation);
+  state.emojiPickerController = createNativeEmojiPickerController({
+    root: els.emojiPicker,
+    getState: () => state.emojiPickerTarget,
+    onCommit: (reaction) => selectEmojiReaction(reaction),
+    onClose: closeEmojiPicker,
+    escapeHtml,
+    normalizeSearchText,
+    loadJson
   });
-  els.emojiPicker.addEventListener("input", (event) => {
-    if (event.target.matches("[data-emoji-search]")) {
-      state.emojiPickerState.query = event.target.value;
-      renderNativeEmojiChoices();
-    }
-    if (event.target.matches("[data-emoji-custom]")) {
-      event.target.value = [...event.target.value].slice(0, 2).join("");
-    }
-  });
-  els.emojiPicker.addEventListener("keydown", (event) => {
-    const choices = [...els.emojiPicker.querySelectorAll("[data-emoji-choice]")];
-    const index = choices.indexOf(document.activeElement);
-    if (event.key === "Escape") {
-      event.preventDefault();
-      closeEmojiPicker();
-      return;
-    }
-    if (!["ArrowRight", "ArrowDown", "ArrowLeft", "ArrowUp", "Home", "End"].includes(event.key)) return;
-    event.preventDefault();
-    const columns = 6;
-    const nextIndex = event.key === "Home" ? 0
-      : event.key === "End" ? choices.length - 1
-        : event.key === "ArrowRight" ? index + 1
-          : event.key === "ArrowLeft" ? index - 1
-            : event.key === "ArrowDown" ? index + columns
-              : index - columns;
-    choices[Math.max(0, Math.min(choices.length - 1, nextIndex))]?.focus();
-  });
-  els.emojiPicker.addEventListener("submit", (event) => {
-    event.preventDefault();
-    const custom = els.emojiPicker.querySelector("[data-emoji-custom]")?.value?.trim();
-    if (!custom) return;
-    commitEmojiChoice(custom, "Réaction personnalisée");
-  });
-}
-
-function renderNativeEmojiPicker() {
-  els.emojiPicker.innerHTML = `
-    <form class="emoji-native-search">
-      <label>
-        <i>search</i>
-        <input data-emoji-search type="search" placeholder="Filtrer" value="${escapeHtml(state.emojiPickerState?.query || "")}">
-      </label>
-      <label class="emoji-custom-field">
-        <input data-emoji-custom type="text" inputmode="text" autocomplete="off" placeholder="🙂" maxlength="4" aria-label="Emoji personnalisé">
-        <button type="submit" aria-label="Ajouter l’emoji personnalisé"><i>keyboard_return</i></button>
-      </label>
-    </form>
-    <div class="emoji-native-tabs" role="tablist">
-      ${EMOJI_CATEGORIES.map((category) => `<button type="button" data-emoji-category="${category.id}" class="${category.id === state.emojiPickerState.category ? "active" : ""}">${escapeHtml(category.label)}</button>`).join("")}
-    </div>
-    <div class="emoji-native-grid" role="listbox" aria-label="Réactions rapides"></div>
-  `;
-  renderNativeEmojiChoices();
-}
-
-function renderNativeEmojiChoices() {
-  const grid = els.emojiPicker?.querySelector(".emoji-native-grid");
-  if (!grid) return;
-  const reactions = getFilteredEmojiChoices();
-  grid.innerHTML = reactions.length ? reactions.map((reaction) => `
-    <button type="button" role="option" data-emoji-choice="${escapeHtml(reaction.emoji)}" data-annotation="${escapeHtml(reaction.annotation)}" aria-label="${escapeHtml(reaction.annotation)}">
-      <span>${escapeHtml(reaction.emoji)}</span>
-      <small>${escapeHtml(reaction.annotation)}</small>
-    </button>
-  `).join("") : `<p class="emoji-native-empty">Aucune réaction.</p>`;
-}
-
-function getFilteredEmojiChoices() {
-  const query = normalizeSearchText(state.emojiPickerState?.query || "");
-  const recents = loadJson(EMOJI_RECENTS_KEY, []);
-  const recentChoices = recents.map((emoji) => QUICK_REACTIONS.find((reaction) => reaction.emoji === emoji) || { emoji, annotation: emoji, category: "recent", terms: "" });
-  const base = state.emojiPickerState?.category === "recent" ? recentChoices : QUICK_REACTIONS;
-  const scoped = state.emojiPickerState?.category && !["all", "recent"].includes(state.emojiPickerState.category)
-    ? base.filter((reaction) => reaction.category === state.emojiPickerState.category)
-    : base;
-  if (!query) return scoped;
-  return scoped.filter((reaction) => normalizeSearchText(`${reaction.emoji} ${reaction.annotation} ${reaction.terms || ""}`).includes(query));
-}
-
-function commitEmojiChoice(emoji, annotation = emoji) {
-  if (!emoji) return;
-  rememberEmojiChoice(emoji);
-  selectEmojiReaction({ emoji, annotation: annotation || emoji });
-}
-
-function rememberEmojiChoice(emoji) {
-  const recents = [emoji, ...loadJson(EMOJI_RECENTS_KEY, []).filter((item) => item !== emoji)].slice(0, 12);
-  localStorage.setItem(EMOJI_RECENTS_KEY, JSON.stringify(recents));
+  state.emojiPickerController.mount();
 }
 
 function selectEmojiReaction(reaction) {
@@ -4871,12 +4586,12 @@ function rebuildGraph() {
   renderAnalysis();
 }
 
-function resetView() {
+function resetView(options = {}) {
   hideRightPanel();
   closeFilterMenu();
   closeGraphSearch();
   closeGraphHelp();
-  state.panelManager?.resetAllPreferences?.();
+  if (options.resetPanels !== false) state.panelManager?.resetLayout?.();
   applyGraphToolbarPrefs(normalizeGraphToolbarPrefs({ mode: "dock", edge: "left", x: 10, y: 92 }));
   resetGraphInteractionState();
   state.activeTypes = new Set(Object.keys(TYPE_CONFIG));

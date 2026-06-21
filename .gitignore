@@ -8,12 +8,15 @@
 
 !index.html
 !app.config.js
+!package.json
+!package-lock.json
 
 !assets/
 !assets/**
 
-!docs/
-!docs/**
+!scripts/
+!scripts/check-modules.mjs
+!scripts/smoke-ui.mjs
 
 !data/
 !data/prospectre-documentation/

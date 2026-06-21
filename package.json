@@ -1,0 +1,13 @@
+{
+  "name": "prospectre",
+  "version": "0.0.0-local",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke:ui": "node scripts/smoke-ui.mjs",
+    "check:modules": "powershell -NoProfile -ExecutionPolicy Bypass -Command \"Get-Content -Raw scripts/check-modules.mjs | node --input-type=module\""
+  },
+  "devDependencies": {
+    "playwright-core": "^1.54.0"
+  }
+}

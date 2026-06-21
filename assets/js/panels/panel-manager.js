@@ -156,6 +156,12 @@ export class PanelManager {
     this.emitLayoutChange();
   }
 
+  resetLayout(ids) {
+    const targets = Array.isArray(ids) && ids.length ? ids : [...this.registry.keys()];
+    for (const id of targets) this.resetPreferences(id);
+    this.emitLayoutChange();
+  }
+
   getLayout() {
     const layout = {};
     for (const [id] of this.active) {
