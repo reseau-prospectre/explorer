@@ -9,6 +9,13 @@ export const KNOWN_PROJECT_MANIFESTS = Object.freeze([
     group: "Bibliothèque interne"
   },
   {
+    id: "pack:eldoom-cbe",
+    title: "eldoom CBE — Bibliothèque de référentiels",
+    version: "0.1.0",
+    url: "./data/eldoom-cbe/manifest.json",
+    group: "Bibliothèque interne"
+  },
+  {
     id: "pack:snt-2040",
     title: "SNT 2040",
     url: "./data/snt-2040/manifest.json",

@@ -1,36 +1,29 @@
 ---
-id: "porte:entrer"
+id: "porte:entrer-dans-la-machine"
 type: "porte"
 titre: "Entrer dans la machine"
-resume: "Point d’entrée du pack vitrine : ce que PROSPECTRE fait, ce qu’il refuse de faire et comment l’essayer sans cérémonie."
+resume: "Le point d’entrée : PROSPECTRE comme dispositif de lecture, d’édition et de preuve."
 liens:
-- "geste:explorer"
-- "geste:lire-fiche"
-- "recette:fabriquer-pack"
-- "objection:trop-technique"
+- "geste:ouvrir-un-pack"
+- "recette:pack-depuis-corpus"
+- "preuve:documentation-autoportee"
 ---
 # Entrer dans la machine
 
-PROSPECTRE ne demande pas d’abord : « qu’est-ce qu’un bon logiciel de documentation ? » La question est trop confortable, donc probablement mauvaise. Il propose un petit dispositif plus vérifiable : prenez un corpus, donnez-lui des types, reliez ses fiches, puis regardez si la pensée circule mieux qu’avant.
+PROSPECTRE propose une expérience assez simple pour être dangereuse : prendre un corpus, lui donner un schéma, relier ses fiches, puis regarder si la pensée circule mieux.
 
-Si rien ne circule, le graphe ne ment pas. Il vous montre simplement que le corpus ne sait pas encore se présenter.
+Le logiciel ne prétend pas comprendre mieux que l’auteur. Il fait quelque chose de plus vérifiable : il montre les objets, les relations, les zones denses, les absences et les chemins. Une machine honnête ne sait pas tout. Elle sait où elle met les nœuds.
 
-## Le pacte
+## Ce que l’on peut essayer
 
-- les contenus restent dans des fichiers Markdown ;
-- le modèle métier reste dans le manifeste ;
-- les relations sont déclarées, visibles, discutables ;
-- l’application sert à explorer, annoter, filtrer, relire et transmettre.
-
-## À essayer en premier
-
-| Envie | Fiche |
+| Essai | Résultat attendu |
 | --- | --- |
-| Comprendre le graphe | [Le jeu de l’exploration](entity:geste:explorer) |
-| Lire une fiche riche | [Lire une fiche sans la disséquer](entity:geste:lire-fiche) |
-| Créer un pack | [Fabriquer un pack](entity:recette:fabriquer-pack) |
-| Demander de l’aide à une IA | [Prompt complet de création](entity:prompt:pack-complet) |
+| Ouvrir le graphe | Voir les familles d’objets et les pivots. |
+| Sélectionner une fiche | Lire son contenu, ses liens et son voisinage. |
+| Filtrer un type | Tester une hypothèse de lecture. |
+| Importer un CSV Moodle | Transformer un référentiel en carte de compétences. |
+| Exporter un pack | Transporter le corpus avec son modèle. |
 
-## Ce que ce pack démontre
+## Principe
 
-La documentation est elle-même un pack. Elle n’explique donc pas seulement PROSPECTRE : elle l’utilise devant vous, avec ses nœuds, ses relations, ses filtres, ses objections et ses recettes.
+La documentation est elle-même un pack. Elle ne décrit donc pas seulement l’application ; elle se soumet à elle. C’est plus drôle, et plus compromettant.

@@ -1,24 +1,29 @@
 ---
-id: "geste:questionner-relations"
+id: "geste:questionner-les-relations"
 type: "geste"
 titre: "Questionner les relations"
-resume: "Distinguer lien utile, lien décoratif et lien qui devrait être du contenu."
+resume: "Demander à chaque lien s’il guide, prouve, dépend ou encombre."
 liens:
-- "geste:explorer"
-- "recette:polir-pack"
-- "objection:graphe-confus"
+- "recette:polish-editorial"
 ---
 # Questionner les relations
 
-Une relation doit supporter une phrase simple : « A éclaire B », « A dépend de B », « A documente B ».
+Demander à chaque lien s’il guide, prouve, dépend ou encombre.
 
-Si la phrase devient gênée, le lien l’est aussi.
+Un geste est une action courte, répétable, observable. Si l’action n’améliore pas la lecture, elle n’est pas encore un geste : c’est un bouton.
 
-## Test rapide
+| Point | Réponse |
+| --- | --- |
+| Action | Demander à chaque lien s’il guide, prouve, dépend ou encombre. |
+| Instrument PROSPECTRE | Graphe, filtres, fiche, recherche, édition ou discussion. |
+| Erreur fréquente | Confondre manipulation de l’interface et clarification du corpus. |
 
-- Le lien change-t-il la lecture du graphe ?
-- Aide-t-il à trouver une fiche ?
-- Révèle-t-il une dépendance ?
-- Peut-il être expliqué en moins de dix mots ?
+## Mode d’emploi
 
-Quatre non : supprimez ou déplacez dans le texte.
+1. Effectuer le geste dans l’interface.
+2. Observer ce qui devient plus visible.
+3. Annuler mentalement le geste : si rien ne manque, il n’était pas utile.
+
+## Critère
+
+Un geste valable laisse une trace de compréhension, pas seulement un changement d’écran.

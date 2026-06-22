@@ -1,12 +1,12 @@
 {
   "id": "pack:prospectre-documentation",
   "titre": "PROSPECTRE — Documentation vivante",
-  "version": "2.0.0",
+  "version": "2.1.0",
   "format_version": "1.0.0",
-  "date_generation": "2026-06-20",
-  "description": "Documentation démonstrative de PROSPECTRE : exploration, fabrication de packs, prompts, ateliers et principes de lisibilité.",
+  "date_generation": "2026-06-21",
+  "description": "Pack vitrine de PROSPECTRE : documentation autoportée, prompts, référentiels Moodle CSV, gouvernance FAIR, graphes et bibliothèque de cas d’usage.",
   "modele": {
-    "version": "2.0.0",
+    "version": "2.1.0",
     "relations": {
       "related_to": {
         "label": "Relie"
@@ -19,6 +19,9 @@
       },
       "uses": {
         "label": "Utilise"
+      },
+      "proves": {
+        "label": "Prouve"
       }
     },
     "types": [
@@ -28,7 +31,7 @@
         "singular": "Porte d’entrée",
         "folder": "portes",
         "color": "#4f8cff",
-        "size": 22,
+        "size": 24,
         "order": 0,
         "showLabel": true,
         "fields": [
@@ -45,8 +48,14 @@
             "required": true
           },
           {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
             "key": "liens",
-            "label": "À explorer ensuite",
+            "label": "Liens",
             "kind": "reference",
             "target": "*",
             "multiple": true,
@@ -60,7 +69,7 @@
         "singular": "Geste",
         "folder": "gestes",
         "color": "#62b35d",
-        "size": 16,
+        "size": 17,
         "order": 1,
         "showLabel": true,
         "fields": [
@@ -75,6 +84,12 @@
             "label": "Résumé",
             "kind": "textarea",
             "required": true
+          },
+          {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
           },
           {
             "key": "liens",
@@ -109,6 +124,12 @@
             "required": true
           },
           {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
             "key": "liens",
             "label": "Liens",
             "kind": "reference",
@@ -135,10 +156,16 @@
             "required": true
           },
           {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
             "key": "usage",
             "label": "Usage",
             "kind": "text",
-            "required": true
+            "required": false
           },
           {
             "key": "liens",
@@ -173,8 +200,14 @@
             "required": true
           },
           {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
             "key": "liens",
-            "label": "Réponses et preuves",
+            "label": "Liens",
             "kind": "reference",
             "target": "*",
             "multiple": true,
@@ -205,6 +238,88 @@
             "required": true
           },
           {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "exemple",
+        "label": "Exemples",
+        "singular": "Exemple",
+        "folder": "exemples",
+        "color": "#ff7aa2",
+        "size": 12,
+        "order": 6,
+        "showLabel": false,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "preuve",
+        "label": "Preuves",
+        "singular": "Preuve",
+        "folder": "preuves",
+        "color": "#7dd3fc",
+        "size": 11,
+        "order": 7,
+        "showLabel": false,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "usage",
+            "label": "Usage",
+            "kind": "text",
+            "required": false
+          },
+          {
             "key": "liens",
             "label": "Liens",
             "kind": "reference",
@@ -217,37 +332,118 @@
     ]
   },
   "contenu": {
-    "portes": 1,
-    "gestes": 4,
-    "recettes": 4,
-    "prompts": 6,
-    "objections": 3,
-    "coulisses": 4
+    "portes": 7,
+    "gestes": 14,
+    "recettes": 16,
+    "prompts": 14,
+    "objections": 10,
+    "coulisses": 18,
+    "exemples": 12,
+    "preuves": 10
   },
   "fichiers": [
     "README.md",
     "portes/entrer-dans-la-machine.md",
-    "gestes/explorer-graphe.md",
+    "portes/ce-que-prospectre-sait-faire.md",
+    "portes/lire-un-corpus-comme-un-graphe.md",
+    "portes/creer-un-pack-sans-ceremonie.md",
+    "portes/lire-un-referentiel-moodle-csv.md",
+    "portes/travailler-avec-une-ia-sans-abdication.md",
+    "portes/construire-une-bibliotheque-prospectre.md",
+    "gestes/ouvrir-un-pack.md",
+    "gestes/lire-le-graphe.md",
     "gestes/filtrer-sans-tricher.md",
+    "gestes/selectionner-un-n-ud.md",
     "gestes/lire-une-fiche.md",
     "gestes/questionner-les-relations.md",
-    "recettes/fabriquer-un-pack.md",
-    "recettes/polir-un-pack.md",
-    "recettes/animer-un-atelier.md",
-    "prompts/prompt-pack-complet.md",
-    "prompts/prompt-structure-courte.md",
-    "prompts/prompt-polish.md",
-    "prompts/prompt-agent-prospectre.md",
-    "prompts/prompt-rag.md",
-    "prompts/prompt-audit.md",
+    "gestes/rechercher-dans-le-corpus.md",
+    "gestes/annoter-collectivement.md",
+    "gestes/importer-un-dossier.md",
+    "gestes/exporter-proprement.md",
+    "gestes/editer-une-fiche.md",
+    "gestes/adapter-le-schema.md",
+    "gestes/lire-le-diagnostic-graphe.md",
+    "gestes/comparer-deux-packs.md",
+    "recettes/pack-depuis-corpus.md",
+    "recettes/referentiel-moodle-csv.md",
+    "recettes/referentiel-de-competences.md",
+    "recettes/pack-prospectif-snt.md",
+    "recettes/pack-formation-neo.md",
+    "recettes/atelier-de-lecture.md",
+    "recettes/audit-de-pack.md",
+    "recettes/polish-editorial.md",
+    "recettes/bibliotheque-prospectre.md",
+    "recettes/agent-specialise.md",
+    "recettes/base-rag-minimale.md",
+    "recettes/gouvernance-documentaire.md",
+    "recettes/export-sur.md",
+    "recettes/versionner-sans-fatiguer.md",
+    "recettes/demonstration-publique.md",
+    "recettes/mesurer-la-lisibilite.md",
+    "prompts/architecture-de-pack.md",
+    "prompts/pack-complet.md",
+    "prompts/pack-csv-moodle.md",
+    "prompts/schema-minimal.md",
+    "prompts/polish-editorial.md",
+    "prompts/audit-de-pack.md",
+    "prompts/agent-prospectre.md",
+    "prompts/rag-prospectre.md",
+    "prompts/extraction-fidele.md",
+    "prompts/labels-humains.md",
+    "prompts/relations-utiles.md",
+    "prompts/atelier-prospectre.md",
+    "prompts/bibliotheque-de-packs.md",
+    "prompts/critique-seche.md",
     "objections/c-est-trop-technique.md",
     "objections/le-graphe-est-confus.md",
     "objections/l-ia-va-tout-faire.md",
-    "coulisses/format-pack.md",
-    "coulisses/modele-et-visibilite.md",
-    "coulisses/markdown-sans-theatre.md",
-    "coulisses/collaboration-et-export.md",
-    "recettes/exemples-bons-mauvais.md",
+    "objections/le-csv-moodle-suffit-deja.md",
+    "objections/cent-un-elements-c-est-trop.md",
+    "objections/les-versions-fatiguent-les-utilisateurs.md",
+    "objections/un-pack-n-est-pas-une-preuve.md",
+    "objections/la-collaboration-va-salir-le-corpus.md",
+    "objections/les-competences-sont-trop-hierarchiques.md",
+    "objections/la-documentation-se-regarde-le-nombril.md",
+    "coulisses/format-d-un-pack.md",
+    "coulisses/schema-et-types.md",
+    "coulisses/modele-et-granularite.md",
+    "coulisses/markdown-sobre.md",
+    "coulisses/liens-entity.md",
+    "coulisses/metriques-de-graphe.md",
+    "coulisses/diagnostic-dynamique.md",
+    "coulisses/import-de-packs.md",
+    "coulisses/mapping-csv-moodle.md",
+    "coulisses/colonnes-moodle.md",
+    "coulisses/addon-referentiel.md",
+    "coulisses/collaboration-et-copresence.md",
+    "coulisses/edition-locale.md",
+    "coulisses/gouvernance-et-securite.md",
+    "coulisses/securite-des-packs.md",
+    "coulisses/fair-et-transportabilite.md",
+    "coulisses/versioning-sobre.md",
+    "coulisses/limites-assumees.md",
+    "exemples/labels-humains.md",
+    "exemples/bon-n-ud.md",
+    "exemples/mauvais-n-ud.md",
+    "exemples/bonne-relation.md",
+    "exemples/relation-decorative.md",
+    "exemples/referentiel-competences.md",
+    "exemples/csv-moodle-importe.md",
+    "exemples/pack-snt.md",
+    "exemples/pack-neo.md",
+    "exemples/pack-vitrine.md",
+    "exemples/bibliotheque.md",
+    "exemples/audit-avant-partage.md",
+    "preuves/documentation-autoportee.md",
+    "preuves/transportabilite.md",
+    "preuves/lisibilite-du-graphe.md",
+    "preuves/tracabilite.md",
+    "preuves/prospective-et-fair.md",
+    "preuves/curriculum-en-graphe.md",
+    "preuves/referentiels-universels.md",
+    "preuves/collaboration-humain-machine.md",
+    "preuves/bibliotheque-vivante.md",
+    "preuves/graphe-101.md",
     "manifest.json"
   ]
 }

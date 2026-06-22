@@ -1,26 +1,29 @@
 ---
-id: "geste:lire-fiche"
+id: "geste:lire-une-fiche"
 type: "geste"
-titre: "Lire une fiche sans la disséquer"
-resume: "Comprendre le rôle des fiches : contenu lisible, métadonnées stables, liens activables."
+titre: "Lire une fiche"
+resume: "Distinguer contenu final, métadonnées, liens activables et preuves."
 liens:
-- "porte:entrer"
-- "coulisse:markdown"
-- "prompt:polish"
+- "coulisse:markdown-sobre"
 ---
-# Lire une fiche sans la disséquer
+# Lire une fiche
 
-Une fiche PROSPECTRE a deux faces.
+Distinguer contenu final, métadonnées, liens activables et preuves.
 
-La première parle aux humains : titres, paragraphes, tableaux, exemples, listes de vérification. La seconde parle au moteur : identifiant stable, type, champs, relations.
+Un geste est une action courte, répétable, observable. Si l’action n’améliore pas la lecture, elle n’est pas encore un geste : c’est un bouton.
 
-La seconde ne doit pas envahir la première. Les codes internes sont nécessaires, mais ils ne méritent pas toujours de monter sur scène.
-
-## Fiche lisible
-
-| À faire | À éviter |
+| Point | Réponse |
 | --- | --- |
-| Titre humain court | Titre composé uniquement d’un code |
-| Résumé utile dès la première ligne | Préambule administratif |
-| Relations nommées et rares | Liens ajoutés parce qu’on pouvait les ajouter |
-| Tableau quand il clarifie | Tableau comme punition typographique |
+| Action | Distinguer contenu final, métadonnées, liens activables et preuves. |
+| Instrument PROSPECTRE | Graphe, filtres, fiche, recherche, édition ou discussion. |
+| Erreur fréquente | Confondre manipulation de l’interface et clarification du corpus. |
+
+## Mode d’emploi
+
+1. Effectuer le geste dans l’interface.
+2. Observer ce qui devient plus visible.
+3. Annuler mentalement le geste : si rien ne manque, il n’était pas utile.
+
+## Critère
+
+Un geste valable laisse une trace de compréhension, pas seulement un changement d’écran.

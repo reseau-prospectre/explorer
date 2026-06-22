@@ -8,18 +8,17 @@
 
 !index.html
 !app.config.js
-!package.json
-!package-lock.json
 
 !assets/
 !assets/**
 
 !scripts/
-!scripts/check-modules.mjs
-!scripts/smoke-ui.mjs
+!scripts/build-prospectre-docs-v2-pack.mjs
 
 !data/
 !data/prospectre-documentation/
 !data/prospectre-documentation/**
+!data/eldoom-cbe/
+!data/eldoom-cbe/**
 !data/neo/
 !data/neo/**

@@ -9,7 +9,7 @@
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined" rel="stylesheet">
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/toastui-editor.min.css">
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
-  <link rel="stylesheet" href="./assets/css/app.css?v=20260621-native-ui-1">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20260622-edit-ux-1">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -48,19 +48,6 @@
                 <span class="tooltip bottom">Fil d’activité</span>
                 <span class="control-label">Fil d’activité</span>
               </button>
-            </div>
-            <div class="transfer-menu-wrap">
-              <button id="transfer-menu-toggle" class="icon-button" type="button" aria-controls="transfer-menu" aria-expanded="false" aria-label="Importer ou exporter">
-                <i>import_export</i>
-                <span class="tooltip bottom">Importer ou exporter</span>
-                <span class="control-label">Importer / exporter</span>
-              </button>
-              <div id="transfer-menu" class="action-menu hidden" role="menu">
-                <button id="open-import" type="button" role="menuitem"><i>upload</i><span>Importer un projet</span></button>
-                <button id="export-current" type="button" role="menuitem"><i>download</i><span>Exporter la fiche</span></button>
-                <button id="export-all" type="button" role="menuitem"><i>inventory_2</i><span>Exporter le projet</span></button>
-                <button id="open-schema-admin" type="button" role="menuitem"><i>database</i><span>Administrer le modèle</span></button>
-              </div>
             </div>
             <button id="profile-button" class="profile-button" type="button" aria-label="Ouvrir le profil">
               <span id="profile-avatar">V</span>
@@ -209,10 +196,10 @@
         <div class="drop-card">
           <i>folder_open</i>
           <h2>Déposer des contenus</h2>
-          <p>Fichiers ou archive</p>
+          <p>Pack .zip, fiches .md, images ou référentiel Moodle .csv</p>
           <label class="primary-button">
             Choisir sur l'ordinateur
-            <input id="pack-input" type="file" accept=".zip,.md,.png,.jpg,.jpeg,.gif,.webp,.svg" multiple>
+            <input id="pack-input" type="file" accept=".zip,.md,.csv,.png,.jpg,.jpeg,.gif,.webp,.svg" multiple>
           </label>
         </div>
       </section>
@@ -231,12 +218,43 @@
         <div class="panel-content">
           <section id="gamification-card" class="gamification-card" aria-label="Cœurs de coprésence"></section>
           <div id="profile-identity" class="profile-identity"></div>
-          <section class="profile-settings-shell">
-            <button id="profile-settings-toggle" class="profile-settings-toggle" type="button" aria-expanded="false" aria-controls="profile-settings-panel">
-              <span><i>tune</i> Identité, thème et connexion</span>
-              <i>expand_more</i>
+          <div class="profile-options-tabs" role="tablist" aria-label="Options du profil">
+            <button class="active" type="button" data-profile-tab="settings" aria-controls="profile-settings-panel" aria-selected="true">
+              <i>tune</i><span>Réglages</span>
             </button>
-            <div id="profile-settings-panel" class="profile-settings-panel hidden">
+            <button type="button" data-profile-tab="portability" aria-controls="profile-portability-panel" aria-selected="false">
+              <i>sync_alt</i><span>Portabilité</span>
+            </button>
+          </div>
+          <div class="profile-options-panels">
+            <section id="profile-portability-panel" class="profile-tab-panel profile-section transfer-section hidden" data-profile-panel="portability" aria-label="Import et export">
+              <div class="transfer-section-head">
+                <div>
+                  <p class="kicker">Portabilité</p>
+                  <h3>Import / Export</h3>
+                </div>
+                <i>sync_alt</i>
+              </div>
+              <div class="transfer-action-grid">
+                <button id="open-import" class="transfer-action-card" type="button">
+                  <i>upload_file</i>
+                  <span><strong>Importer</strong><small>Zip, Markdown, images, CSV Moodle</small></span>
+                </button>
+                <button id="export-current" class="transfer-action-card" type="button">
+                  <i>description</i>
+                  <span><strong>Fiche</strong><small>Markdown sélectionné</small></span>
+                </button>
+                <button id="export-all" class="transfer-action-card" type="button">
+                  <i>inventory_2</i>
+                  <span><strong>Projet</strong><small>Pack PROSPECTRE complet</small></span>
+                </button>
+                <button id="open-schema-admin" class="transfer-action-card" type="button">
+                  <i>database</i>
+                  <span><strong>Modèle</strong><small>Types et schéma du pack</small></span>
+                </button>
+              </div>
+            </section>
+            <div id="profile-settings-panel" class="profile-settings-panel profile-tab-panel" data-profile-panel="settings">
               <section class="profile-section identity-editor" aria-label="Identité affichée">
                 <label class="identity-color" aria-label="Couleur du profil">
                   <span id="profile-color-preview" class="identity-color-preview">IC</span>
@@ -283,7 +301,7 @@
               </section>
               <button id="clear-local" class="secondary-button clear-local-button" type="button">Réinitialiser l’application et l’identité</button>
             </div>
-          </section>
+          </div>
         </div>
       </section>
 
@@ -370,6 +388,7 @@
     <script src="https://uicdn.toast.com/editor/latest/toastui-editor-all.min.js"></script>
     <script src="https://uicdn.toast.com/editor/latest/i18n/fr-fr.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/papaparse@5.4.1/papaparse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/fuse.js@7.1.0/dist/fuse.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/dayjs@1.11.13/dayjs.min.js"></script>
@@ -383,6 +402,6 @@
       }
     </script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260621-native-ui-1" type="module"></script>
+  <script src="./assets/js/main.js?v=20260622-edit-ux-1" type="module"></script>
   </body>
 </html>

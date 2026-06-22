@@ -9,6 +9,7 @@ export function createProjectModel(dependencies) {
   const {
     state,
     getFirstMarkdownImage,
+    resolveGraphImage,
     resolveAvatarProfile,
     getScoreBoost
   } = dependencies;
@@ -25,7 +26,9 @@ export function createProjectModel(dependencies) {
         body: parsed.body,
         path: file.path,
         rawText: file.text,
-        imageURL: getFirstMarkdownImage(parsed.body, file.path)
+        imageURL: meta.graph_image_enabled && meta.graph_image
+          ? resolveGraphImage(meta.graph_image, file.path)
+          : getFirstMarkdownImage(parsed.body, file.path)
       });
     }
     return entities;

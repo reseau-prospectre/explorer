@@ -14,7 +14,14 @@ export function createMarkdownRenderer({ state }) {
       markdownMatch ? { index: markdownMatch.index, url: markdownMatch[1] } : null,
       htmlMatch ? { index: htmlMatch.index, url: htmlMatch[1] } : null
     ].filter(Boolean).sort((a, b) => a.index - b.index);
-    return candidates.length ? resolvePackAssetUrl(candidates[0].url, markdownPath) : null;
+    if (!candidates.length) return null;
+    const resolved = resolvePackAssetUrl(candidates[0].url, markdownPath);
+    return /^https?:\/\//i.test(resolved) ? null : resolved;
+  }
+
+  function resolveGraphImage(source, markdownPath = "") {
+    if (!source) return null;
+    return resolvePackAssetUrl(source, markdownPath);
   }
 
   function resolveEditorMarkdownAssets(markdown, markdownPath) {
@@ -72,10 +79,66 @@ export function createMarkdownRenderer({ state }) {
       return `<button class="inline-entity" data-node="${escapeHtml(entity.id)}" type="button"><span class="dot" style="background:${color}"></span>${escapeHtml(textLabel)}</button>`;
     });
     html = DOMPurify.sanitize(html);
-    return html.replace(/<img([^>]*?)src="([^"]+)"([^>]*)>/g, (match, before, source, after) => {
-      const resolved = resolvePackAssetUrl(source, markdownPath);
-      return `<img${before}src="${escapeHtml(resolved)}"${after}>`;
+    return decorateRenderedMedia(html, markdownPath);
+  }
+
+  function renderContentWithEntityLinks(content, markdownPath = "", format = "markdown") {
+    if (format === "html") return renderHtmlContent(content, markdownPath);
+    return renderMarkdownWithEntityLinks(content, markdownPath);
+  }
+
+  function renderHtmlContent(htmlContent, markdownPath = "") {
+    const html = DOMPurify.sanitize(String(htmlContent || ""), {
+      ADD_TAGS: ["iframe"],
+      ADD_ATTR: [
+        "allow",
+        "allowfullscreen",
+        "class",
+        "decoding",
+        "frameborder",
+        "loading",
+        "referrerpolicy",
+        "rel",
+        "sandbox",
+        "style",
+        "target"
+      ],
+      FORBID_TAGS: ["script", "object", "embed"]
     });
+    return `<div class="moodle-html-content">${decorateRenderedMedia(html, markdownPath)}</div>`;
+  }
+
+  function decorateRenderedMedia(html, markdownPath = "") {
+    let decorated = String(html || "").replace(/<img([^>]*?)src="([^"]+)"([^>]*)>/g, (match, before, source, after) => {
+      const resolved = resolvePackAssetUrl(source, markdownPath);
+      const attrs = `${before} ${after}`;
+      const alt = /alt="([^"]*)"/i.exec(attrs)?.[1] || "Image";
+      const displaySource = getDisplayHost(resolved);
+      return `
+        <figure class="rich-image-frame is-loading">
+          <span class="rich-image-placeholder" aria-hidden="true">
+            <i>image</i>
+            <span>${escapeHtml(alt)}</span>
+            ${displaySource ? `<small>${escapeHtml(displaySource)}</small>` : ""}
+          </span>
+          <img${before}src="${escapeHtml(resolved)}"${after} loading="lazy" decoding="async">
+        </figure>
+      `;
+    });
+    decorated = decorated.replace(/<iframe\b([^>]*)><\/iframe>/gi, (match, attrs) => {
+      const safeAttrs = attrs.includes("sandbox=") ? attrs : `${attrs} sandbox="allow-scripts allow-same-origin allow-presentation"`;
+      return `<div class="rich-embed-frame"><iframe${safeAttrs}></iframe></div>`;
+    });
+    return decorated;
+  }
+
+  function getDisplayHost(source) {
+    if (!/^https?:\/\//i.test(source)) return "";
+    try {
+      return new URL(source).hostname;
+    } catch {
+      return "";
+    }
   }
 
   function resolvePackAssetUrl(source, markdownPath) {
@@ -88,6 +151,8 @@ export function createMarkdownRenderer({ state }) {
 
   return {
     getFirstMarkdownImage,
+    resolveGraphImage,
+    renderContentWithEntityLinks,
     renderMarkdownWithEntityLinks,
     resolveEditorMarkdownAssets,
     resolvePackAssetUrl

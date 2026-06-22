@@ -219,17 +219,25 @@ export function createNodeRenderer({ state, resolveAvatarAssetURL }) {
   function makeTextSprite(text, color, options = {}) {
     const canvas = document.createElement("canvas");
     const context = canvas.getContext("2d");
-    canvas.width = 640;
-    canvas.height = 150;
+    canvas.width = 760;
     const fontSize = options.selected ? 34 : options.important ? 29 : 25;
+    const maxWidth = options.selected ? 660 : 600;
+    const maxLines = options.selected ? 3 : 2;
     const isLightTheme = document.documentElement.dataset.theme === "light";
+    context.font = `700 ${fontSize}px system-ui, sans-serif`;
+    context.textAlign = "center";
+    context.textBaseline = "middle";
+    const lines = wrapSpriteText(context, text, maxWidth, maxLines);
+    const lineHeight = Math.round(fontSize * 1.16);
+    const boxHeight = Math.max(72, lines.length * lineHeight + 28);
+    canvas.height = boxHeight + 76;
     context.font = `700 ${fontSize}px system-ui, sans-serif`;
     context.textAlign = "center";
     context.textBaseline = "middle";
     context.fillStyle = isLightTheme
       ? options.selected ? "rgba(245, 250, 249, 0.96)" : "rgba(239, 246, 245, 0.9)"
       : options.selected ? "rgba(7, 16, 21, 0.92)" : "rgba(9, 20, 27, 0.74)";
-    roundRect(context, 22, 36, 596, 72, 18);
+    roundRect(context, 28, 34, 704, boxHeight, 18);
     context.fill();
     context.strokeStyle = color;
     context.lineWidth = options.selected ? 4 : 2;
@@ -237,7 +245,10 @@ export function createNodeRenderer({ state, resolveAvatarAssetURL }) {
     context.stroke();
     context.globalAlpha = 1;
     context.fillStyle = isLightTheme ? "#0b1a22" : "#f1f8f7";
-    context.fillText(shortLabel(text, options.selected ? 46 : 34), 320, 73);
+    const firstLineY = 34 + boxHeight / 2 - ((lines.length - 1) * lineHeight) / 2;
+    lines.forEach((line, index) => {
+      context.fillText(line, 380, firstLineY + index * lineHeight);
+    });
     const texture = new THREE.CanvasTexture(canvas);
     const sprite = new THREE.Sprite(new THREE.SpriteMaterial({
       map: texture,
@@ -245,8 +256,33 @@ export function createNodeRenderer({ state, resolveAvatarAssetURL }) {
       depthTest: false,
       depthWrite: false
     }));
-    sprite.scale.set(options.selected ? 64 : 54, options.selected ? 15 : 13, 1);
+    const width = options.selected ? 70 : 58;
+    sprite.scale.set(width, width * (canvas.height / canvas.width), 1);
     return sprite;
+  }
+
+  function wrapSpriteText(context, text, maxWidth, maxLines) {
+    const words = String(text || "").replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
+    if (!words.length) return [""];
+    const lines = [];
+    let current = "";
+    for (const word of words) {
+      const next = current ? `${current} ${word}` : word;
+      if (context.measureText(next).width <= maxWidth) {
+        current = next;
+        continue;
+      }
+      if (current) lines.push(current);
+      current = context.measureText(word).width > maxWidth ? shortLabel(word, 18) : word;
+      if (lines.length === maxLines - 1) break;
+    }
+    if (current && lines.length < maxLines) lines.push(current);
+    const consumed = lines.join(" ");
+    const original = words.join(" ");
+    if (lines.length && consumed.length < original.length) {
+      lines[lines.length - 1] = shortLabel(lines[lines.length - 1], Math.max(18, lines[lines.length - 1].length - 1));
+    }
+    return lines;
   }
 
   function roundRect(context, x, y, width, height, radius) {

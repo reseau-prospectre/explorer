@@ -1,21 +1,29 @@
 ---
-id: "objection:graphe-confus"
+id: "objection:le-graphe-est-confus"
 type: "objection"
-titre: "Objection : le graphe est confus"
-resume: "Un graphe confus est souvent un diagnostic exact, pas seulement un problème de rendu."
+titre: "Le graphe est confus"
+resume: "Un graphe confus est souvent un diagnostic exact du modèle."
 liens:
-- "geste:explorer"
-- "geste:filtrer"
-- "recette:polir-pack"
+- "recette:polish-editorial"
 ---
-# Objection : le graphe est confus
+# Le graphe est confus
 
-Il peut l’être pour deux raisons.
+Un graphe confus est souvent un diagnostic exact du modèle.
 
-La première vient du rendu : trop de labels, tailles trop proches, couleurs peu discriminantes. Cela se corrige.
+Une objection sérieuse vaut mieux qu’un compliment vague. PROSPECTRE gagne à les garder dans le pack, visibles, reliées, discutables.
 
-La seconde vient du modèle : trop de types visibles, trop de liens, pas assez de hiérarchie. Cela ne se corrige pas avec une police plus aimable.
+| Point | Réponse |
+| --- | --- |
+| Objection | Un graphe confus est souvent un diagnostic exact du modèle. |
+| Réponse sèche | Admettre le risque, puis montrer la procédure qui le réduit. |
+| Preuve attendue | Une fiche liée, un exemple ou une manipulation dans le graphe. |
 
-## Test
+## Réponse opérationnelle
 
-Masquez les types fins. Si le graphe devient intelligible, le modèle est récupérable. S’il reste confus, les pivots ne sont pas les bons.
+1. Accepter l’objection comme test.
+2. Chercher la fiche, la preuve ou la manipulation qui répond.
+3. Si rien ne répond, l’objection vient peut-être de gagner.
+
+## Critère
+
+Une objection résolue laisse une procédure, pas une déclaration de confiance.

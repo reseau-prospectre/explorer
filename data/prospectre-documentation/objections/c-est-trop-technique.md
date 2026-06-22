@@ -1,23 +1,29 @@
 ---
-id: "objection:trop-technique"
+id: "objection:c-est-trop-technique"
 type: "objection"
-titre: "Objection : c’est trop technique"
-resume: "Réponse à l’objection classique : un pack ne doit pas demander au lecteur d’aimer le YAML."
+titre: "C’est trop technique"
+resume: "La technique existe, mais elle doit rester au service d’une lecture claire."
 liens:
-- "geste:lire-fiche"
-- "recette:fabriquer-pack"
-- "coulisse:format-pack"
+- "coulisse:format-d-un-pack"
 ---
-# Objection : c’est trop technique
+# C’est trop technique
 
-Elle est recevable. Si l’utilisateur doit admirer le front matter, nous avons perdu.
+La technique existe, mais elle doit rester au service d’une lecture claire.
 
-La technique doit rester assez proche pour garantir la portabilité, et assez discrète pour ne pas devenir le sujet. Le bon pack expose des fiches, pas son échafaudage.
+Une objection sérieuse vaut mieux qu’un compliment vague. PROSPECTRE gagne à les garder dans le pack, visibles, reliées, discutables.
 
-## Réponse pratique
+| Point | Réponse |
+| --- | --- |
+| Objection | La technique existe, mais elle doit rester au service d’une lecture claire. |
+| Réponse sèche | Admettre le risque, puis montrer la procédure qui le réduit. |
+| Preuve attendue | Une fiche liée, un exemple ou une manipulation dans le graphe. |
 
-- titres humains ;
-- codes relégués aux champs ;
-- modèles simples ;
-- exemples copiables ;
-- documentation par gestes plutôt que par options.
+## Réponse opérationnelle
+
+1. Accepter l’objection comme test.
+2. Chercher la fiche, la preuve ou la manipulation qui répond.
+3. Si rien ne répond, l’objection vient peut-être de gagner.
+
+## Critère
+
+Une objection résolue laisse une procédure, pas une déclaration de confiance.

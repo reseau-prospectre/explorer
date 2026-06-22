@@ -1,0 +1,454 @@
+{
+  "id": "pack:eldoom-cbe",
+  "titre": "eldoom CBE - Bibliothèque de référentiels",
+  "version": "0.1.0",
+  "format_version": "1.0.0",
+  "date_generation": "2026-06-21",
+  "description": "Catalogue PROSPECTRE des référentiels eldoomCBE : 158 CSV publics, liens directs, prévisualisation eldoom et préparation à la conversion en graphes de compétences.",
+  "source": "https://github.com/eldoomCBE",
+  "modele": {
+    "version": "1.0.0",
+    "relations": {
+      "contient": {
+        "label": "Contient"
+      },
+      "documente": {
+        "label": "Documente"
+      },
+      "ouvre": {
+        "label": "Ouvre"
+      },
+      "compare": {
+        "label": "Compare"
+      },
+      "prouve": {
+        "label": "Prouve"
+      },
+      "utilise": {
+        "label": "Utilise"
+      }
+    },
+    "types": [
+      {
+        "id": "porte",
+        "label": "Portes d'entrée",
+        "singular": "Porte",
+        "folder": "portes",
+        "color": "#f97316",
+        "size": 25,
+        "showLabel": true,
+        "order": 0,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "collection",
+        "label": "Collections",
+        "singular": "Collection",
+        "folder": "collections",
+        "color": "#2563eb",
+        "size": 21,
+        "showLabel": true,
+        "order": 1,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "source",
+            "label": "Source",
+            "kind": "url",
+            "required": false
+          },
+          {
+            "key": "liens",
+            "label": "Référentiels",
+            "kind": "reference",
+            "target": "referentiel",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "referentiel",
+        "label": "Référentiels CSV",
+        "singular": "Référentiel",
+        "folder": "referentiels",
+        "color": "#16a34a",
+        "size": 10,
+        "showLabel": false,
+        "order": 2,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "theme",
+            "label": "Thème",
+            "kind": "text",
+            "required": false
+          },
+          {
+            "key": "source_repo",
+            "label": "Dépôt",
+            "kind": "text",
+            "required": false
+          },
+          {
+            "key": "csv_url",
+            "label": "CSV direct",
+            "kind": "url",
+            "required": false
+          },
+          {
+            "key": "eldoom_url",
+            "label": "Ouvrir dans eldoom",
+            "kind": "url",
+            "required": false
+          },
+          {
+            "key": "github_url",
+            "label": "Source GitHub",
+            "kind": "url",
+            "required": false
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "geste",
+        "label": "Gestes",
+        "singular": "Geste",
+        "folder": "gestes",
+        "color": "#0f766e",
+        "size": 15,
+        "showLabel": true,
+        "order": 3,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "coulisse",
+        "label": "Sous le capot",
+        "singular": "Coulisse",
+        "folder": "coulisses",
+        "color": "#7c3aed",
+        "size": 14,
+        "showLabel": true,
+        "order": 4,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      },
+      {
+        "id": "preuve",
+        "label": "Preuves",
+        "singular": "Preuve",
+        "folder": "preuves",
+        "color": "#0284c7",
+        "size": 13,
+        "showLabel": true,
+        "order": 5,
+        "fields": [
+          {
+            "key": "titre",
+            "label": "Titre",
+            "kind": "text",
+            "required": true
+          },
+          {
+            "key": "resume",
+            "label": "Résumé",
+            "kind": "textarea",
+            "required": true
+          },
+          {
+            "key": "liens",
+            "label": "Liens",
+            "kind": "reference",
+            "target": "*",
+            "multiple": true,
+            "required": false
+          }
+        ]
+      }
+    ]
+  },
+  "contenu": {
+    "portes": 3,
+    "collections": 10,
+    "referentiels": 158,
+    "gestes": 3,
+    "coulisses": 3,
+    "preuves": 3
+  },
+  "fichiers": [
+    "README.md",
+    "portes/la-bibliotheque-qui-manquait.md",
+    "portes/double-lecture-eldoom-prospectre.md",
+    "portes/cartographie-des-familles.md",
+    "gestes/ouvrir-un-csv.md",
+    "gestes/importer-dans-prospectre.md",
+    "gestes/comparer-deux-referentiels.md",
+    "coulisses/url-preview-eldoom.md",
+    "coulisses/conversion-csv-graphe.md",
+    "coulisses/catalogues-json.md",
+    "preuves/cent-cinquante-huit-liens.md",
+    "preuves/ressources-visuelles.md",
+    "preuves/formats-ouverts.md",
+    "collections/mcf-apc.md",
+    "collections/mcf-but.md",
+    "collections/mcf-ia.md",
+    "collections/mcf-lang.md",
+    "collections/mcf-num.md",
+    "collections/mcf-sba.md",
+    "collections/mcf-sic.md",
+    "collections/cf.md",
+    "collections/eldoomcbe-companion.md",
+    "collections/moodlenet-repo.md",
+    "referentiels/mcf-apc/mcf-approche-par-competence-lite-csv.md",
+    "referentiels/mcf-apc/mcf-approche-par-competence-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-juridiques-parcours-administration-et-justice-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-juridiques-parcours-entreprise-et-association-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-juridiques-parcours-patrimoine-et-finance-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-sociales-parcours-animation-sociale-et-socioculturelle-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-sociales-parcours-assistance-sociale-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-sociales-parcours-cge3s-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-sociales-parcours-education-specialisee-csv.md",
+    "referentiels/mcf-but/csv-pn-but-carrieres-sociales-parcours-villes-et-territoires-durables-csv.md",
+    "referentiels/mcf-but/csv-pn-but-chimie-parcours-analyse-controle-qualite-environnement-csv.md",
+    "referentiels/mcf-but/csv-pn-but-chimie-parcours-chimie-industrielle-csv.md",
+    "referentiels/mcf-but/csv-pn-but-chimie-parcours-materiaux-et-produits-formules-csv.md",
+    "referentiels/mcf-but/csv-pn-but-chimie-parcours-synthese-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gaco-parcours-macast-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gaco-parcours-management-commercial-et-marketing-omnicanal-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gaco-parcours-management-des-fonctions-support-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gaco-parcours-management-responsable-de-projets-et-des-organisations-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gccd-parcours-rapeb-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gcgp-parcours-conception-des-procedes-et-innovation-technologique-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gcgp-parcours-controle-pilotage-et-optimisation-des-procedes-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gcgp-parcours-controle-qualite-environnement-et-securite-des-procedes-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gea-parcours-controle-de-gestion-et-pilotage-de-la-performance-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gea-parcours-gestion-comptable-fiscale-et-financiere-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gea-parcours-gestion-entrepreneuriat-et-management-d-activites-csv.md",
+    "referentiels/mcf-but/csv-pn-but-gea-parcours-gestion-et-pilotage-des-ressources-humaines-csv.md",
+    "referentiels/mcf-but/csv-pn-but-geii-parcours-automatisme-et-informatique-industrielle-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-biologique-parcours-agronomie-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-biologique-parcours-biologie-medicale-et-biotechnologie-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-biologique-parcours-dietetique-et-nutrition-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-biologique-parcours-sciences-de-l-aliment-et-biotechnologie-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-biologique-parcours-sciences-de-l-environnement-et-ecotechnologies-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-civil-construction-durable-parcours-bureaux-d-etudes-conception-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-civil-construction-durable-parcours-travaux-batiment-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-civil-construction-durable-parcours-travaux-publics-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-electrique-et-informatique-industrielle-parcours-electricite-et-maitrise-de-l-e.md",
+    "referentiels/mcf-but/csv-pn-but-genie-electrique-et-informatique-industrielle-parcours-electronique-et-systemes-embar.md",
+    "referentiels/mcf-but/csv-pn-but-genie-industriel-et-maintenance-parcours-ingenierie-des-systemes-pluritechniques-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-industriel-et-maintenance-parcours-management-methodes-et-maintenance-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-mecanique-et-productique-parcours-charge-d-affaires-industrielles-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-mecanique-et-productique-parcours-conception-et-production-durables-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-mecanique-et-productique-parcours-innovation-pour-l-industrie-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-mecanique-et-productique-parcours-management-de-process-industriel-csv.md",
+    "referentiels/mcf-but/csv-pn-but-genie-mecanique-et-productique-parcours-simulation-numerique-et-realite-virtuelle-csv.md",
+    "referentiels/mcf-but/csv-pn-but-hygiene-securite-environnement-parcours-sdmrpte-csv.md",
+    "referentiels/mcf-but/csv-pn-but-info-parcours-administration-gestion-et-exploitation-des-donnees-csv.md",
+    "referentiels/mcf-but/csv-pn-but-info-parcours-deploiement-d-applications-communicantes-et-securisees-csv.md",
+    "referentiels/mcf-but/csv-pn-but-info-parcours-integration-d-applications-et-management-du-systeme-d-information-csv.md",
+    "referentiels/mcf-but/csv-pn-but-info-parcours-realisation-d-applications-conception-developpement-validation-csv.md",
+    "referentiels/mcf-but/csv-pn-but-information-communication-parcours-communication-des-organisations-csv.md",
+    "referentiels/mcf-but/csv-pn-but-information-communication-parcours-information-numerique-dans-les-organisations-csv.md",
+    "referentiels/mcf-but/csv-pn-but-information-communication-parcours-journalisme-csv.md",
+    "referentiels/mcf-but/csv-pn-but-information-communication-parcours-metiers-du-livre-et-du-patrimoine-csv.md",
+    "referentiels/mcf-but/csv-pn-but-information-communication-parcours-publicite-csv.md",
+    "referentiels/mcf-but/csv-pn-but-management-de-la-logistique-et-des-transports-parcours-mscc-csv.md",
+    "referentiels/mcf-but/csv-pn-but-management-de-la-logistique-et-des-transports-parcours-mscd-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mesures-physiques-parcours-materiaux-et-controles-physico-chimiques-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mesures-physiques-parcours-mesures-et-analyses-environnementales-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mesures-physiques-parcours-techniques-d-instrumentation-csv.md",
+    "referentiels/mcf-but/csv-pn-but-metiers-du-multimedia-et-de-l-internet-parcours-creation-numerique-csv.md",
+    "referentiels/mcf-but/csv-pn-but-metiers-du-multimedia-et-de-l-internet-parcours-dweb-di-csv.md",
+    "referentiels/mcf-but/csv-pn-but-metiers-du-multimedia-et-de-l-internet-parcours-strat-ux-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mt2e-parcours-exploit-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mt2e-parcours-mane-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mt2e-parcours-optim-csv.md",
+    "referentiels/mcf-but/csv-pn-but-mt2e-parcours-real-csv.md",
+    "referentiels/mcf-but/csv-pn-but-packaging-emballage-et-conditionnement-parcours-echsc-csv.md",
+    "referentiels/mcf-but/csv-pn-but-packaging-emballage-et-conditionnement-parcours-eco-conception-et-industrialisation-c.md",
+    "referentiels/mcf-but/csv-pn-but-qlio-parcours-accompagnement-a-la-transformation-numerique-csv.md",
+    "referentiels/mcf-but/csv-pn-but-qlio-parcours-management-de-la-production-de-biens-et-de-services-csv.md",
+    "referentiels/mcf-but/csv-pn-but-qlio-parcours-pilotage-de-la-chaine-logistique-globale-csv.md",
+    "referentiels/mcf-but/csv-pn-but-qlio-parcours-qualite-et-pilotage-des-systemes-de-management-integres-csv.md",
+    "referentiels/mcf-but/csv-pn-but-reseaux-et-telecommunications-parcours-cybersecurite-csv.md",
+    "referentiels/mcf-but/csv-pn-but-reseaux-et-telecommunications-parcours-developpement-systeme-et-cloud-csv.md",
+    "referentiels/mcf-but/csv-pn-but-reseaux-et-telecommunications-parcours-internet-des-objets-et-mobilite-csv.md",
+    "referentiels/mcf-but/csv-pn-but-reseaux-et-telecommunications-parcours-pilotage-de-projets-de-reseaux-csv.md",
+    "referentiels/mcf-but/csv-pn-but-reseaux-et-telecommunications-parcours-reseaux-operateurs-et-multimedia-csv.md",
+    "referentiels/mcf-but/csv-pn-but-science-des-donnees-parcours-ems-csv.md",
+    "referentiels/mcf-but/csv-pn-but-science-des-donnees-parcours-vcod-csv.md",
+    "referentiels/mcf-but/csv-pn-but-science-et-genie-des-materiaux-parcours-mcemp-csv.md",
+    "referentiels/mcf-but/csv-pn-but-science-et-genie-des-materiaux-parcours-mimp-csv.md",
+    "referentiels/mcf-but/csv-pn-but-science-et-genie-des-materiaux-parcours-mrvm-csv.md",
+    "referentiels/mcf-but/csv-pn-but-tc-parcours-business-developpement-et-management-de-la-relation-client-csv.md",
+    "referentiels/mcf-but/csv-pn-but-techniques-de-commercialisation-parcours-business-international-achat-et-vente-csv.md",
+    "referentiels/mcf-but/csv-pn-but-techniques-de-commercialisation-parcours-marketing-digital-e-business-et-entrepreneur.md",
+    "referentiels/mcf-but/csv-pn-but-techniques-de-commercialisation-parcours-marketing-et-management-du-point-de-vente-cs.md",
+    "referentiels/mcf-but/csv-pn-but-techniques-de-commercialisation-parcours-strategie-de-marque-et-evenementiel-csv.md",
+    "referentiels/mcf-ia/mcf-ai-competency-framework-for-students-csv.md",
+    "referentiels/mcf-ia/mcf-ai-competency-framework-for-teachers-csv.md",
+    "referentiels/mcf-ia/mcf-referentiel-de-competences-en-ia-pour-les-apprenants-csv.md",
+    "referentiels/mcf-ia/mcf-referentiel-de-competences-en-ia-pour-les-enseignants-csv.md",
+    "referentiels/mcf-lang/mcf-common-european-framework-of-reference-for-languages-cefr-csv.md",
+    "referentiels/mcf-num/mcf-digcomp-2-2-le-referentiel-de-la-competence-numerique-pour-les-citoyens-csv.md",
+    "referentiels/mcf-num/mcf-digcomp-2-2-the-digital-competence-framework-for-citizens-csv.md",
+    "referentiels/mcf-num/mcf-digcompedu-cadre-europeen-pour-la-competence-numerique-des-educateurs-csv.md",
+    "referentiels/mcf-num/mcf-digcompedu-european-framework-for-the-digital-competence-of-educators-csv.md",
+    "referentiels/mcf-sba/mcf-skill-based-approach-lite-csv.md",
+    "referentiels/mcf-sba/mcf-skill-based-approach-csv.md",
+    "referentiels/mcf-sic/mcf-sentiment-d-intelligences-collectives-csv.md",
+    "referentiels/cf/framework-samples-parlenet-communication-numerique-parlenet-20240625-2012-comma-separated-csv.md",
+    "referentiels/cf/framework-samples-example-of-a-name-of-a-competency-framework-id-number-example-csv.md",
+    "referentiels/cf/framework-samples-example-csv.md",
+    "referentiels/cf/framework-samples-055-cefr-fr-csv.md",
+    "referentiels/cf/framework-samples-2011-385-referentiel-c2i2e-version-2011-c2i2e-2011-comma-separated-csv.md",
+    "referentiels/cf/framework-samples-2016-206-cefr-for-stem-2016-20211102-1352-comma-separated-csv.md",
+    "referentiels/cf/framework-samples-2018-429-iste-standards-for-educators-iste-educators-2018-20180906-1342-comma-.md",
+    "referentiels/cf/framework-samples-2021-master-meef-pif-neo-inspe-neo-pif-20240531-1846-comma-separated-csv.md",
+    "referentiels/cf/framework-samples-2023-774-digcomplmsadmin-1979-20230214-0934-comma-separated-csv.md",
+    "referentiels/cf/framework-samples-2024-sample-template-csv.md",
+    "referentiels/cf/framework-samples-350-cefr-de-csv.md",
+    "referentiels/cf/framework-samples-example-of-a-name-of-a-competency-framework-id-number-example-x-csv.md",
+    "referentiels/cf/framework-samples-simple-sample-ordered-csv.md",
+    "referentiels/cf/framework-samples-simple-sample-unordered-csv.md",
+    "referentiels/eldoomcbe-companion/ai-generated-frameworks-mcf-digcomp-3-0-referentiel-europeen-de-la-competence-numerique-ai-gener.md",
+    "referentiels/moodlenet-repo/assets-041-ccss-math-httpcorestandards-orgmath-20170106-0445-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-058-the-arts-f-10-201609the-arts-f-10-20170106-0810-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-101-ciencias-sociales-competencias-disciplinares-cs-cd-20170719-2101-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-112-mkr-nrw-fixed-csv.md",
+    "referentiels/moodlenet-repo/assets-112-mkr-nrw-csv.md",
+    "referentiels/moodlenet-repo/assets-122-international-standard-classification-of-education-fields-of-education-and-training-2.md",
+    "referentiels/moodlenet-repo/assets-147-science-f-10-201609science-f-10-20170106-0803-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-148-health-and-physical-education-f-10-201609health-and-physical-education-f-10-20170106-.md",
+    "referentiels/moodlenet-repo/assets-161-heziberri-2020-disciplinares-20202-20180627-1428-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-206-cefr-for-stem-2016-20211102-1352-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-246-al-grade-3-5-technology-education-2008-3-5-20170109-1927-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-248-next-generation-science-standards-d2454348-20170214-1817-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-251-kompetenzrahmen-csv.md",
+    "referentiels/moodlenet-repo/assets-256-comunicacion-competencias-disciplinares-com-cd-20170719-2118-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-314-digcompedu-2017-20210701-1347-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-315-kmk-medienkompetenz-import-semikolon-windows1252-csv.md",
+    "referentiels/moodlenet-repo/assets-319-technologie-cycle-4-technologie-cycle4-20170910-1655-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-326-wncp-pre-calculus-12-2008-wncp-prec12-20170910-0034-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-349-english-f-10-201609english-f-10-20170106-0648-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-385-referentiel-c2i2e-version-2011-c2i2e-2011-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-429-iste-standards-for-educators-iste-educators-2018-20180906-1342-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-446-al-grade-6-8-technology-education-2008-6-8-20170109-1927-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-448-mnpcc-grade-6-science-mn-2016-6v2-20170109-2116-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-475-al-grade-9-12-technology-education-2008-09-12-20170109-1927-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-492-ger-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-515-work-studies-f-10-201609work-studies-f-10-20170106-0820-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-529-ccss-math-httpcorestandards-orgmath-20170106-0445-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-561-al-grade-k-2-technology-education-2008-k-2-20170109-1925-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-591-cap-ifca-cap-ifca-20170411-1717-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-592-matematicas-competencias-disciplinares-basicas-mat-cd-20170723-1625-comma-separated-c.md",
+    "referentiels/moodlenet-repo/assets-603-ccss-ela-literacy-httpcorestandards-orgela-literacy-20170106-0445-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-619-cefr-english-version-csv.md",
+    "referentiels/moodlenet-repo/assets-694-competencias-genericas-de-la-ems-cg-20170723-0810-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-704-ncs-20180206-0021-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-729-ccss-ela-literacy-httpcorestandards-orgela-literacy-20170106-0445-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-774-digcomplmsadmin-1979-20230214-0934-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-823-mathematics-f-10-201609mathematics-f-10-20170106-0653-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-842-languages-f-10-201609languages-f-10-20170106-0833-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-866-humanities-and-social-sciences-f-10-201609humanities-and-social-sciences-f-10-2017010.md",
+    "referentiels/moodlenet-repo/assets-907-mnpcc-grade-3-science-mn-2016-3v2-20170109-2115-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-925-heziberri-2020-transversales-2020-20180627-1428-comma-separated-csv.md",
+    "referentiels/moodlenet-repo/assets-950-college-career-and-civic-life-c3-framework-for-social-studies-state-standards-d260735.md",
+    "referentiels/moodlenet-repo/assets-984-125-csv.md",
+    "referentiels/moodlenet-repo/assets-987-technologies-f-10-201609technologies-f-10-20170106-0815-comma-separated-csv.md",
+    "manifest.json"
+  ]
+}

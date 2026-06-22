@@ -49,6 +49,12 @@ import {
 } from "./controllers/comments-controller.js";
 import { createGraphController } from "./controllers/graph-controller.js";
 import { overlays } from "./ui/overlay-manager.js";
+import { confirmAction, requestChoice } from "./ui/confirm-dialog.js";
+import { ensureMoodleHtmlSupport, isMoodleHtmlEntity } from "./ui/moodle-bootstrap.js";
+import {
+  convertMoodleCompetencyCsv,
+  isLikelyMoodleCompetencyCsv
+} from "./import/moodle-competency-csv.js";
 
 const {
   session: SESSION_KEY,
@@ -140,8 +146,6 @@ const els = {
   topbar: document.querySelector(".topbar"),
   mobileMenu: document.querySelector("#mobile-menu"),
   mobileMenuToggle: document.querySelector("#mobile-menu-toggle"),
-  transferMenu: document.querySelector("#transfer-menu"),
-  transferMenuToggle: document.querySelector("#transfer-menu-toggle"),
   rightPanel: document.querySelector("#right-panel"),
   panelKicker: document.querySelector("#panel-kicker"),
   panelTitle: document.querySelector("#panel-title"),
@@ -155,7 +159,7 @@ const els = {
   packInput: document.querySelector("#pack-input"),
   profileMenu: document.querySelector("#profile-menu"),
   gamificationCard: document.querySelector("#gamification-card"),
-  profileSettingsToggle: document.querySelector("#profile-settings-toggle"),
+  profileOptionsTabs: document.querySelector(".profile-options-tabs"),
   profileSettingsPanel: document.querySelector("#profile-settings-panel"),
   profileAvatar: document.querySelector("#profile-avatar"),
   profileIdentity: document.querySelector("#profile-identity"),
@@ -258,6 +262,7 @@ const state = {
 };
 state.contentEditor = null;
 state.contentEditorAssetMap = new Map();
+state.editAutosaveTimer = null;
 state.schemaDraggedType = null;
 state.schemaDragArmedType = null;
 state.emojiPickerTarget = null;
@@ -295,6 +300,8 @@ const { LocalRealtimeProvider, FirebaseRealtimeProvider } = createRealtimeProvid
 
 const {
   getFirstMarkdownImage,
+  resolveGraphImage,
+  renderContentWithEntityLinks,
   renderMarkdownWithEntityLinks,
   resolveEditorMarkdownAssets,
   resolvePackAssetUrl
@@ -314,6 +321,7 @@ const {
 } = createProjectModel({
   state,
   getFirstMarkdownImage,
+  resolveGraphImage,
   resolveAvatarProfile,
   getScoreBoost
 });
@@ -321,7 +329,7 @@ const {
 init();
 
 async function init() {
-  if (!window.ForceGraph3D || !window.JSZip || !window.jsyaml || !window.marked || !window.DOMPurify) {
+  if (!window.ForceGraph3D || !window.JSZip || !window.jsyaml || !window.marked || !window.DOMPurify || !window.Papa) {
     showToast("Chargement incomplet. Vérifiez la connexion.");
     return;
   }
@@ -420,14 +428,12 @@ function hideGlobalTooltip() {
 function setupControls() {
   els.mobileMenuToggle?.addEventListener("click", toggleMobileMenu);
   els.filterMenuToggle?.addEventListener("click", toggleFilterMenu);
-  els.transferMenuToggle?.addEventListener("click", toggleTransferMenu);
   els.mobileMenu?.addEventListener("click", (event) => {
     const button = event.target.closest("button");
-    if (button && button !== els.transferMenuToggle && !button.hasAttribute("data-expand-presence")) closeMobileMenu();
+    if (button && !button.hasAttribute("data-expand-presence")) closeMobileMenu();
   });
   document.addEventListener("pointerdown", (event) => {
     if (els.topbar?.classList.contains("menu-open") && !els.topbar.contains(event.target)) closeMobileMenu();
-    if (els.transferMenu && !event.target.closest(".transfer-menu-wrap")) closeTransferMenu();
     if (els.projectSwitcherMenu && !event.target.closest(".project-switcher-wrap")) closeProjectMenu();
     if (els.graphSearchPopover && !event.target.closest("#graph-search-popover") && !event.target.closest("#graph-search-toggle")) closeGraphSearch();
     if (els.typeFilters && !event.target.closest("#type-filters") && !event.target.closest("#filter-menu-toggle")) closeFilterMenu();
@@ -438,7 +444,6 @@ function setupControls() {
   document.addEventListener("keydown", (event) => {
     if (event.key === "Escape") {
       closeMobileMenu();
-      closeTransferMenu();
       closeProjectMenu();
       closeGraphSearch();
       closeFilterMenu();
@@ -503,7 +508,9 @@ function setupControls() {
   document.querySelector("#close-activity")?.addEventListener("click", closeActivityPanel);
   document.querySelector("#close-profile").addEventListener("click", closeProfile);
   document.addEventListener("click", handleWidgetExternalAction);
-  els.profileSettingsToggle?.addEventListener("click", toggleProfileSettings);
+  els.profileOptionsTabs?.addEventListener("click", handleProfileTabClick);
+  document.addEventListener("load", handleRichImageLoad, true);
+  document.addEventListener("error", handleRichImageError, true);
   document.querySelector("#clear-local").addEventListener("click", clearLocalData);
   els.googleLogin?.addEventListener("click", toggleGoogleAccount);
   els.realtimeSwitch?.addEventListener("change", (event) => toggleRealtimeMode(event.target.checked));
@@ -716,17 +723,6 @@ function closeFilterMenu() {
   els.typeFilters?.classList.add("hidden");
   els.filterMenuToggle?.setAttribute("aria-expanded", "false");
   syncToolbarActiveStates();
-}
-
-function toggleTransferMenu() {
-  const open = els.transferMenu.classList.contains("hidden");
-  els.transferMenu.classList.toggle("hidden", !open);
-  els.transferMenuToggle.setAttribute("aria-expanded", String(open));
-}
-
-function closeTransferMenu() {
-  els.transferMenu?.classList.add("hidden");
-  els.transferMenuToggle?.setAttribute("aria-expanded", "false");
 }
 
 function closeMobileMenu() {
@@ -1047,6 +1043,10 @@ function updateProjectUrl(manifestUrl) {
   const url = new URL(window.location.href);
   if (sameProjectUrl(manifestUrl, DEFAULT_PROJECT_MANIFEST_URL)) url.searchParams.delete("project");
   else url.searchParams.set("project", manifestUrl);
+  url.searchParams.delete("source");
+  url.searchParams.delete("url");
+  url.searchParams.delete("file");
+  url.searchParams.delete("pack");
   url.searchParams.delete("select");
   url.searchParams.delete("tab");
   url.searchParams.delete("comment");
@@ -1221,15 +1221,61 @@ function createRealtimeProvider(useFirebase) {
 }
 
 async function loadDefaultProject() {
-  const requestedManifest = new URLSearchParams(window.location.search).get("project");
+  const requested = getUrlLaunchRequest();
   try {
-    await loadProject(requestedManifest || DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: false });
+    if (requested.kind === "project") {
+      await loadProject(requested.value, { updateUrl: false });
+      return;
+    }
+    if (requested.kind === "resource") {
+      await loadRemoteResource(requested.value, { updateUrl: false });
+      return;
+    }
+    await loadProject(DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: false });
   } catch (error) {
-    if (!requestedManifest) throw error;
-    console.warn("Projet demandé indisponible, retour au projet par défaut.", error);
-    showToast("Projet demandé indisponible · retour au projet par défaut");
+    if (requested.kind === "default") throw error;
+    console.warn("Ressource demandée indisponible, retour au projet par défaut.", error);
+    showToast("Ressource demandée indisponible · retour au projet par défaut");
     await loadProject(DEFAULT_PROJECT_MANIFEST_URL, { updateUrl: true });
   }
+}
+
+function getUrlLaunchRequest() {
+  const params = new URLSearchParams(window.location.search);
+  const pack = params.get("pack");
+  if (pack) {
+    const manifestUrl = resolveKnownProjectAlias(pack);
+    if (manifestUrl) return { kind: "project", value: manifestUrl };
+  }
+  const project = params.get("project");
+  if (project) return { kind: "project", value: project };
+  const resource = params.get("source") || params.get("url") || params.get("file");
+  if (resource) return { kind: "resource", value: resource };
+  return { kind: "default", value: DEFAULT_PROJECT_MANIFEST_URL };
+}
+
+function resolveKnownProjectAlias(value) {
+  const normalized = normalizeAlias(value);
+  const match = KNOWN_PROJECT_MANIFESTS.find((entry) => {
+    const ids = [
+      entry.id,
+      entry.id?.replace(/^pack:/, ""),
+      entry.title,
+      entry.url
+    ];
+    return ids.some((item) => normalizeAlias(item) === normalized);
+  });
+  return match?.url || "";
+}
+
+function normalizeAlias(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/^pack:/, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
 }
 
 async function discoverAvailableProjectManifests() {
@@ -1302,6 +1348,123 @@ async function loadProject(manifestUrl, options = {}) {
   });
 }
 
+async function loadRemoteResource(resourceUrl, options = {}) {
+  const absoluteUrl = new URL(resourceUrl, window.location.href).href;
+  const fileName = getRemoteFileName(absoluteUrl);
+  const extension = getFileExtension(fileName);
+  showToast(`Chargement distant… ${shortLabel(fileName || absoluteUrl, 42)}`);
+  if (extension === "json" || /manifest\.json(?:$|[?#])/i.test(absoluteUrl)) {
+    await loadProject(absoluteUrl, options);
+    return;
+  }
+  const response = await fetch(absoluteUrl, { cache: "no-store" });
+  if (!response.ok) throw new Error(`Ressource distante indisponible (${response.status})`);
+  if (extension === "zip") {
+    const files = await extractZipEntries(await JSZip.loadAsync(await response.blob()));
+    await loadRemoteImportedFiles(files, {
+      title: fileName.replace(/\.zip$/i, "") || "Pack distant",
+      sourceUrl: absoluteUrl,
+      updateUrl: options.updateUrl
+    });
+    return;
+  }
+  if (extension === "csv") {
+    const text = await response.text();
+    if (!isLikelyMoodleCompetencyCsv(text)) throw new Error("CSV distant non reconnu comme référentiel Moodle.");
+    const pack = convertMoodleCompetencyCsv(text, { fileName });
+    await loadRemoteMoodlePack(pack, { sourceUrl: absoluteUrl, updateUrl: options.updateUrl });
+    return;
+  }
+  if (extension === "md") {
+    await loadRemoteImportedFiles([{ path: fileName || "fiche.md", text: await response.text() }], {
+      title: fileName.replace(/\.md$/i, "") || "Fiche distante",
+      sourceUrl: absoluteUrl,
+      updateUrl: options.updateUrl
+    });
+    return;
+  }
+  throw new Error(`Type de ressource distante non pris en charge : ${extension || "inconnu"}`);
+}
+
+async function loadRemoteMoodlePack(pack, options = {}) {
+  beginProjectSwitch(options.sourceUrl || pack.manifest.id);
+  state.projectManifest = {
+    ...pack.manifest,
+    source: {
+      ...(pack.manifest.source || {}),
+      url: options.sourceUrl || pack.manifest.source?.url || ""
+    }
+  };
+  state.projectManifestUrl = options.sourceUrl || "";
+  registerRecentProject(state.projectManifest);
+  if (options.updateUrl !== false) updateRemoteResourceUrl(options.sourceUrl);
+  loadFiles(pack.files, "Référentiel Moodle distant chargé", { resetFilters: true });
+  if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
+}
+
+async function loadRemoteImportedFiles(files, options = {}) {
+  const importedManifestFile = files.find((file) => file.path.toLowerCase() === "manifest.json");
+  const importedManifest = importedManifestFile ? parseJson(importedManifestFile.text) : null;
+  const manifest = importedManifest || createRemoteSingleFileManifest(files, options);
+  beginProjectSwitch(options.sourceUrl || manifest.id);
+  state.projectManifest = {
+    ...manifest,
+    source: {
+      ...(manifest.source || {}),
+      url: options.sourceUrl || manifest.source?.url || ""
+    }
+  };
+  state.projectManifestUrl = options.sourceUrl || "";
+  registerRecentProject(state.projectManifest);
+  if (options.updateUrl !== false) updateRemoteResourceUrl(options.sourceUrl);
+  loadFiles(files, importedManifest ? "Pack distant chargé" : "Fiche distante chargée", { resetFilters: true });
+  if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
+}
+
+function createRemoteSingleFileManifest(files, options = {}) {
+  const markdownFiles = files.filter((file) => file.path.toLowerCase().endsWith(".md"));
+  const seed = options.sourceUrl || markdownFiles.map((file) => file.path).join("|") || options.title || "remote";
+  return {
+    id: `pack:remote-${safeFileName(seed).slice(0, 80)}`,
+    titre: options.title || "Fichier distant",
+    version: "1.0.0",
+    format_version: "1.0.0",
+    date_generation: new Date().toISOString().slice(0, 10),
+    description: "Contenu chargé depuis une ressource distante.",
+    source: {
+      type: "remote-file",
+      url: options.sourceUrl || ""
+    },
+    modele: DEFAULT_MODEL_SCHEMA,
+    fichiers: [...markdownFiles.map((file) => file.path), "manifest.json"]
+  };
+}
+
+function updateRemoteResourceUrl(resourceUrl) {
+  if (!resourceUrl) return;
+  const url = new URL(window.location.href);
+  url.searchParams.delete("project");
+  url.searchParams.delete("pack");
+  url.searchParams.delete("url");
+  url.searchParams.delete("file");
+  url.searchParams.set("source", resourceUrl);
+  url.searchParams.delete("select");
+  url.searchParams.delete("tab");
+  url.searchParams.delete("comment");
+  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function getRemoteFileName(resourceUrl) {
+  try {
+    const url = new URL(resourceUrl, window.location.href);
+    const hinted = url.searchParams.get("filename") || url.searchParams.get("name");
+    const lastPath = decodeURIComponent(url.pathname.split("/").filter(Boolean).pop() || "");
+    return hinted || lastPath || "ressource";
+  } catch {
+    return String(resourceUrl || "").split(/[\\/]/).pop() || "ressource";
+  }
+}
+
 function beginProjectSwitch(manifestUrl) {
   closeProjectMenu();
   closeGraphSearch();
@@ -1356,6 +1519,8 @@ async function importUserFiles(fileList) {
   for (const file of fileList) {
     if (file.name.toLowerCase().endsWith(".zip")) {
       imported.push(...await extractZipEntries(await JSZip.loadAsync(file)));
+    } else if (file.name.toLowerCase().endsWith(".csv")) {
+      if (await importMoodleCsvFile(file)) return;
     } else if (file.name.toLowerCase().endsWith(".md")) {
       imported.push({ path: file.name, text: await file.text() });
     } else if (PACK_ASSET_EXTENSIONS.has(getFileExtension(file.name))) {
@@ -1371,7 +1536,15 @@ async function importUserFiles(fileList) {
   let baseFiles = [...state.files.values()];
   let replacesProject = false;
   if (importedManifest?.id && importedManifest.id !== state.projectManifest?.id) {
-    const replace = window.confirm(`Le pack « ${importedManifest.titre || importedManifest.id} » est un autre projet. Le charger à la place du projet courant ?`);
+    const replace = await confirmAction({
+      title: "Charger un autre projet",
+      message: `Le pack « ${importedManifest.titre || importedManifest.id} » ne correspond pas au projet actif.`,
+      details: "Le projet courant sera remplacé par le contenu importé.",
+      anchor: els.dropOverlay?.querySelector(".drop-card"),
+      confirmLabel: "Remplacer",
+      confirmIcon: "sync",
+      tone: "danger"
+    });
     if (!replace) return;
     replacesProject = true;
     state.files.clear();
@@ -1383,13 +1556,130 @@ async function importUserFiles(fileList) {
   if (importedManifest?.id) registerRecentProject(importedManifest);
   const existingPaths = new Set(baseFiles.map((file) => file.path));
   const conflicts = imported.filter((file) => existingPaths.has(file.path) && file.path !== "manifest.json");
-  if (conflicts.length && !window.confirm(`${conflicts.length} fichier${conflicts.length > 1 ? "s" : ""} existe${conflicts.length > 1 ? "nt" : ""} déjà. Remplacer par la version importée ?`)) {
-    return;
+  if (conflicts.length) {
+    const replaceConflicts = await confirmAction({
+      title: "Fichiers déjà présents",
+      message: `${conflicts.length} fichier${conflicts.length > 1 ? "s existent" : " existe"} déjà dans le projet.`,
+      details: "Les versions importées remplaceront les fichiers portant le même chemin.",
+      anchor: els.dropOverlay?.querySelector(".drop-card"),
+      confirmLabel: "Remplacer",
+      confirmIcon: "published_with_changes",
+      tone: "danger"
+    });
+    if (!replaceConflicts) return;
   }
   loadFiles([...baseFiles, ...imported], importedManifest ? "Pack chargé" : "Contenus ajoutés", { resetFilters: replacesProject });
   if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
   els.dropOverlay.classList.add("hidden");
   els.packInput.value = "";
+}
+
+async function importMoodleCsvFile(file) {
+  const text = await file.text();
+  if (!isLikelyMoodleCompetencyCsv(text)) return false;
+  let pack;
+  try {
+    pack = convertMoodleCompetencyCsv(text, { fileName: file.name });
+  } catch (error) {
+    showToast(error?.message || "CSV Moodle illisible");
+    return true;
+  }
+  const mode = await requestChoice({
+    title: "Référentiel Moodle détecté",
+    message: `${pack.manifest.titre} · ${pack.stats.rows} éléments`,
+    details: "Choisir comment intégrer ce référentiel dans PROSPECTRE.",
+    anchor: els.dropOverlay?.querySelector(".drop-card"),
+    choices: [
+      { label: "Remplacer le projet", value: "replace", kind: "primary", icon: "sync" },
+      { label: "Fusionner", value: "merge", kind: "secondary", icon: "merge_type" }
+    ]
+  });
+  if (!mode) return true;
+  const replace = mode === "replace";
+  const finalPack = replace ? pack : ensureUniqueMoodleNamespace(text, file.name, pack);
+  if (replace) {
+    state.files.clear();
+    state.projectManifest = finalPack.manifest;
+    registerRecentProject(finalPack.manifest);
+    loadFiles(finalPack.files, "Référentiel Moodle chargé", { resetFilters: true });
+  } else {
+    const importedFiles = finalPack.files
+      .filter((item) => item.path !== "manifest.json")
+      .map((item) => item.path === "README.md"
+        ? { ...item, path: `moodle/${safeFileName(finalPack.stats.frameworkId || "referentiel")}/README.md` }
+        : item);
+    state.projectManifest = mergeProjectManifestWithMoodlePack(state.projectManifest, finalPack.manifest, importedFiles);
+    loadFiles([...state.files.values(), ...importedFiles], "Référentiel Moodle ajouté", { resetFilters: false });
+  }
+  if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
+  els.dropOverlay.classList.add("hidden");
+  els.packInput.value = "";
+  return true;
+}
+
+function ensureUniqueMoodleNamespace(text, fileName, pack) {
+  if (!moodlePackCollides(pack)) return pack;
+  for (let index = 2; index < 100; index += 1) {
+    const candidate = convertMoodleCompetencyCsv(text, {
+      fileName,
+      namespaceSuffix: `-${index}`
+    });
+    if (!moodlePackCollides(candidate)) return candidate;
+  }
+  return pack;
+}
+
+function moodlePackCollides(pack) {
+  const entityIds = new Set([...state.entities.keys()]);
+  return pack.files
+    .filter((file) => file.path.endsWith(".md"))
+    .some((file) => {
+      const parsed = parseMarkdownFile(file.text);
+      return parsed.meta?.id && entityIds.has(parsed.meta.id);
+    });
+}
+
+function mergeProjectManifestWithMoodlePack(currentManifest, importedManifest, importedFiles) {
+  const mergedModel = mergeModelSchemas(currentManifest?.modele || state.modelSchema || DEFAULT_MODEL_SCHEMA, importedManifest.modele);
+  const currentFiles = Array.isArray(currentManifest?.fichiers) ? currentManifest.fichiers : [];
+  return {
+    ...(currentManifest || {}),
+    modele: mergedModel,
+    fichiers: [...new Set([...currentFiles, ...importedFiles.map((file) => file.path)])],
+    imports: [
+      ...(Array.isArray(currentManifest?.imports) ? currentManifest.imports : []),
+      importedManifest.source
+    ].filter(Boolean)
+  };
+}
+
+function mergeModelSchemas(baseSchema, incomingSchema) {
+  const base = normalizeModelSchema(baseSchema);
+  const incoming = normalizeModelSchema(incomingSchema);
+  const types = base.types.map((type) => ({ ...type, fields: [...(type.fields || [])] }));
+  const typeMap = new Map(types.map((type) => [type.id, type]));
+  for (const incomingType of incoming.types) {
+    const existing = typeMap.get(incomingType.id);
+    if (!existing) {
+      const copy = { ...incomingType, fields: [...(incomingType.fields || [])] };
+      typeMap.set(copy.id, copy);
+      types.push(copy);
+      continue;
+    }
+    const existingFieldKeys = new Set((existing.fields || []).map((field) => field.key));
+    for (const field of incomingType.fields || []) {
+      if (!existingFieldKeys.has(field.key)) existing.fields.push(field);
+    }
+  }
+  return {
+    version: base.version || incoming.version || MODEL_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    relations: {
+      ...(base.relations || {}),
+      ...(incoming.relations || {})
+    },
+    types
+  };
 }
 
 async function reconnectRealtimeForDataset() {
@@ -1757,10 +2047,6 @@ function renderTypeFilters() {
         <i>restart_alt</i>
         <span>Réinitialiser</span>
       </button>
-      <div class="graph-reset-confirm hidden" data-reset-confirm>
-        <p>Cette action relance le layout automatique du projet courant.</p>
-        <button class="danger-button compact" type="button" data-reset-confirm-action>Confirmer la réinitialisation</button>
-      </div>
     </section>
   `;
   els.typeFilters.querySelector("[data-filter-action='all']")?.addEventListener("click", () => {
@@ -1809,12 +2095,16 @@ function renderTypeFilters() {
       updateFocusDepthLabel();
     }, 120);
   });
-  const resetArm = els.typeFilters.querySelector("[data-reset-arm]");
-  const resetConfirm = els.typeFilters.querySelector("[data-reset-confirm]");
-  resetArm?.addEventListener("click", () => {
-    resetConfirm?.classList.toggle("hidden");
-  });
-  els.typeFilters.querySelector("[data-reset-confirm-action]")?.addEventListener("click", () => {
+  els.typeFilters.querySelector("[data-reset-arm]")?.addEventListener("click", async () => {
+    const confirmed = await confirmAction({
+      title: "Réinitialiser la vue",
+      message: "Réactiver les types, fermer les panneaux, vider la recherche et relancer le layout automatique.",
+      details: "Le projet et les fichiers importés restent conservés.",
+      tone: "danger",
+      confirmLabel: "Réinitialiser",
+      confirmIcon: "restart_alt"
+    });
+    if (!confirmed) return;
     closeFilterMenu();
     state.graphController?.reset?.({ resetPanels: true }) || resetView();
   });
@@ -2019,7 +2309,7 @@ function getOverviewDiscussionEntity() {
     id: getOverviewContextId(),
     type: "overview",
     label: manifest.titre || manifest.id || "Vue d’ensemble",
-    summary: manifest.description || "Échanges et réactions associés à la vue d’ensemble du projet."
+    summary: manifest.description || ""
   };
 }
 
@@ -2047,11 +2337,15 @@ function openOverviewDiscussion() {
 function renderOverviewMetaDetails() {
   destroyContentEditor();
   const manifest = state.projectManifest || {};
+  if (state.editMode) {
+    renderOverviewEditForm();
+    return;
+  }
   const generatedAt = formatManifestDate(manifest.date_generation);
   const fileCount = Array.isArray(manifest.fichiers) ? manifest.fichiers.length : state.files.size;
   els.panelContent.innerHTML = `
     <article class="readable-card overview-details-card">
-      <p class="lead">${escapeHtml(manifest.description || "Aucune description fournie dans le manifeste du projet.")}</p>
+      ${manifest.description ? `<p class="lead">${escapeHtml(manifest.description)}</p>` : ""}
       <h2>${escapeHtml(manifest.titre || manifest.id || "Vue d’ensemble")}</h2>
       <dl class="overview-detail-list">
         <div><dt>Identifiant</dt><dd>${escapeHtml(manifest.id || state.datasetId || "Non renseigné")}</dd></div>
@@ -2060,20 +2354,136 @@ function renderOverviewMetaDetails() {
         <div><dt>Fichiers chargés</dt><dd>${fileCount}</dd></div>
       </dl>
     </article>
+    <footer class="reading-actions reading-footer">
+      <span class="quiet">Manifest du projet</span>
+      <div class="reading-footer-actions">
+        <div class="edit-toggle">
+          <i>edit</i>
+          <span>Modifier</span>
+          <label class="switch">
+            <input id="overview-edit-toggle" type="checkbox">
+            <span></span>
+          </label>
+          <span class="tooltip top">Modifier les détails locaux du projet</span>
+        </div>
+      </div>
+    </footer>
   `;
+  els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
+    state.editMode = event.target.checked;
+    renderOverviewMetaDetails();
+  });
+}
+
+function renderOverviewEditForm() {
+  const manifest = state.projectManifest || {};
+  const generatedAt = formatManifestDate(manifest.date_generation);
+  const fileCount = Array.isArray(manifest.fichiers) ? manifest.fichiers.length : state.files.size;
+  els.panelContent.innerHTML = `
+    <section class="edit-surface overview-edit-surface">
+      <header class="edit-surface-head">
+        <div>
+          <p class="kicker">Édition locale</p>
+          <h2>${escapeHtml(manifest.titre || manifest.id || "Vue d’ensemble")}</h2>
+        </div>
+        <label class="edit-toggle">
+          <i>edit</i>
+          <span>Modifier</span>
+          <span class="switch">
+            <input id="overview-edit-toggle" type="checkbox" checked>
+            <span></span>
+          </span>
+        </label>
+      </header>
+      <div class="local-edit-warning"><i>info</i><span>Ces détails restent locaux jusqu’à l’export d’un nouveau pack.</span></div>
+      <div class="edit-card">
+        <label class="field-label">Titre du projet
+          <input id="overview-title" class="text-field" type="text" value="${escapeHtml(manifest.titre || "")}" placeholder="Titre affiché du projet">
+        </label>
+      </div>
+      <section class="edit-card edit-option-card ${manifest.description ? "is-enabled" : ""}" data-edit-option="overview-description">
+        <div class="edit-card-head">
+          <div>
+            <p class="kicker">Option</p>
+            <h3>Description</h3>
+            <p>Texte libre du manifeste PROSPECTRE. Vide par défaut pour les imports Moodle.</p>
+          </div>
+          <label class="switch" aria-label="Activer la description">
+            <input id="overview-description-toggle" type="checkbox"${manifest.description ? " checked" : ""}>
+            <span></span>
+          </label>
+        </div>
+        <textarea id="overview-description" rows="6"${manifest.description ? "" : " disabled"} placeholder="Ajouter une description du projet…">${escapeHtml(manifest.description || "")}</textarea>
+      </section>
+      <section class="edit-card overview-static-meta">
+        <div class="edit-card-head">
+          <div>
+            <p class="kicker">Métadonnées</p>
+            <h3>Lecture seule</h3>
+          </div>
+        </div>
+        <dl class="overview-detail-list">
+          <div><dt>Identifiant</dt><dd>${escapeHtml(manifest.id || state.datasetId || "Non renseigné")}</dd></div>
+          <div><dt>Version</dt><dd>${escapeHtml(manifest.version || "Non renseignée")}</dd></div>
+          <div><dt>Génération</dt><dd>${escapeHtml(generatedAt || "Non renseignée")}</dd></div>
+          <div><dt>Fichiers chargés</dt><dd>${fileCount}</dd></div>
+        </dl>
+      </section>
+      <footer class="edit-actions">
+        <button id="apply-overview-adjust" class="primary-button" type="button"><i>save</i><span>Enregistrer</span></button>
+        <button id="cancel-overview-adjust" class="secondary-button" type="button"><i>close</i><span>Annuler</span></button>
+      </footer>
+    </section>
+  `;
+  els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
+    state.editMode = event.target.checked;
+    renderOverviewMetaDetails();
+  });
+  els.panelContent.querySelector("#overview-description-toggle")?.addEventListener("change", (event) => {
+    const enabled = event.target.checked;
+    const card = event.target.closest(".edit-option-card");
+    const description = els.panelContent.querySelector("#overview-description");
+    card?.classList.toggle("is-enabled", enabled);
+    if (description) {
+      description.disabled = !enabled;
+      if (enabled) description.focus();
+    }
+  });
+  els.panelContent.querySelector("#apply-overview-adjust")?.addEventListener("click", () => {
+    const title = els.panelContent.querySelector("#overview-title")?.value.trim();
+    const descriptionEnabled = Boolean(els.panelContent.querySelector("#overview-description-toggle")?.checked);
+    const description = descriptionEnabled ? els.panelContent.querySelector("#overview-description")?.value.trim() || "" : "";
+    state.projectManifest ||= {};
+    if (title) state.projectManifest.titre = title;
+    if (description) state.projectManifest.description = description;
+    else delete state.projectManifest.description;
+    updateManifestFile();
+    saveSession();
+    renderProjectSwitcher();
+    renderAnalysis();
+    state.editMode = false;
+    renderOverviewMetaDetails();
+    showToast("Détails du projet enregistrés");
+  });
+  els.panelContent.querySelector("#cancel-overview-adjust")?.addEventListener("click", () => {
+    state.editMode = false;
+    renderOverviewMetaDetails();
+  });
 }
 
 function renderOverview(entity) {
   destroyContentEditor();
+  if (isMoodleHtmlEntity(entity)) ensureMoodleHtmlSupport();
   if (state.editMode) {
     renderEditForm(entity);
     return;
   }
   const related = renderInlineRelations(entity);
+  const summary = getVisibleEntitySummary(entity);
   els.panelContent.innerHTML = `
     <article class="readable-card">
-      ${entity.summary ? `<p class="lead">${escapeHtml(entity.summary)}</p>` : ""}
-      <div class="rendered-content">${renderMarkdownWithEntityLinks(entity.body, entity.path)}</div>
+      ${summary ? renderSummaryCallout(entity, summary) : ""}
+      <div class="rendered-content">${renderContentWithEntityLinks(entity.body, entity.path, entity.content_format)}</div>
     </article>
     ${related ? `<section class="meta-section relation-section"><h3>Éléments liés</h3>${related}</section>` : ""}
     <footer class="reading-actions reading-footer">
@@ -2102,6 +2512,57 @@ function renderOverview(entity) {
   highlightRenderedSearchMatches();
   decorateSmartLinks(els.panelContent);
   bindInlineEntityClicks();
+}
+
+function getVisibleEntitySummary(entity) {
+  if (!entity?.summary) return "";
+  if (entity.summary_enabled === false) return "";
+  if (isMoodleHtmlEntity(entity) && entity.summary_enabled !== true) return "";
+  return entity.summary;
+}
+
+function isSummaryOptionEnabled(entity) {
+  return Boolean(getVisibleEntitySummary(entity));
+}
+
+function normalizeSummaryStyle(style) {
+  return ["focus", "note", "typing"].includes(style) ? style : "focus";
+}
+
+function renderSummaryCallout(entity, summary) {
+  const style = normalizeSummaryStyle(entity?.summary_style);
+  const length = Math.max(24, Math.min(220, summary.length));
+  return `
+    <aside class="entity-summary-card entity-summary-card--${style}" style="--summary-characters:${length}" aria-label="Résumé">
+      <div class="entity-summary-card__head">
+        <i>${style === "typing" ? "auto_awesome" : "notes"}</i>
+        <span>Résumé</span>
+      </div>
+      <p>${escapeHtml(summary)}</p>
+    </aside>
+  `;
+}
+
+function summaryStyleLabel(style) {
+  return {
+    focus: "Signal",
+    note: "Note",
+    typing: "Typing"
+  }[normalizeSummaryStyle(style)];
+}
+
+function renderSummaryStyleChoice(style, activeStyle) {
+  const active = normalizeSummaryStyle(activeStyle) === style;
+  const icon = style === "typing" ? "auto_awesome" : style === "note" ? "sticky_note_2" : "format_quote";
+  return `
+    <button type="button" class="summary-style-preview ${active ? "active" : ""}" data-summary-style="${style}" aria-checked="${active}">
+      <span class="summary-style-preview__label"><i>${icon}</i>${escapeHtml(summaryStyleLabel(style))}</span>
+      <span class="summary-style-preview__card entity-summary-card entity-summary-card--${style}" aria-hidden="true">
+        <span class="entity-summary-card__head"><i>${icon}</i><span>Résumé</span></span>
+        <span class="summary-style-preview__line">Idée clé de la fiche, prête à être parcourue.</span>
+      </span>
+    </button>
+  `;
 }
 
 function renderInlineRelations(entity) {
@@ -2231,54 +2692,286 @@ function renderDiscussion(entity = state.entities.get(state.selectedId)) {
 
 function renderEditForm(entity) {
   destroyContentEditor();
+  const contentFormat = entity.content_format === "html" ? "html" : "markdown";
+  const summaryEnabled = isSummaryOptionEnabled(entity);
+  const summaryStyle = normalizeSummaryStyle(entity.summary_style);
+  const graphImageEnabled = Boolean(entity.graph_image_enabled && entity.graph_image);
+  const graphImageValue = entity.graph_image || "";
   els.panelContent.innerHTML = `
-    <div class="switch-row edit-mode">
-      <span class="edit-mode-label"><i>edit</i>Modifier</span>
-      <label class="switch">
-        <input id="edit-toggle" type="checkbox" checked>
-        <span></span>
-      </label>
-    </div>
-    <div class="local-edit-warning"><i>info</i><span>Ces modifications restent locales à ce navigateur jusqu’à l’export et au partage d’un nouveau pack.</span></div>
-    <label class="field-label">Titre
-      <input id="adjust-label" class="text-field" type="text" value="${escapeHtml(entity.label)}">
-    </label>
-    <label class="field-label">Résumé
-      <textarea id="adjust-summary" rows="5">${escapeHtml(entity.summary || "")}</textarea>
-    </label>
-    <label class="field-label">Contenu</label>
-    <div id="content-editor" class="content-editor"></div>
-    <textarea id="adjust-body" class="content-editor-fallback" rows="14">${escapeHtml(entity.body || "")}</textarea>
-    <button id="apply-adjust" class="primary-button" type="button">Enregistrer</button>
-    <button id="download-current" class="secondary-button" type="button">Exporter cette fiche</button>
+    <section class="edit-surface">
+      <header class="edit-surface-head">
+        <div>
+          <p class="kicker">Édition locale</p>
+          <h2>${escapeHtml(entity.label || "Fiche")}</h2>
+        </div>
+        <label class="edit-toggle">
+          <i>edit</i>
+          <span>Modifier</span>
+          <span class="switch">
+            <input id="edit-toggle" type="checkbox" checked>
+            <span></span>
+          </span>
+        </label>
+      </header>
+      <div class="local-edit-warning"><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span></div>
+      <div class="edit-card">
+        <label class="field-label">Titre
+          <input id="adjust-label" class="text-field" type="text" value="${escapeHtml(entity.label)}">
+        </label>
+      </div>
+      <section class="edit-card edit-option-card ${summaryEnabled ? "is-enabled" : ""}" data-edit-option="summary">
+        <div class="edit-card-head">
+          <div>
+            <p class="kicker">Option</p>
+            <h3>Résumé</h3>
+            <p>Afficher un résumé distinct du contenu principal.</p>
+          </div>
+          <label class="switch" aria-label="Activer le résumé">
+            <input id="summary-toggle" type="checkbox"${summaryEnabled ? " checked" : ""}>
+            <span></span>
+          </label>
+        </div>
+        <textarea id="adjust-summary" rows="4"${summaryEnabled ? "" : " disabled"}>${escapeHtml(entity.summary || "")}</textarea>
+        <details class="summary-appearance" ${summaryEnabled ? "" : "hidden"}>
+          <summary><i>palette</i><span>Apparence du résumé</span><strong>${escapeHtml(summaryStyleLabel(summaryStyle))}</strong></summary>
+          <div class="summary-style-preview-grid" role="radiogroup" aria-label="Style du résumé">
+            ${renderSummaryStyleChoice("focus", summaryStyle)}
+            ${renderSummaryStyleChoice("note", summaryStyle)}
+            ${renderSummaryStyleChoice("typing", summaryStyle)}
+          </div>
+        </details>
+      </section>
+      <section class="edit-card edit-format-card">
+        <div class="edit-card-head">
+          <div>
+            <p class="kicker">Corps</p>
+            <h3>Mode de contenu</h3>
+          </div>
+        </div>
+        <label class="field-label compact-select-label">Type de contenu
+          <select id="content-format" class="text-field">
+            <option value="markdown"${contentFormat === "markdown" ? " selected" : ""}>Texte enrichi</option>
+            <option value="html"${contentFormat === "html" ? " selected" : ""}>HTML importé</option>
+          </select>
+        </label>
+      </section>
+      <section class="edit-card edit-content-card ${contentFormat === "html" ? "is-html-format" : "is-markdown-format"}">
+        <div class="edit-content-head">
+          <div>
+            <p class="kicker">Corps</p>
+            <h3>${contentFormat === "html" ? "HTML importé" : "Éditeur de texte"}</h3>
+          </div>
+        </div>
+        <div id="content-editor" class="content-editor"></div>
+        <textarea id="adjust-body" class="content-editor-fallback" rows="18" spellcheck="false">${escapeHtml(entity.body || "")}</textarea>
+        <div class="html-preview-shell hidden">
+          <p class="kicker">Aperçu</p>
+          <div id="html-preview" class="html-editor-preview" aria-live="polite"></div>
+        </div>
+      </section>
+      <section class="edit-card edit-option-card ${graphImageEnabled ? "is-enabled" : ""}" data-edit-option="graph-image">
+        <div class="edit-card-head">
+          <div>
+            <p class="kicker">Graphe</p>
+            <h3>Image du nœud</h3>
+            <p>Utiliser une image comme texture du nœud sélectionné.</p>
+          </div>
+          <label class="switch" aria-label="Activer l’image du graphe">
+            <input id="graph-image-toggle" type="checkbox"${graphImageEnabled ? " checked" : ""}>
+            <span></span>
+          </label>
+        </div>
+        <div class="graph-image-editor ${graphImageEnabled ? "" : "hidden"}">
+          <label class="field-label">URL ou chemin d’asset
+            <input id="graph-image-source" class="text-field" type="text" value="${escapeHtml(graphImageValue)}" placeholder="https://… ou assets/uploads/image.png">
+          </label>
+          <div class="graph-image-actions">
+            <label class="secondary-button compact-action">
+              <i>add_photo_alternate</i><span>Ajouter une image</span>
+              <input id="graph-image-file" type="file" accept=".png,.jpg,.jpeg,.gif,.webp,.svg,image/*">
+            </label>
+            <button id="clear-graph-image" class="ghost-button" type="button"><i>backspace</i><span>Vider</span></button>
+          </div>
+        </div>
+      </section>
+      <footer class="edit-export-footer">
+        <button id="download-current" class="transfer-action-card edit-download-card" type="button">
+          <i>description</i>
+          <span><strong>Fiche</strong><small>Télécharger le Markdown sélectionné</small></span>
+        </button>
+      </footer>
+    </section>
   `;
   els.panelContent.querySelector("#edit-toggle").addEventListener("change", (event) => {
-    state.editMode = event.target.checked;
-    renderRightPanel();
+    if (event.target.checked) return;
+    persistEditForm(entity, { exitEdit: true });
+  });
+  els.panelContent.querySelector("#summary-toggle")?.addEventListener("change", (event) => {
+    const enabled = event.target.checked;
+    const card = event.target.closest(".edit-option-card");
+    const summary = els.panelContent.querySelector("#adjust-summary");
+    card?.classList.toggle("is-enabled", enabled);
+    els.panelContent.querySelector(".summary-appearance")?.toggleAttribute("hidden", !enabled);
+    if (summary) {
+      summary.disabled = !enabled;
+      if (enabled) summary.focus();
+    }
+    scheduleEditAutosave(entity);
+  });
+  els.panelContent.querySelectorAll("[data-summary-style]").forEach((button) => {
+    button.addEventListener("click", () => {
+      els.panelContent.querySelectorAll("[data-summary-style]").forEach((item) => {
+        const active = item === button;
+        item.classList.toggle("active", active);
+        item.setAttribute("aria-checked", String(active));
+      });
+      const label = els.panelContent.querySelector(".summary-appearance summary strong");
+      if (label) label.textContent = summaryStyleLabel(button.dataset.summaryStyle);
+      scheduleEditAutosave(entity);
+    });
+  });
+  els.panelContent.querySelector("#graph-image-toggle")?.addEventListener("change", (event) => {
+    const enabled = event.target.checked;
+    const card = event.target.closest(".edit-option-card");
+    const editor = els.panelContent.querySelector(".graph-image-editor");
+    card?.classList.toggle("is-enabled", enabled);
+    editor?.classList.toggle("hidden", !enabled);
+    if (enabled) els.panelContent.querySelector("#graph-image-source")?.focus();
+    scheduleEditAutosave(entity);
+  });
+  els.panelContent.querySelector("#graph-image-file")?.addEventListener("change", async (event) => {
+    const [file] = event.target.files || [];
+    if (!file) return;
+    const extension = getImageExtensionFromBlob(file);
+    const path = `assets/uploads/${crypto.randomUUID()}.${extension}`;
+    state.files.set(path, { path, dataUrl: await blobToDataUrl(file), binary: true });
+    const relativePath = getRelativePackPath(entity.path, path);
+    els.panelContent.querySelector("#graph-image-source").value = relativePath;
+    els.panelContent.querySelector("#graph-image-toggle").checked = true;
+    els.panelContent.querySelector("[data-edit-option='graph-image']")?.classList.add("is-enabled");
+    els.panelContent.querySelector(".graph-image-editor")?.classList.remove("hidden");
+    scheduleEditAutosave(entity);
+  });
+  els.panelContent.querySelector("#clear-graph-image")?.addEventListener("click", () => {
+    els.panelContent.querySelector("#graph-image-source").value = "";
+    els.panelContent.querySelector("#graph-image-toggle").checked = false;
+    els.panelContent.querySelector("[data-edit-option='graph-image']")?.classList.remove("is-enabled");
+    els.panelContent.querySelector(".graph-image-editor")?.classList.add("hidden");
+    scheduleEditAutosave(entity);
+  });
+  els.panelContent.querySelector("#content-format")?.addEventListener("change", (event) => {
+    handleContentFormatChange(entity, event.target.value);
   });
   setupContentEditor(entity);
-  els.panelContent.querySelector("#apply-adjust").addEventListener("click", () => {
-    entity.label = els.panelContent.querySelector("#adjust-label").value.trim() || entity.label;
-    entity.summary = els.panelContent.querySelector("#adjust-summary").value.trim();
-    entity.body = getEditedMarkdown();
+  const surface = els.panelContent.querySelector(".edit-surface");
+  surface?.addEventListener("input", (event) => {
+    if (event.target?.id === "adjust-body" && entity.content_format === "html") updateHtmlPreview(entity);
+    scheduleEditAutosave(entity);
+  });
+  surface?.addEventListener("change", () => scheduleEditAutosave(entity));
+  els.panelContent.querySelector("#download-current").addEventListener("click", exportSelected);
+}
+
+function scheduleEditAutosave(entity) {
+  clearTimeout(state.editAutosaveTimer);
+  state.editAutosaveTimer = setTimeout(() => persistEditForm(entity, { rebuild: false, silent: true }), 700);
+}
+
+function readEditFormValues(entity) {
+  const summaryEnabledNow = Boolean(els.panelContent.querySelector("#summary-toggle")?.checked);
+  const graphImageEnabledNow = Boolean(els.panelContent.querySelector("#graph-image-toggle")?.checked);
+  const graphImage = graphImageEnabledNow ? els.panelContent.querySelector("#graph-image-source")?.value.trim() || "" : "";
+  return {
+    label: els.panelContent.querySelector("#adjust-label")?.value.trim() || entity.label,
+    summary: summaryEnabledNow ? els.panelContent.querySelector("#adjust-summary")?.value.trim() || "" : "",
+    summary_enabled: summaryEnabledNow,
+    summary_style: summaryEnabledNow
+      ? normalizeSummaryStyle(els.panelContent.querySelector("[data-summary-style].active")?.dataset.summaryStyle)
+      : "",
+    content_format: els.panelContent.querySelector("#content-format")?.value === "html" ? "html" : "markdown",
+    graph_image: graphImage,
+    graph_image_enabled: Boolean(graphImageEnabledNow && graphImage),
+    body: getEditedMarkdown()
+  };
+}
+
+function persistEditForm(entity, options = {}) {
+  if (!entity || !els.panelContent.querySelector(".edit-surface")) return false;
+  clearTimeout(state.editAutosaveTimer);
+  const previousSignature = [
+    entity.label,
+    entity.summary,
+    entity.summary_enabled,
+    entity.summary_style,
+    entity.content_format,
+    entity.graph_image,
+    entity.graph_image_enabled,
+    entity.body
+  ].join("\u001f");
+  Object.assign(entity, readEditFormValues(entity));
+  const nextSignature = [
+    entity.label,
+    entity.summary,
+    entity.summary_enabled,
+    entity.summary_style,
+    entity.content_format,
+    entity.graph_image,
+    entity.graph_image_enabled,
+    entity.body
+  ].join("\u001f");
+  if (previousSignature !== nextSignature) {
     updateFileFromEntity(entity);
-    entity.imageURL = getFirstMarkdownImage(entity.body, entity.path);
-    rebuildGraph();
+    entity.imageURL = entity.graph_image_enabled
+      ? resolveGraphImage(entity.graph_image, entity.path)
+      : getFirstMarkdownImage(entity.body, entity.path);
+    if (options.rebuild !== false) rebuildGraph();
+  }
+  if (options.exitEdit) {
     state.editMode = false;
     renderRightPanel();
-    showToast("Modification enregistrée");
-  });
-  els.panelContent.querySelector("#download-current").addEventListener("click", exportSelected);
+  }
+  return previousSignature !== nextSignature;
+}
+
+function handleContentFormatChange(entity, value) {
+  const currentBody = getEditedMarkdown();
+  destroyContentEditor();
+  entity.content_format = value === "html" ? "html" : "markdown";
+  entity.body = currentBody;
+  els.panelContent.querySelector("#adjust-body").value = currentBody;
+  const contentCard = els.panelContent.querySelector(".edit-content-card");
+  const contentTitle = contentCard?.querySelector(".edit-content-head h3");
+  contentCard?.classList.toggle("is-html-format", entity.content_format === "html");
+  contentCard?.classList.toggle("is-markdown-format", entity.content_format !== "html");
+  if (contentTitle) contentTitle.textContent = entity.content_format === "html" ? "HTML importé" : "Éditeur de texte";
+  setupContentEditor(entity);
+  scheduleEditAutosave(entity);
 }
 
 function setupContentEditor(entity) {
   const mount = els.panelContent.querySelector("#content-editor");
   const fallback = els.panelContent.querySelector("#adjust-body");
+  const previewShell = els.panelContent.querySelector(".html-preview-shell");
+  previewShell?.classList.add("hidden");
+  if (entity.content_format === "html") {
+    mount?.classList.add("hidden");
+    fallback?.classList.remove("content-editor-fallback");
+    fallback.hidden = false;
+    state.contentEditorAssetMap = new Map();
+    previewShell?.classList.remove("hidden");
+    updateHtmlPreview(entity);
+    return;
+  }
   if (!mount || !window.toastui?.Editor) {
     mount?.classList.add("hidden");
     fallback?.classList.remove("content-editor-fallback");
+    fallback?.classList.remove("hidden");
+    fallback.hidden = false;
     return;
   }
+  mount.classList.remove("hidden");
+  fallback.classList.remove("hidden");
+  fallback.classList.add("content-editor-fallback");
   fallback.hidden = true;
   state.contentEditorAssetMap = new Map();
   const editorMarkdown = resolveEditorMarkdownAssets(entity.body || "", entity.path);
@@ -2291,7 +2984,7 @@ function setupContentEditor(entity) {
     initialValue: editorMarkdown,
     language: "fr-FR",
     usageStatistics: false,
-    hideModeSwitch: false,
+    hideModeSwitch: true,
     toolbarItems: [
       ["heading", "bold", "italic", "strike"],
       ["hr", "quote"],
@@ -2311,11 +3004,16 @@ function setupContentEditor(entity) {
       }
     }
   });
-  setTimeout(() => {
-    const modeTabs = mount.querySelectorAll(".toastui-editor-mode-switch .tab-item");
-    if (modeTabs[0]) modeTabs[0].setAttribute("aria-label", "Source Markdown");
-    if (modeTabs[1]) modeTabs[1].setAttribute("aria-label", "Éditeur visuel");
-  }, 250);
+  state.contentEditor.on?.("change", () => scheduleEditAutosave(entity));
+}
+
+function updateHtmlPreview(entity) {
+  const preview = els.panelContent.querySelector("#html-preview");
+  if (!preview) return;
+  if (isMoodleHtmlEntity(entity) || entity.content_format === "html") ensureMoodleHtmlSupport();
+  preview.innerHTML = renderContentWithEntityLinks(getEditedMarkdown(), entity.path, "html");
+  decorateSmartLinks(preview);
+  bindInlineEntityClicks();
 }
 
 function getEditedMarkdown() {
@@ -2369,8 +3067,8 @@ function renderGraphQualityCard(focusNodes, selected, selectedLink, scopeLinks) 
       <div class="graph-quality-facts">
         ${renderGraphQualityFact(formatCompactNumber(metrics.nodeCount), "éléments")}
         ${renderGraphQualityFact(formatCompactNumber(metrics.linkCount), "liens")}
+        ${renderGraphQualityFact(formatGraphNumber(metrics.linksPerNode), "liens / élément")}
         ${renderGraphQualityFact(formatCompactNumber(metrics.typeCount), "types")}
-        ${renderGraphQualityFact(formatGraphNumber(metrics.averageDegree), "degré moyen")}
         ${renderGraphQualityFact(`${Math.round(metrics.largestRatio * 100)}%`, "couverture")}
         ${renderGraphQualityFact(formatCompactNumber(metrics.maxDegree), "hub max")}
         ${metrics.isolateCount ? renderGraphQualityFact(formatCompactNumber(metrics.isolateCount), "isolats", true) : ""}
@@ -2437,6 +3135,7 @@ function computeGraphQualityMetrics(focusNodes, scopeLinks) {
   const linkCount = links.length;
   const maxUndirectedLinks = nodeCount > 1 ? nodeCount * (nodeCount - 1) / 2 : 0;
   const densityValue = maxUndirectedLinks ? linkCount / maxUndirectedLinks : 0;
+  const linksPerNode = nodeCount ? linkCount / nodeCount : 0;
   const averageDegree = nodeCount ? (2 * linkCount) / nodeCount : 0;
   const { componentCount, largestComponentSize, isolateCount, maxDegree, degreeStdDev } = computeVisibleComponents(nodeIds, links);
   const largestRatio = nodeCount ? largestComponentSize / nodeCount : 0;
@@ -2483,6 +3182,7 @@ function computeGraphQualityMetrics(focusNodes, scopeLinks) {
     componentCount,
     isolateCount,
     densityValue,
+    linksPerNode,
     averageDegree,
     largestComponentSize,
     largestRatio,
@@ -2600,6 +3300,7 @@ function renderAnalysis() {
     : state.graph.links.length;
   if (selected) {
     const metadata = getEntityMetadataEntries(selected, relatedNodes.length, linkedCount);
+    const selectedSummary = getVisibleEntitySummary(selected);
     els.kpiGrid.classList.add("project-metadata");
     els.kpiGrid.innerHTML = `
       ${graphQualityCard}
@@ -2614,7 +3315,7 @@ function renderAnalysis() {
       <div class="context-card">
         <p class="kicker">Sélection active</p>
         <strong>${escapeHtml(selected.label)}</strong>
-        <p>${escapeHtml(selected.summary || "Aucun résumé disponible pour cet élément.")}</p>
+        ${selectedSummary ? `<p>${escapeHtml(selectedSummary)}</p>` : ""}
       </div>
     `;
   } else if (selectedLink) {
@@ -2650,7 +3351,7 @@ function renderAnalysis() {
     els.timeline.innerHTML = `
       <div class="context-card project-context-card">
         <strong>${escapeHtml(manifest.titre || manifest.id || "Projet sans titre")}</strong>
-        <p>${escapeHtml(manifest.description || "Aucune description fournie dans le manifeste du projet.")}</p>
+        ${manifest.description ? `<p>${escapeHtml(manifest.description)}</p>` : ""}
         <div class="project-tags">
           ${manifest.version ? `<span>Version ${escapeHtml(manifest.version)}</span>` : ""}
           ${generatedAt ? `<span>${escapeHtml(generatedAt)}</span>` : ""}
@@ -3341,12 +4042,46 @@ function updateFileFromEntity(entity) {
   const parsed = parseMarkdownFile(file.text);
   if ("titre" in parsed.meta) parsed.meta.titre = entity.label;
   else parsed.meta.label = entity.label;
-  if ("resume" in parsed.meta) parsed.meta.resume = entity.summary;
-  else parsed.meta.summary = entity.summary;
+  if (entity.summary_enabled && entity.summary) {
+    if ("resume" in parsed.meta || !("summary" in parsed.meta)) parsed.meta.resume = entity.summary;
+    else parsed.meta.summary = entity.summary;
+    parsed.meta.summary_enabled = true;
+    const summaryStyle = normalizeSummaryStyle(entity.summary_style);
+    if (summaryStyle === "focus") delete parsed.meta.summary_style;
+    else parsed.meta.summary_style = summaryStyle;
+  } else {
+    delete parsed.meta.resume;
+    delete parsed.meta.summary;
+    delete parsed.meta.summary_enabled;
+    delete parsed.meta.summary_style;
+  }
+  if (entity.content_format === "html") parsed.meta.content_format = "html";
+  else delete parsed.meta.content_format;
+  if (entity.graph_image_enabled && entity.graph_image) {
+    parsed.meta.graph_image_enabled = true;
+    parsed.meta.graph_image = entity.graph_image;
+  } else {
+    delete parsed.meta.graph_image_enabled;
+    delete parsed.meta.graph_image;
+  }
   const yaml = jsyaml.dump(parsed.meta, { lineWidth: 100 });
   file.text = `---\n${yaml}---\n\n${entity.body || ""}`;
   entity.rawText = file.text;
   saveSession();
+}
+
+function updateManifestFile() {
+  if (!state.projectManifest) return;
+  state.projectManifest.modele = state.modelSchema;
+  const manifestFile = state.files.get("manifest.json");
+  if (manifestFile) {
+    manifestFile.text = JSON.stringify(state.projectManifest, null, 2);
+  } else {
+    state.files.set("manifest.json", {
+      path: "manifest.json",
+      text: JSON.stringify(state.projectManifest, null, 2)
+    });
+  }
 }
 
 function serializeEntity(entity) {
@@ -3390,7 +4125,6 @@ function canAdministerSchema() {
 }
 
 function openSchemaAdmin(view = "types") {
-  closeTransferMenu();
   if (!canAdministerSchema()) {
     showToast("Ce compte ne dispose pas des droits d’administration");
     return;
@@ -3597,7 +4331,7 @@ function handleSchemaAdminInput(event) {
   }
 }
 
-function handleSchemaAdminClick(event) {
+async function handleSchemaAdminClick(event) {
   const button = event.target.closest("button");
   if (!button || !state.schemaDraft) return;
   if (button.dataset.selectField) {
@@ -3606,11 +4340,11 @@ function handleSchemaAdminClick(event) {
   } else if (button.hasAttribute("data-add-type")) {
     addSchemaType();
   } else if (button.dataset.deleteType) {
-    deleteSchemaType(button.dataset.deleteType);
+    await deleteSchemaType(button.dataset.deleteType, button);
   } else if (button.hasAttribute("data-add-field")) {
     addSchemaField();
   } else if (button.dataset.deleteField) {
-    deleteSchemaField(button.dataset.deleteField);
+    await deleteSchemaField(button.dataset.deleteField, button);
   } else if (button.hasAttribute("data-export-schema")) {
     exportSchemaDraft();
   } else if (button.hasAttribute("data-import-schema")) {
@@ -3733,13 +4467,22 @@ function addSchemaType() {
   renderSchemaTypes();
 }
 
-function deleteSchemaType(typeId) {
+async function deleteSchemaType(typeId, anchor = null) {
   const used = [...state.entities.values()].filter((entity) => entity.type === typeId).length;
   if (used) {
     showToast(`Suppression impossible : ${used} élément${used > 1 ? "s utilisent" : " utilise"} ce type`);
     return;
   }
-  if (!window.confirm("Supprimer ce type du schéma ?")) return;
+  const confirmed = await confirmAction({
+    title: "Supprimer ce type",
+    message: "Ce type sera retiré du schéma du modèle.",
+    details: "Cette action est limitée au schéma en cours d'édition.",
+    anchor,
+    confirmLabel: "Supprimer",
+    confirmIcon: "delete",
+    tone: "danger"
+  });
+  if (!confirmed) return;
   state.schemaDraft.types = state.schemaDraft.types.filter((type) => type.id !== typeId);
   renderSchemaTypes();
 }
@@ -3759,13 +4502,22 @@ function addSchemaField() {
   renderSchemaFields();
 }
 
-function deleteSchemaField(fieldKey) {
+async function deleteSchemaField(fieldKey, anchor = null) {
   const type = state.schemaDraft.types.find((item) => item.id === state.schemaSelectedType);
   if (!type || fieldKey === "titre") {
     showToast("Le champ titre est obligatoire");
     return;
   }
-  if (!window.confirm("Supprimer ce champ du schéma ? Les données existantes ne seront pas effacées.")) return;
+  const confirmed = await confirmAction({
+    title: "Supprimer ce champ",
+    message: "Le champ sera retiré du schéma.",
+    details: "Les données déjà présentes dans les fiches ne seront pas effacées.",
+    anchor,
+    confirmLabel: "Supprimer",
+    confirmIcon: "delete",
+    tone: "danger"
+  });
+  if (!confirmed) return;
   type.fields = type.fields.filter((field) => field.key !== fieldKey);
   state.schemaSelectedField = type.fields[0]?.key || "";
   renderSchemaFields();
@@ -3798,8 +4550,17 @@ function saveSchemaDraft() {
   showToast(`Schéma ${state.modelSchema.version} enregistré`);
 }
 
-function resetSchemaDraft() {
-  if (!window.confirm("Réinitialiser le schéma avec les types et champs par défaut ?")) return;
+async function resetSchemaDraft(event) {
+  const confirmed = await confirmAction({
+    title: "Réinitialiser le schéma",
+    message: "Les types et champs du modèle reviendront aux valeurs par défaut.",
+    details: "Le contenu des fiches du projet actif n'est pas supprimé.",
+    anchor: event?.currentTarget || null,
+    confirmLabel: "Réinitialiser",
+    confirmIcon: "restart_alt",
+    tone: "danger"
+  });
+  if (!confirmed) return;
   state.schemaDraft = structuredClone(DEFAULT_MODEL_SCHEMA);
   state.schemaSelectedType = DEFAULT_MODEL_SCHEMA.types[0]?.id || "";
   state.schemaSelectedField = DEFAULT_MODEL_SCHEMA.types[0]?.fields[0]?.key || "";
@@ -4046,11 +4807,38 @@ function closeProfileState() {
   pauseGamificationVisual();
 }
 
-function toggleProfileSettings() {
-  const open = els.profileSettingsPanel?.classList.contains("hidden");
-  els.profileSettingsPanel?.classList.toggle("hidden", !open);
-  els.profileSettingsToggle?.setAttribute("aria-expanded", String(open));
-  els.profileSettingsToggle?.classList.toggle("open", Boolean(open));
+function handleProfileTabClick(event) {
+  const button = event.target.closest("[data-profile-tab]");
+  if (!button) return;
+  selectProfileTab(button.dataset.profileTab);
+}
+
+function selectProfileTab(tab = "settings") {
+  const selected = tab === "portability" ? "portability" : "settings";
+  document.querySelectorAll("[data-profile-tab]").forEach((button) => {
+    const active = button.dataset.profileTab === selected;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-selected", String(active));
+  });
+  document.querySelectorAll("[data-profile-panel]").forEach((panel) => {
+    panel.classList.toggle("hidden", panel.dataset.profilePanel !== selected);
+  });
+}
+
+function handleRichImageLoad(event) {
+  updateRichImageState(event.target, "is-loaded");
+}
+
+function handleRichImageError(event) {
+  updateRichImageState(event.target, "is-broken");
+}
+
+function updateRichImageState(target, stateClass) {
+  if (!(target instanceof HTMLImageElement)) return;
+  const frame = target.closest(".rich-image-frame");
+  if (!frame) return;
+  frame.classList.remove("is-loading", "is-loaded", "is-broken");
+  frame.classList.add(stateClass);
 }
 
 function openActivityPanel() {
@@ -4199,7 +4987,15 @@ function saveProfile() {
 }
 
 async function clearLocalData() {
-  const confirmed = window.confirm("Réinitialiser complètement l’application et créer une nouvelle identité locale ?");
+  const confirmed = await confirmAction({
+    title: "Réinitialisation complète",
+    message: "PROSPECTRE va repartir sur une identité locale neuve et le projet par défaut.",
+    details: "Les préférences, sessions locales, commentaires, cache du projet actif, vue du graphe et paramètres de connexion seront effacés de ce navigateur.",
+    anchor: document.querySelector("#clear-local"),
+    confirmLabel: "Tout réinitialiser",
+    confirmIcon: "restart_alt",
+    tone: "danger"
+  });
   if (!confirmed) return;
   try {
     if (state.provider?.authApi && state.provider?.auth) {
@@ -4209,16 +5005,29 @@ async function clearLocalData() {
     // Le nettoyage local doit rester possible même si Firebase est indisponible.
   }
   await state.provider?.disconnect?.();
-  localStorage.removeItem(SESSION_KEY);
-  localStorage.removeItem(PROFILE_KEY);
-  localStorage.removeItem(ANONYMOUS_PROFILE_KEY);
-  localStorage.removeItem(GOOGLE_PROFILE_KEY);
-  localStorage.removeItem(COMMENTS_KEY);
-  localStorage.removeItem(DRAFTS_KEY);
-  localStorage.removeItem(ACTIVITY_READ_KEY);
-  localStorage.removeItem(THEME_KEY);
-  localStorage.removeItem(REALTIME_KEY);
-  window.location.reload();
+  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
+  [
+    SESSION_KEY,
+    PROFILE_KEY,
+    ANONYMOUS_PROFILE_KEY,
+    GOOGLE_PROFILE_KEY,
+    COMMENTS_KEY,
+    DRAFTS_KEY,
+    ACTIVITY_READ_KEY,
+    THEME_KEY,
+    REALTIME_KEY,
+    PROJECT_SESSIONS_KEY,
+    GRAPH_LAYOUT_KEY
+  ].forEach((key) => key && localStorage.removeItem(key));
+  for (const key of Object.keys(localStorage)) {
+    if (key.startsWith("prospectre.")) localStorage.removeItem(key);
+  }
+  for (const key of Object.keys(sessionStorage)) {
+    if (key.startsWith("prospectre.")) sessionStorage.removeItem(key);
+  }
+  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
+  window.history.replaceState(null, "", cleanUrl);
+  window.location.replace(cleanUrl);
 }
 
 function renderProfileButton() {
@@ -4242,6 +5051,7 @@ function renderProfileControls() {
   renderGamificationCard();
   renderProfileIdentity();
   renderThemeChoice();
+  if (!document.querySelector("[data-profile-tab].active")) selectProfileTab("settings");
 }
 
 function renderGamificationCard() {

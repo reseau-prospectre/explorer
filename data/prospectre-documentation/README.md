@@ -1,17 +1,17 @@
 # PROSPECTRE — Documentation vivante
 
-Ce dossier est la documentation de PROSPECTRE et un pack de démonstration.
+Ce dossier est la documentation intégrée de PROSPECTRE et son pack vitrine.
 
-Il ne présente pas seulement des fonctions : il montre comment un corpus peut devenir un graphe lisible, discutable et exportable.
+Il contient exactement 101 fiches : assez pour montrer un graphe réel, pas assez pour se cacher derrière l’abondance.
 
 ## Parcours recommandé
 
-1. Ouvrir [Entrer dans la machine](entity:porte:entrer).
-2. Lire [Le jeu de l’exploration](entity:geste:explorer).
-3. Tester [Fabriquer un pack](entity:recette:fabriquer-pack).
-4. Copier un des prompts de la section Prompts.
+1. Ouvrir [Entrer dans la machine](entity:porte:entrer-dans-la-machine).
+2. Lire [Ce que PROSPECTRE sait faire](entity:porte:ce-que-prospectre-sait-faire).
+3. Tester [Lire un référentiel Moodle CSV](entity:porte:lire-un-referentiel-moodle-csv).
+4. Copier [Pack CSV Moodle](entity:prompt:pack-csv-moodle) ou [Pack complet](entity:prompt:pack-complet).
 5. Revenir au graphe et vérifier si la structure raconte déjà quelque chose.
 
-## Principe
+## Position
 
-La documentation sérieuse n’a pas besoin d’être solennelle. Elle doit être vérifiable, utile et assez nette pour que l’utilisateur sache quoi faire ensuite.
+PROSPECTRE est un lecteur de corpus structurés, un atelier d’édition, un graphe de discussion et un format transportable. Il n’a pas vocation à remplacer Moodle, GitHub, les référentiels ou les experts. Il sait les lire autrement. C’est déjà beaucoup.

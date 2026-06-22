@@ -1,21 +1,29 @@
 ---
-id: "geste:filtrer"
+id: "geste:filtrer-sans-tricher"
 type: "geste"
 titre: "Filtrer sans tricher"
-resume: "Utiliser les filtres comme des hypothèses de lecture et non comme de simples interrupteurs."
+resume: "Utiliser les types comme hypothèses temporaires de lecture, pas comme cache-misère."
 liens:
-- "geste:explorer"
-- "recette:polir-pack"
-- "coulisse:modele"
+- "coulisse:modele-et-granularite"
 ---
 # Filtrer sans tricher
 
-Un filtre n’est pas une cachette. C’est une hypothèse temporaire.
+Utiliser les types comme hypothèses temporaires de lecture, pas comme cache-misère.
 
-## Trois essais utiles
+Un geste est une action courte, répétable, observable. Si l’action n’améliore pas la lecture, elle n’est pas encore un geste : c’est un bouton.
 
-- **Noyau seul** : afficher les types directeurs pour vérifier si l’ossature tient.
-- **Détail seul** : afficher un type fin pour voir s’il a une fonction réelle.
-- **Chemin mixte** : afficher un pivot, un type intermédiaire et un type de preuve.
+| Point | Réponse |
+| --- | --- |
+| Action | Utiliser les types comme hypothèses temporaires de lecture, pas comme cache-misère. |
+| Instrument PROSPECTRE | Graphe, filtres, fiche, recherche, édition ou discussion. |
+| Erreur fréquente | Confondre manipulation de l’interface et clarification du corpus. |
 
-Si le détail ne raconte rien sans le parent, il doit peut-être retourner dans le parent.
+## Mode d’emploi
+
+1. Effectuer le geste dans l’interface.
+2. Observer ce qui devient plus visible.
+3. Annuler mentalement le geste : si rien ne manque, il n’était pas utile.
+
+## Critère
+
+Un geste valable laisse une trace de compréhension, pas seulement un changement d’écran.
