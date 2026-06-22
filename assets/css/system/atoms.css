@@ -1,0 +1,132 @@
+/*
+  Atoms: indivisible UI primitives. These classes are intentionally additive
+  and can coexist with current app.css selectors during migration.
+*/
+
+.ps-surface {
+  position: relative;
+  border: 1px solid var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    var(--ps-glass-fill);
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-sm));
+}
+
+@supports not (backdrop-filter: blur(1px)) {
+  .ps-surface {
+    background: color-mix(in srgb, var(--ps-color-surface) 92%, transparent);
+  }
+}
+
+.ps-text-label {
+  color: var(--ps-color-text-subtle);
+  font-size: var(--ps-font-size-xs);
+  font-weight: 700;
+  line-height: var(--ps-line-tight);
+  text-transform: uppercase;
+}
+
+.ps-text-body {
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-md);
+  line-height: var(--ps-line-normal);
+}
+
+.ps-text-muted {
+  color: var(--ps-color-text-muted);
+}
+
+.ps-icon-button,
+.ps-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 36px;
+  border: 1px solid var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    var(--ps-glass-card);
+  color: var(--ps-color-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition:
+    transform var(--ps-duration-fast) var(--ps-ease-standard),
+    border-color var(--ps-duration-mid) var(--ps-ease-standard),
+    background var(--ps-duration-mid) var(--ps-ease-standard);
+}
+
+.ps-button {
+  gap: var(--ps-space-sm);
+  min-width: 0;
+  padding: 0 var(--ps-space-lg);
+  border-radius: var(--ps-radius-md);
+  font-size: var(--ps-font-size-sm);
+  font-weight: 700;
+}
+
+.ps-icon-button {
+  width: 36px;
+  border-radius: var(--ps-radius-full);
+}
+
+.ps-button:hover,
+.ps-icon-button:hover {
+  transform: translateY(-1px);
+  border-color: var(--ps-glass-border-bright);
+}
+
+.ps-button--primary {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 44%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 34%, transparent), transparent),
+    var(--ps-glass-fill-strong);
+}
+
+.ps-input {
+  width: 100%;
+  min-height: 38px;
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-md);
+  background: var(--ps-glass-card);
+  color: var(--ps-color-text);
+  padding: var(--ps-space-sm) var(--ps-space-md);
+}
+
+.ps-input::placeholder {
+  color: color-mix(in srgb, var(--ps-color-text-muted) 76%, transparent);
+}
+
+.ps-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-xs);
+  min-height: 26px;
+  max-width: 100%;
+  padding: 0 var(--ps-space-sm);
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-full);
+  background: var(--ps-glass-soft);
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-xs);
+  font-weight: 700;
+}
+
+.ps-focus-ring:focus-visible,
+.ps-button:focus-visible,
+.ps-icon-button:focus-visible,
+.ps-input:focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--ps-color-accent) 76%, transparent);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ps-button,
+  .ps-icon-button {
+    transition: none;
+  }
+
+  .ps-button:hover,
+  .ps-icon-button:hover {
+    transform: none;
+  }
+}

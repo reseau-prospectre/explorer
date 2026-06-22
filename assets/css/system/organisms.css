@@ -1,0 +1,78 @@
+/*
+  Organisms: PROSPECTRE-level sections composed from atoms and molecules.
+*/
+
+.ps-panel {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+  border-radius: var(--ps-radius-xl);
+}
+
+.ps-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-md);
+  min-width: 0;
+  padding: var(--ps-space-lg);
+  border-bottom: 1px solid var(--ps-color-border);
+}
+
+.ps-panel__title {
+  min-width: 0;
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-xl);
+  font-weight: 850;
+  line-height: var(--ps-line-tight);
+}
+
+.ps-panel__body {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--ps-space-lg);
+}
+
+.ps-editor-shell {
+  display: grid;
+  gap: var(--ps-space-lg);
+  min-width: 0;
+}
+
+.ps-editor-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ps-space-md);
+}
+
+.ps-editor-surface {
+  min-height: 260px;
+  border-radius: var(--ps-radius-lg);
+  overflow: hidden;
+}
+
+.ps-data-table {
+  width: 100%;
+  border-collapse: collapse;
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-sm);
+}
+
+.ps-data-table th,
+.ps-data-table td {
+  padding: var(--ps-space-sm) var(--ps-space-md);
+  border-bottom: 1px solid var(--ps-color-border);
+  text-align: left;
+  vertical-align: top;
+}
+
+.ps-data-table th {
+  color: var(--ps-color-text-subtle);
+  font-size: var(--ps-font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}

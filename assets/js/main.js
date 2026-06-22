@@ -35,6 +35,32 @@ import {
 import { createNodeRenderer } from "./graph/node-renderer.js";
 import { createRealtimeProviders } from "./services/realtime.js";
 import { createMarkdownRenderer } from "./ui/markdown.js";
+import {
+  htmlToMarkdown,
+  looksLikeHtml,
+  markdownToEditableHtml
+} from "./ui/content-format.js";
+import {
+  normalizeSummaryStyle,
+  renderEditorModeButton,
+  renderSummaryCallout,
+  renderSummaryStyleChoice,
+  summaryStyleLabel
+} from "./ui/editor-view.js";
+import { renderGraphQualityCard as renderGraphQualityCardView } from "./ui/graph-quality-view.js";
+import {
+  getFallbackExcerpt,
+  getSearchExcerpt
+} from "./ui/search-view.js";
+import {
+  decorateSmartLinks,
+  renderLinkPreview,
+  renderSmartText
+} from "./ui/smart-link-view.js";
+import {
+  getTypePresentation,
+  renderTypeDistributionChart as renderTypeDistributionChartView
+} from "./ui/type-distribution-chart.js";
 import { bootstrapProspectre } from "./app/bootstrap.js";
 import { PanelManager } from "./panels/panel-manager.js";
 import {
@@ -48,6 +74,14 @@ import {
   QUICK_REACTIONS
 } from "./controllers/comments-controller.js";
 import { createGraphController } from "./controllers/graph-controller.js";
+import {
+  getEntityEditSignature,
+  getEntityEditorFormat,
+  getInitialEditorMode,
+  getNextEditorState,
+  normalizeEditorFormat,
+  normalizeEditorMode
+} from "./controllers/editor-controller.js";
 import { overlays } from "./ui/overlay-manager.js";
 import { confirmAction, requestChoice } from "./ui/confirm-dialog.js";
 import { ensureMoodleHtmlSupport, isMoodleHtmlEntity } from "./ui/moodle-bootstrap.js";
@@ -2531,59 +2565,6 @@ function isSummaryOptionEnabled(entity) {
   return Boolean(getVisibleEntitySummary(entity));
 }
 
-function normalizeSummaryStyle(style) {
-  return ["focus", "note", "typing"].includes(style) ? style : "focus";
-}
-
-function renderSummaryCallout(entity, summary) {
-  const style = normalizeSummaryStyle(entity?.summary_style);
-  const length = Math.max(24, Math.min(220, summary.length));
-  return `
-    <aside class="entity-summary-card entity-summary-card--${style}" style="--summary-characters:${length}" aria-label="Résumé">
-      <div class="entity-summary-card__head">
-        <i>${style === "typing" ? "auto_awesome" : "notes"}</i>
-        <span>Résumé</span>
-      </div>
-      <p>${escapeHtml(summary)}</p>
-    </aside>
-  `;
-}
-
-function summaryStyleLabel(style) {
-  return {
-    focus: "Signal",
-    note: "Note",
-    typing: "Typing"
-  }[normalizeSummaryStyle(style)];
-}
-
-function renderSummaryStyleChoice(style, activeStyle) {
-  const active = normalizeSummaryStyle(activeStyle) === style;
-  const icon = style === "typing" ? "auto_awesome" : style === "note" ? "sticky_note_2" : "format_quote";
-  return `
-    <button type="button" class="summary-style-preview ${active ? "active" : ""}" data-summary-style="${style}" aria-checked="${active}">
-      <span class="summary-style-preview__label"><i>${icon}</i>${escapeHtml(summaryStyleLabel(style))}</span>
-      <span class="summary-style-preview__card entity-summary-card entity-summary-card--${style}" aria-hidden="true">
-        <span class="entity-summary-card__head"><i>${icon}</i><span>Résumé</span></span>
-        <span class="summary-style-preview__line">Idée clé de la fiche, prête à être parcourue.</span>
-      </span>
-    </button>
-  `;
-}
-
-function getInitialEditorMode(entity) {
-  return entity?.content_format === "html" || looksLikeHtml(entity?.body) ? "html" : "visual";
-}
-
-function renderEditorModeButton(mode, activeMode, icon, label) {
-  const active = mode === activeMode;
-  return `
-    <button type="button" class="${active ? "active" : ""}" data-editor-mode="${mode}" aria-pressed="${active}" aria-label="${escapeHtml(label)}">
-      <i>${icon}</i><span>${escapeHtml(label)}</span>
-    </button>
-  `;
-}
-
 function renderInlineRelations(entity) {
   const links = state.graph.links.filter((link) => getId(link.source) === entity.id || getId(link.target) === entity.id);
   const items = [];
@@ -2711,8 +2692,8 @@ function renderDiscussion(entity = state.entities.get(state.selectedId)) {
 
 function renderEditForm(entity) {
   destroyContentEditor();
-  const contentFormat = entity.content_format === "html" || looksLikeHtml(entity.body) ? "html" : "markdown";
-  const editorMode = getInitialEditorMode(entity);
+  const contentFormat = getEntityEditorFormat(entity, looksLikeHtml);
+  const editorMode = getInitialEditorMode(entity, looksLikeHtml);
   const summaryEnabled = isSummaryOptionEnabled(entity);
   const summaryStyle = normalizeSummaryStyle(entity.summary_style);
   const graphImageEnabled = Boolean(entity.graph_image_enabled && entity.graph_image);
@@ -2732,13 +2713,13 @@ function renderEditForm(entity) {
           </span>
         </label>
       </header>
-      <div class="local-edit-warning"><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span></div>
-      <div class="edit-card">
-        <label class="field-label">Titre
-          <input id="adjust-label" class="text-field" type="text" value="${escapeHtml(entity.label)}">
+      <div class="local-edit-warning ps-chip"><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span></div>
+      <div class="edit-card ps-card ps-surface">
+        <label class="field-label ps-field ps-text-label">Titre
+          <input id="adjust-label" class="text-field ps-input" type="text" value="${escapeHtml(entity.label)}">
         </label>
       </div>
-      <section class="edit-card edit-option-card ${summaryEnabled ? "is-enabled" : ""}" data-edit-option="summary">
+      <section class="edit-card edit-option-card ps-card ps-surface ${summaryEnabled ? "is-enabled" : ""}" data-edit-option="summary">
         <div class="edit-card-head">
           <div>
             <h3>Résumé</h3>
@@ -2749,7 +2730,7 @@ function renderEditForm(entity) {
             <span></span>
           </label>
         </div>
-        <textarea id="adjust-summary" rows="4"${summaryEnabled ? "" : " disabled"}>${escapeHtml(entity.summary || "")}</textarea>
+        <textarea id="adjust-summary" class="ps-input" rows="4"${summaryEnabled ? "" : " disabled"}>${escapeHtml(entity.summary || "")}</textarea>
         <details class="summary-appearance" ${summaryEnabled ? "" : "hidden"}>
           <summary><i>palette</i><span>Apparence du résumé</span><strong>${escapeHtml(summaryStyleLabel(summaryStyle))}</strong></summary>
           <div class="summary-style-preview-grid" role="radiogroup" aria-label="Style du résumé">
@@ -2759,31 +2740,31 @@ function renderEditForm(entity) {
           </div>
         </details>
       </section>
-      <section class="edit-card edit-editor-card is-${editorMode}-mode" data-editor-format="${contentFormat}">
-        <header class="edit-editor-head">
+      <section class="edit-card edit-editor-card ps-editor-shell ps-surface is-${editorMode}-mode" data-editor-format="${contentFormat}">
+        <header class="edit-editor-head ps-card__header">
           <div>
-            <h3>Contenu</h3>
+            <h3 class="ps-card__title">Contenu</h3>
           </div>
-          <span class="editor-format-badge">${contentFormat === "html" ? "HTML" : "Markdown"}</span>
+          <span class="editor-format-badge ps-chip">${contentFormat === "html" ? "HTML" : "Markdown"}</span>
         </header>
         <input id="content-format" type="hidden" value="${contentFormat}">
         <input id="editor-format" type="hidden" value="${contentFormat}">
         <input id="editor-mode" type="hidden" value="${editorMode}">
-        <div class="editor-mode-bar" role="toolbar" aria-label="Vues d’édition du contenu">
+        <div class="editor-mode-bar ps-tab-list" role="toolbar" aria-label="Vues d’édition du contenu">
           ${renderEditorModeButton("visual", editorMode, "stylus_note", "Visuel")}
           ${renderEditorModeButton("markdown", editorMode, "notes", "Markdown")}
           ${renderEditorModeButton("html", editorMode, "code_blocks", "HTML")}
           ${renderEditorModeButton("preview", editorMode, "visibility", "Aperçu")}
         </div>
-        <div class="editor-workbench">
-          <div id="content-editor" class="content-editor"></div>
-          <textarea id="adjust-body" class="content-editor-fallback" rows="18" spellcheck="false">${escapeHtml(entity.body || "")}</textarea>
+        <div class="editor-workbench ps-editor-surface">
+          <div id="content-editor" class="content-editor ps-editor-surface"></div>
+          <textarea id="adjust-body" class="content-editor-fallback ps-input" rows="18" spellcheck="false">${escapeHtml(entity.body || "")}</textarea>
           <div class="html-preview-shell hidden">
             <div id="html-preview" class="html-editor-preview" aria-live="polite"></div>
           </div>
         </div>
       </section>
-      <section class="edit-card edit-option-card ${graphImageEnabled ? "is-enabled" : ""}" data-edit-option="graph-image">
+      <section class="edit-card edit-option-card ps-card ps-surface ${graphImageEnabled ? "is-enabled" : ""}" data-edit-option="graph-image">
         <div class="edit-card-head">
           <div>
             <p class="kicker">Graphe</p>
@@ -2919,7 +2900,7 @@ function readEditFormValues(entity) {
     ? getEditedBodyAndFormat()
     : {
       body: entity.body || "",
-      format: entity.content_format === "html" ? "html" : "markdown"
+      format: getEntityEditorFormat(entity)
     };
   return {
     label: els.panelContent.querySelector("#adjust-label")?.value.trim() || entity.label,
@@ -2938,27 +2919,9 @@ function readEditFormValues(entity) {
 function persistEditForm(entity, options = {}) {
   if (!entity || !els.panelContent.querySelector(".edit-surface")) return false;
   clearTimeout(state.editAutosaveTimer);
-  const previousSignature = [
-    entity.label,
-    entity.summary,
-    entity.summary_enabled,
-    entity.summary_style,
-    entity.content_format,
-    entity.graph_image,
-    entity.graph_image_enabled,
-    entity.body
-  ].join("\u001f");
+  const previousSignature = getEntityEditSignature(entity);
   Object.assign(entity, readEditFormValues(entity));
-  const nextSignature = [
-    entity.label,
-    entity.summary,
-    entity.summary_enabled,
-    entity.summary_style,
-    entity.content_format,
-    entity.graph_image,
-    entity.graph_image_enabled,
-    entity.body
-  ].join("\u001f");
+  const nextSignature = getEntityEditSignature(entity);
   if (previousSignature !== nextSignature) {
     updateFileFromEntity(entity);
     entity.imageURL = entity.graph_image_enabled
@@ -2974,28 +2937,23 @@ function persistEditForm(entity, options = {}) {
 }
 
 function switchEditorMode(entity, mode) {
-  const targetMode = normalizeEditorMode(mode);
   const current = isBodyEditDirty()
     ? getEditedBodyAndFormat()
     : {
       body: entity.body || "",
-      format: entity.content_format === "html" && looksLikeHtml(entity.body) ? "html" : "markdown"
+      format: getEntityEditorFormat(entity, looksLikeHtml)
     };
   destroyContentEditor();
-  const nextFormat = targetMode === "html"
-    ? "html"
-    : targetMode === "preview"
-      ? current.format
-      : "markdown";
-  const nextBody = nextFormat === current.format
-    ? current.body
-    : nextFormat === "html"
-      ? markdownToEditableHtml(current.body)
-      : htmlToMarkdown(current.body);
-  setEditorMode(targetMode, nextFormat);
+  const next = getNextEditorState({
+    mode,
+    current,
+    toHtml: markdownToEditableHtml,
+    toMarkdown: htmlToMarkdown
+  });
+  setEditorMode(next.mode, next.format);
   const fallback = els.panelContent.querySelector("#adjust-body");
   if (fallback) {
-    fallback.value = nextBody;
+    fallback.value = next.body;
     fallback.scrollTop = 0;
     fallback.scrollLeft = 0;
   }
@@ -3118,21 +3076,17 @@ function getEditedBodyAndFormat() {
   return { body, format };
 }
 
-function normalizeEditorMode(mode) {
-  return ["visual", "markdown", "html", "preview"].includes(mode) ? mode : "visual";
-}
-
 function getEditorMode() {
   return normalizeEditorMode(els.panelContent.querySelector("#editor-mode")?.value);
 }
 
 function getEditorFormat() {
-  return els.panelContent.querySelector("#editor-format")?.value === "html" ? "html" : "markdown";
+  return normalizeEditorFormat(els.panelContent.querySelector("#editor-format")?.value);
 }
 
 function setEditorMode(mode, format) {
   const normalizedMode = normalizeEditorMode(mode);
-  const normalizedFormat = format === "html" ? "html" : "markdown";
+  const normalizedFormat = normalizeEditorFormat(format);
   const modeInput = els.panelContent.querySelector("#editor-mode");
   const formatInput = els.panelContent.querySelector("#editor-format");
   const card = els.panelContent.querySelector(".edit-editor-card");
@@ -3146,6 +3100,7 @@ function setEditorMode(mode, format) {
   els.panelContent.querySelectorAll("[data-editor-mode]").forEach((button) => {
     const active = button.dataset.editorMode === normalizedMode;
     button.classList.toggle("active", active);
+    button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
   });
 }
@@ -3174,56 +3129,6 @@ function resetEditorScroll() {
   });
 }
 
-function looksLikeHtml(value = "") {
-  return /<\/?[a-z][\s\S]*>/i.test(String(value || ""));
-}
-
-function markdownToEditableHtml(markdown = "") {
-  const html = window.marked?.parse ? window.marked.parse(String(markdown || "")) : String(markdown || "");
-  return window.DOMPurify?.sanitize ? window.DOMPurify.sanitize(html) : html;
-}
-
-function htmlToMarkdown(html = "") {
-  const template = document.createElement("template");
-  template.innerHTML = window.DOMPurify?.sanitize ? window.DOMPurify.sanitize(String(html || "")) : String(html || "");
-  return domNodesToMarkdown(template.content.childNodes).replace(/\n{3,}/g, "\n\n").trim();
-}
-
-function domNodesToMarkdown(nodes) {
-  return [...nodes].map((node) => domNodeToMarkdown(node)).join("").replace(/[ \t]+\n/g, "\n");
-}
-
-function domNodeToMarkdown(node) {
-  if (node.nodeType === Node.TEXT_NODE) return node.nodeValue.replace(/\s+/g, " ");
-  if (node.nodeType !== Node.ELEMENT_NODE) return "";
-  const tag = node.tagName.toLowerCase();
-  const text = () => domNodesToMarkdown(node.childNodes).trim();
-  if (/h[1-6]/.test(tag)) return `${"#".repeat(Number(tag[1]))} ${text()}\n\n`;
-  if (tag === "p") return `${text()}\n\n`;
-  if (tag === "br") return "\n";
-  if (tag === "strong" || tag === "b") return `**${text()}**`;
-  if (tag === "em" || tag === "i") return `*${text()}*`;
-  if (tag === "code") return node.closest("pre") ? node.textContent : `\`${node.textContent}\``;
-  if (tag === "pre") return `\n\`\`\`\n${node.textContent.trim()}\n\`\`\`\n\n`;
-  if (tag === "blockquote") return `${text().split("\n").map((line) => `> ${line}`).join("\n")}\n\n`;
-  if (tag === "a") return `[${text() || node.href}](${node.getAttribute("href") || ""})`;
-  if (tag === "img") return `![${node.getAttribute("alt") || "Image"}](${node.getAttribute("src") || ""})`;
-  if (tag === "ul" || tag === "ol") return `${[...node.children].map((item, index) => `${tag === "ol" ? `${index + 1}.` : "-"} ${domNodesToMarkdown(item.childNodes).trim()}`).join("\n")}\n\n`;
-  if (tag === "table") return tableToMarkdown(node);
-  if (["div", "section", "article", "main", "tbody", "thead"].includes(tag)) return `${domNodesToMarkdown(node.childNodes)}\n`;
-  return domNodesToMarkdown(node.childNodes);
-}
-
-function tableToMarkdown(table) {
-  const rows = [...table.querySelectorAll("tr")].map((row) => [...row.children].map((cell) => domNodesToMarkdown(cell.childNodes).trim().replace(/\|/g, "\\|")));
-  if (!rows.length) return "";
-  const width = Math.max(...rows.map((row) => row.length));
-  const normalized = rows.map((row) => Array.from({ length: width }, (_, index) => row[index] || ""));
-  const head = normalized[0];
-  const body = normalized.slice(1);
-  return `\n| ${head.join(" | ")} |\n| ${head.map(() => "---").join(" | ")} |\n${body.map((row) => `| ${row.join(" | ")} |`).join("\n")}\n\n`;
-}
-
 function destroyContentEditor() {
   state.contentEditor?.destroy?.();
   state.contentEditor = null;
@@ -3244,85 +3149,12 @@ function renderGraphQualityCard(focusNodes, selected, selectedLink, scopeLinks) 
     : selectedLink
       ? "Chemin"
       : "Vue active";
-  return `
-    <article class="project-meta-card graph-quality-card">
-      <div class="graph-quality-header">
-        <div>
-          <p class="kicker">Diagnostic graphe</p>
-          <strong>${escapeHtml(scopeLabel)}</strong>
-        </div>
-        <div class="graph-quality-overall">
-          <span>Score global</span>
-          ${renderGraphScoreBadge(metrics.overall.grade, "Score global", "large")}
-        </div>
-      </div>
-      <div class="graph-quality-scores">
-        ${renderGraphQualityScore("Lisibilité", metrics.readability, "Évalue si le volume visible reste lisible sans filtrage immédiat.")}
-        ${renderGraphQualityScore("Cohésion", metrics.cohesion, "Mesure la part du graphe réellement reliée au groupe principal.")}
-        ${renderGraphQualityScore("Maillage", metrics.mesh, "Observe si le degré moyen donne assez de chemins sans saturer la lecture.")}
-        ${renderGraphQualityScore("Équilibre", metrics.balance, "Repère les graphes trop dominés par un seul hub ou des degrés très dispersés.")}
-      </div>
-      <div class="graph-quality-facts">
-        ${renderGraphQualityFact(formatCompactNumber(metrics.nodeCount), "éléments")}
-        ${renderGraphQualityFact(formatCompactNumber(metrics.linkCount), "liens")}
-        ${renderGraphQualityFact(formatGraphNumber(metrics.linksPerNode), "liens / élément")}
-        ${renderGraphQualityFact(formatCompactNumber(metrics.typeCount), "types")}
-        ${renderGraphQualityFact(`${Math.round(metrics.largestRatio * 100)}%`, "couverture")}
-        ${renderGraphQualityFact(formatCompactNumber(metrics.maxDegree), "hub max")}
-        ${metrics.isolateCount ? renderGraphQualityFact(formatCompactNumber(metrics.isolateCount), "isolats", true) : ""}
-      </div>
-    </article>
-  `;
-}
-
-function renderGraphQualityScore(label, metric, hint) {
-  return `
-    <div class="graph-quality-score grade-${metric.grade}">
-      <div class="graph-quality-score-head">
-        <strong>${escapeHtml(label)}</strong>
-        <button class="graph-quality-info" type="button" aria-label="${escapeHtml(`Information : ${label}`)}">
-          <i>info</i>
-          <span class="tooltip top max">${escapeHtml(hint)}</span>
-        </button>
-      </div>
-      ${renderGraphScoreBadge(metric.grade, label)}
-    </div>
-  `;
-}
-
-function renderGraphQualityFact(value, label, danger = false) {
-  return `
-    <span class="graph-quality-fact${danger ? " is-warning" : ""}">
-      <strong>${escapeHtml(value)}</strong>
-      <small>${escapeHtml(label)}</small>
-    </span>
-  `;
-}
-
-function renderGraphScoreBadge(grade, label, variant = "") {
-  const grades = ["A", "B", "C", "D", "E"];
-  const activeIndex = Math.max(0, grades.indexOf(grade));
-  const colors = ["#038141", "#85bb2f", "#fecb02", "#ee8100", "#e63e11"];
-  const segments = grades.map((item, index) => {
-    const active = index === activeIndex;
-    const x = 2 + index * 22;
-    const y = active ? 1 : 5;
-    const height = active ? 24 : 16;
-    const width = active ? 26 : 22;
-    const textX = x + width / 2;
-    return `
-      <g class="${active ? "is-active" : ""}">
-        <rect x="${x}" y="${y}" width="${width}" height="${height}" rx="4" fill="${colors[index]}"></rect>
-        <text x="${textX}" y="${active ? "18" : "17"}" text-anchor="middle">${item}</text>
-      </g>
-    `;
-  }).join("");
-  return `
-    <svg class="graph-score-badge ${variant ? `is-${variant}` : ""} grade-${grade}" viewBox="0 0 116 28" role="img" aria-label="${escapeHtml(`${label} ${grade}`)}">
-      <title>${escapeHtml(`${label} ${grade}`)}</title>
-      ${segments}
-    </svg>
-  `;
+  return renderGraphQualityCardView({
+    metrics,
+    scopeLabel,
+    formatCompactNumber,
+    formatGraphNumber
+  });
 }
 
 function computeGraphQualityMetrics(focusNodes, scopeLinks) {
@@ -3788,106 +3620,15 @@ function getBreadcrumbEntities(selected) {
   return chain;
 }
 
-function getDistributionEntries(nodes) {
-  const counts = nodes.reduce((acc, node) => {
-    if (!getTypePresentation(node.type)) return acc;
-    acc[node.type] = (acc[node.type] || 0) + 1;
-    return acc;
-  }, {});
-  const configurations = [
-    ...Object.entries(TYPE_CONFIG),
-    ["contribution", { ...CONTRIBUTION_FILTER, order: Number.MAX_SAFE_INTEGER }]
-  ];
-  return configurations
-    .map(([type, config]) => ({ type, ...config, value: counts[type] || 0 }))
-    .filter((entry) => entry.value > 0);
-}
-
-function getTypePresentation(type) {
-  if (type === "contribution") return { ...CONTRIBUTION_FILTER, order: Number.MAX_SAFE_INTEGER };
-  return TYPE_CONFIG[type] || null;
-}
-
 function renderTypeDistributionChart(nodes) {
-  const canvas = document.querySelector("#type-distribution-chart");
-  const legend = document.querySelector("#type-distribution-legend");
-  if (!canvas) return;
-  const entries = getDistributionEntries(nodes);
-  const total = entries.reduce((sum, entry) => sum + entry.value, 0);
-  const signature = JSON.stringify(entries.map(({ label, value, color }) => [label, value, color]));
-  if (!window.Chart) {
-    canvas.hidden = true;
-    const card = canvas.closest(".chart-card");
-    card?.classList.add("chart-card-fallback");
-    card?.setAttribute("data-chart-state", "fallback");
-    if (legend) {
-      legend.innerHTML = entries.map((entry) => `
-        <span><i class="legend-dot" style="background:${entry.color}"></i><span class="legend-label">${escapeHtml(entry.label)}</span><strong>${entry.value}</strong></span>
-      `).join("");
-    }
-    return;
-  }
-  canvas.hidden = false;
-  const card = canvas.closest(".chart-card");
-  card?.classList.remove("chart-card-fallback");
-  card?.setAttribute("data-chart-state", "chartjs");
-  if (state.charts.typeDistribution && state.charts.typeDistributionSignature === signature && state.charts.typeDistribution.canvas === canvas) {
-    return;
-  }
-  state.charts.typeDistribution?.destroy();
-  state.charts.typeDistributionSignature = signature;
-  state.charts.typeDistribution = new Chart(canvas, {
-    type: "doughnut",
-    data: {
-      labels: entries.map((entry) => entry.label),
-      datasets: [{
-        data: entries.map((entry) => entry.value),
-        backgroundColor: entries.map((entry) => entry.color),
-        borderColor: "rgba(7, 16, 21, 0.92)",
-        borderWidth: 3,
-        hoverOffset: 3
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      resizeDelay: 80,
-      cutout: "66%",
-      animation: { duration: 280 },
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          displayColors: true,
-          callbacks: {
-            label: (context) => `${context.label}: ${context.parsed}`
-          }
-        }
-      }
-    },
-    plugins: [{
-      id: "centerText",
-      afterDraw(chart) {
-        const { ctx, chartArea } = chart;
-        if (!chartArea) return;
-        ctx.save();
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--text").trim() || "#edf7f6";
-        ctx.textAlign = "center";
-        ctx.textBaseline = "middle";
-        ctx.font = "700 20px system-ui";
-        ctx.fillText(String(total), (chartArea.left + chartArea.right) / 2, (chartArea.top + chartArea.bottom) / 2 - 4);
-        ctx.font = "600 11px system-ui";
-        ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue("--muted").trim() || "#9fb3b8";
-        ctx.fillText(nodes.length === state.graph.nodes.length ? "éléments" : "liés", (chartArea.left + chartArea.right) / 2, (chartArea.top + chartArea.bottom) / 2 + 17);
-        ctx.restore();
-      }
-    }]
+  renderTypeDistributionChartView({
+    nodes,
+    canvas: document.querySelector("#type-distribution-chart"),
+    legend: document.querySelector("#type-distribution-legend"),
+    chartState: state.charts,
+    chartCtor: window.Chart,
+    allNodeCount: state.graph.nodes.length
   });
-  if (legend) {
-    legend.innerHTML = entries.map((entry) => `
-      <span><i class="legend-dot" style="background:${entry.color}"></i><span class="legend-label">${escapeHtml(entry.label)}</span><strong>${entry.value}</strong></span>
-    `).join("");
-  }
-  requestAnimationFrame(() => state.charts.typeDistribution?.resize());
 }
 
 function renderPresence() {
@@ -5830,9 +5571,9 @@ function renderSearchResults() {
     const type = TYPE_CONFIG[entity?.type]?.singular || entity?.type || "Fiche";
     const active = index === state.searchActiveIndex;
     return `
-      <button class="graph-search-result${active ? " active" : ""}" type="button" role="option" aria-selected="${active}" data-search-index="${index}">
+      <button class="graph-search-result ps-card ps-surface${active ? " active" : ""}" type="button" role="option" aria-selected="${active}" data-search-index="${index}">
         <span class="dot" style="background:${TYPE_CONFIG[entity?.type]?.color || "#9aa6ad"}"></span>
-        <span>
+        <span class="ps-meta-item">
           <strong>${escapeHtml(result.item.label)}</strong>
           <small>${escapeHtml(type)} · ${escapeHtml(result.excerpt || result.item.summary || "")}</small>
         </span>
@@ -5874,27 +5615,6 @@ function handleGraphSearchKeydown(event) {
     event.preventDefault();
     navigateToSearchResult(Math.max(0, state.searchActiveIndex));
   }
-}
-
-function getSearchExcerpt(item, value, matches = []) {
-  const bodyMatch = matches?.find((match) => ["body", "summary", "metadata", "label"].includes(match.key));
-  const source = String(item[bodyMatch?.key] || item.body || item.summary || item.label || "");
-  const matchIndex = bodyMatch?.indices?.[0]?.[0] ?? normalizeSearchText(source).indexOf(normalizeSearchText(value));
-  return makeExcerpt(source, matchIndex);
-}
-
-function getFallbackExcerpt(item, term) {
-  const source = [item.summary, item.body, item.metadata].filter(Boolean).join("\n");
-  const index = normalizeSearchText(source).indexOf(term);
-  return makeExcerpt(source, index);
-}
-
-function makeExcerpt(text, index) {
-  const clean = String(text || "").replace(/\s+/g, " ").trim();
-  if (!clean) return "";
-  const start = Math.max(0, index > -1 ? index - 42 : 0);
-  const excerpt = clean.slice(start, start + 128);
-  return `${start > 0 ? "…" : ""}${excerpt}${start + 128 < clean.length ? "…" : ""}`;
 }
 
 function clearSearchState() {
@@ -6056,30 +5776,6 @@ function isTextInputActive() {
   return ["INPUT", "TEXTAREA", "SELECT"].includes(element?.tagName) || element?.isContentEditable;
 }
 
-function decorateSmartLinks(root = document) {
-  root.querySelectorAll?.('a[href^="http://"], a[href^="https://"]').forEach((link) => {
-    if (link.dataset.smartLink) return;
-    link.dataset.smartLink = link.href;
-    link.rel = "noopener noreferrer";
-    link.target = "_blank";
-  });
-}
-
-function renderSmartText(text) {
-  const source = String(text || "");
-  const urlPattern = /(https?:\/\/[^\s<>"')\]]+)/g;
-  let cursor = 0;
-  let html = "";
-  for (const match of source.matchAll(urlPattern)) {
-    const url = match[0];
-    html += escapeHtml(source.slice(cursor, match.index));
-    html += `<a href="${escapeHtml(url)}" data-smart-link="${escapeHtml(url)}" target="_blank" rel="noopener noreferrer">${escapeHtml(shortLabel(url, 48))}</a>`;
-    cursor = match.index + url.length;
-  }
-  html += escapeHtml(source.slice(cursor));
-  return html;
-}
-
 function handleSmartLinkHover(event) {
   const link = event.target.closest?.("[data-smart-link]");
   if (!link || link === state.linkPreview.anchor) return;
@@ -6116,32 +5812,6 @@ function openLinkPreview(link, options = {}) {
   els.linkPreviewPopover.classList.remove("hidden");
   positionLinkPreview(link);
   if (!options.passive) recordHeartEvent("linkPreview", HEART_POINTS.linkPreview);
-}
-
-function renderLinkPreview(url, title) {
-  let parsed = null;
-  try {
-    parsed = new URL(url);
-  } catch {
-    parsed = null;
-  }
-  const host = parsed?.hostname?.replace(/^www\./, "") || "Lien externe";
-  const initial = host.charAt(0).toUpperCase() || "L";
-  return `
-    <div class="link-preview-head">
-      <span class="link-preview-icon">${escapeHtml(initial)}</span>
-      <div>
-        <strong>${escapeHtml(shortLabel(title || host, 76))}</strong>
-        <span>${escapeHtml(host)}</span>
-      </div>
-    </div>
-    <p>${escapeHtml(shortLabel(url, 120))}</p>
-    <div class="link-preview-actions">
-      <button type="button" data-link-action="open"><i>open_in_new</i>Ouvrir</button>
-      <button type="button" data-link-action="copy"><i>content_copy</i>Copier</button>
-      <button type="button" data-link-action="embed"><i>fullscreen</i>Intégrer</button>
-    </div>
-  `;
 }
 
 function positionLinkPreview(anchor) {

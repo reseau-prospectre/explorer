@@ -1,0 +1,10 @@
+/*
+  PROSPECTRE atomic design system entrypoint.
+  Load before app.css; load adapters.css after app.css.
+*/
+
+@import url("./tokens.css");
+@import url("./atoms.css");
+@import url("./molecules.css");
+@import url("./organisms.css");
+@import url("./templates.css");

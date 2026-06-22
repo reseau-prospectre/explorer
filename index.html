@@ -11,7 +11,9 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+  <link rel="stylesheet" href="./assets/css/system/index.css?v=20260622-atomic-system-1">
   <link rel="stylesheet" href="./assets/css/app.css?v=20260622-editor-render-4">
+  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260622-atomic-bridge-1">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -104,16 +106,16 @@
 
       <div id="type-filters" class="graph-options-panel toolbar-popover hidden" aria-label="Options d’affichage du graphe"></div>
 
-      <section id="graph-search-popover" class="graph-search-popover toolbar-popover hidden" aria-label="Recherche dans le graphe">
-        <label class="graph-search-field">
+      <section id="graph-search-popover" class="graph-search-popover toolbar-popover ps-surface hidden" aria-label="Recherche dans le graphe">
+        <label class="graph-search-field ps-field">
           <i>search</i>
-          <input id="search-input" type="search" placeholder="Rechercher dans les fiches" autocomplete="off">
-          <button id="clear-search" class="search-clear hidden" type="button" aria-label="Effacer la recherche">
+          <input id="search-input" class="ps-input" type="search" placeholder="Rechercher dans les fiches" autocomplete="off">
+          <button id="clear-search" class="search-clear ps-icon-button hidden" type="button" aria-label="Effacer la recherche">
             <i>close</i>
           </button>
         </label>
-        <div id="graph-search-status" class="graph-search-status">Tapez un mot-clé, un titre ou un fragment de contenu.</div>
-        <div id="graph-search-results" class="graph-search-results" role="listbox" aria-label="Résultats de recherche"></div>
+        <div id="graph-search-status" class="graph-search-status ps-text-muted">Tapez un mot-clé, un titre ou un fragment de contenu.</div>
+        <div id="graph-search-results" class="graph-search-results ps-meta-list" role="listbox" aria-label="Résultats de recherche"></div>
       </section>
 
       <section id="graph-help-popover" class="graph-help-popover toolbar-popover hidden" aria-label="Aide rapide du graphe">

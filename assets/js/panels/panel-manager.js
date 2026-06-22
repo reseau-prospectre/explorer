@@ -198,6 +198,8 @@ export class PanelManager {
     panel.className = [
       "adaptive-panel",
       "adaptive-panel--v3",
+      "ps-panel",
+      "ps-surface",
       `adaptive-panel--${mode}`,
       `adaptive-panel--${edge}`,
       mode === "float" ? "is-grabbable" : "",
@@ -235,15 +237,15 @@ export class PanelManager {
         ? toolButton(collapsed ? "restore" : "collapse", collapsed ? "Déplier" : "Replier", `data-panel-collapse="${id}"`)
         : toolButton("detach", "Détacher", `data-panel-mode="${id}"`);
     const title = config.headerSlot === "insights"
-      ? `<div class="adaptive-panel__title adaptive-panel__title--slot" data-panel-title-slot="insights"></div>`
-      : `<div class="adaptive-panel__title">
-          ${config.badge ? `<span class="adaptive-panel__badge" style="--badge-color:${escapeHtml(config.badge.color || "var(--accent)")};"><i></i>${escapeHtml(config.badge.label || "")}</span>` : ""}
+      ? `<div class="adaptive-panel__title adaptive-panel__title--slot ps-panel__title" data-panel-title-slot="insights"></div>`
+      : `<div class="adaptive-panel__title ps-panel__title">
+          ${config.badge ? `<span class="adaptive-panel__badge ps-chip" style="--badge-color:${escapeHtml(config.badge.color || "var(--accent)")};"><i></i>${escapeHtml(config.badge.label || "")}</span>` : ""}
           <h2>${escapeHtml(config.title || id)}</h2>
         </div>`;
     return `
-      <header class="adaptive-panel__header" data-panel-grab>
+      <header class="adaptive-panel__header ps-panel__header" data-panel-grab>
         ${title}
-        <div class="adaptive-panel__tools">
+        <div class="adaptive-panel__tools ps-action-row">
           <div class="adaptive-panel__edge-menu">
             ${primary}
             <div id="${edgeMenuId}" class="adaptive-panel__edge-options" hidden>
@@ -265,7 +267,7 @@ export class PanelManager {
           ${toolButton("close", "Fermer", `data-panel-close="${id}"`)}
         </div>
       </header>
-      <div class="adaptive-panel__body"></div>
+      <div class="adaptive-panel__body ps-panel__body"></div>
       <div class="adaptive-panel__resize-rail adaptive-panel__resize-rail--horizontal" aria-hidden="true"></div>
       <div class="adaptive-panel__resize-rail adaptive-panel__resize-rail--vertical" aria-hidden="true"></div>
       ${RESIZE_DIRECTIONS.map((direction) => `<button class="adaptive-panel__resize adaptive-panel__resize--${direction}" type="button" data-panel-resize="${direction}" aria-label="Redimensionner"></button>`).join("")}
@@ -480,11 +482,11 @@ export class PanelManager {
 }
 
 function toolButton(iconName, label, dataAttrs = "", extraAttrs = "") {
-  return `<button type="button" ${dataAttrs} ${extraAttrs} aria-label="${escapeHtml(label)}">${iconMarkup(iconName)}<span class="tooltip left">${escapeHtml(label)}</span></button>`;
+  return `<button type="button" class="ps-icon-button" ${dataAttrs} ${extraAttrs} aria-label="${escapeHtml(label)}">${iconMarkup(iconName)}<span class="tooltip left">${escapeHtml(label)}</span></button>`;
 }
 
 function menuButton(iconName, label, dataAttrs = "") {
-  return `<button type="button" ${dataAttrs}>${iconMarkup(iconName)}<span>${escapeHtml(label)}</span></button>`;
+  return `<button type="button" class="ps-button" ${dataAttrs}>${iconMarkup(iconName)}<span>${escapeHtml(label)}</span></button>`;
 }
 
 function normalizePreferences(prefs = {}) {

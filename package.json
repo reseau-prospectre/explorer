@@ -1,0 +1,15 @@
+{
+  "name": "prospectre",
+  "version": "0.0.0-local",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "smoke:ui": "node _agents/scripts/smoke-ui.mjs",
+    "check:modules": "node _agents/scripts/check-modules.mjs",
+    "check:css": "node _agents/scripts/check-css.mjs",
+    "check": "npm run check:modules && npm run check:css"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.54.0"
+  }
+}

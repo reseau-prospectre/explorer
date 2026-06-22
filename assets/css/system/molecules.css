@@ -1,0 +1,86 @@
+/*
+  Molecules: small reusable groups of atoms with one clear responsibility.
+*/
+
+.ps-field {
+  display: grid;
+  gap: var(--ps-space-xs);
+}
+
+.ps-field__hint {
+  color: var(--ps-color-text-subtle);
+  font-size: var(--ps-font-size-xs);
+  line-height: var(--ps-line-normal);
+}
+
+.ps-action-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-sm);
+}
+
+.ps-tab-list {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-xs);
+  padding: var(--ps-space-xs);
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-lg);
+  background: var(--ps-glass-soft);
+}
+
+.ps-tab {
+  min-height: 32px;
+  padding: 0 var(--ps-space-md);
+  border-radius: var(--ps-radius-md);
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-sm);
+  font-weight: 700;
+}
+
+.ps-tab[aria-selected="true"],
+.ps-tab.is-active {
+  background: var(--ps-glass-card);
+  color: var(--ps-color-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+}
+
+.ps-meta-list {
+  display: grid;
+  gap: var(--ps-space-sm);
+}
+
+.ps-meta-item {
+  display: grid;
+  gap: var(--ps-space-2xs);
+  min-width: 0;
+}
+
+.ps-card {
+  display: grid;
+  gap: var(--ps-space-md);
+  padding: var(--ps-space-lg);
+  border-radius: var(--ps-radius-lg);
+}
+
+.ps-card__header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ps-space-md);
+  min-width: 0;
+}
+
+.ps-card__title {
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-lg);
+  font-weight: 800;
+  line-height: var(--ps-line-tight);
+}
+
+.ps-card__body {
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-sm);
+  line-height: var(--ps-line-normal);
+}

@@ -1,0 +1,31 @@
+/*
+  Templates: layout skeletons for pages and high-level PROSPECTRE workspaces.
+*/
+
+.ps-workspace-template {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  min-width: 0;
+  min-height: 100%;
+}
+
+.ps-split-template {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 420px);
+  gap: var(--ps-space-lg);
+  min-width: 0;
+  min-height: 0;
+}
+
+.ps-stack-template {
+  display: grid;
+  align-content: start;
+  gap: var(--ps-space-lg);
+  min-width: 0;
+}
+
+@media (max-width: 840px) {
+  .ps-split-template {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

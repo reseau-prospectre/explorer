@@ -1,0 +1,294 @@
+/*
+  PROSPECTRE atomic adapters.
+  Loaded after app.css so legacy selectors can progressively consume ps-* tokens.
+*/
+
+/* Entity editor migrated first; legacy selectors remain behavior anchors. */
+.edit-editor-card.ps-editor-shell {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    var(--ps-glass-fill);
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-sm));
+}
+
+.edit-editor-card .ps-card__title {
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-lg);
+  letter-spacing: 0;
+}
+
+.edit-editor-card .editor-format-badge.ps-chip {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 34%, var(--ps-color-border));
+  background: var(--ps-glass-soft);
+  color: var(--ps-color-text-muted);
+}
+
+.edit-editor-card .editor-mode-bar.ps-tab-list {
+  border-color: var(--ps-color-border);
+  background: color-mix(in srgb, var(--ps-color-surface) 78%, transparent);
+}
+
+.edit-editor-card .editor-mode-bar .ps-tab {
+  border-radius: var(--ps-radius-md);
+  color: var(--ps-color-text-muted);
+}
+
+.edit-editor-card .editor-mode-bar .ps-tab.is-active {
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 20%, transparent), transparent),
+    var(--ps-glass-card);
+  color: var(--ps-color-text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--ps-color-accent) 42%, transparent);
+}
+
+.edit-editor-card .editor-workbench.ps-editor-surface {
+  border-top: 1px solid var(--ps-color-border);
+  background: color-mix(in srgb, var(--ps-color-surface) 88%, transparent);
+}
+
+.edit-editor-card #adjust-body.ps-input:not(.content-editor-fallback) {
+  border: 0;
+  color: var(--ps-color-text);
+}
+
+.edit-editor-card .html-editor-preview {
+  background: color-mix(in srgb, var(--ps-color-surface) 92%, transparent);
+}
+
+/* Adaptive panels mapped to the PROSPECTRE panel organism. */
+.adaptive-panel.ps-panel {
+  --adaptive-panel-radius: var(--ps-radius-md);
+  border-color: var(--ps-glass-border);
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ps-color-surface-raised) 24%, transparent), transparent 132px),
+    radial-gradient(circle at 18% 0%, color-mix(in srgb, var(--ps-color-accent) 11%, transparent), transparent 38%),
+    var(--ps-glass-fill);
+  box-shadow: var(--ps-glass-shadow-float);
+  backdrop-filter: blur(var(--ps-glass-blur-sm));
+}
+
+.adaptive-panel.ps-panel .ps-panel__header {
+  border-bottom-color: var(--ps-color-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 64%, transparent);
+}
+
+.adaptive-panel.ps-panel .ps-panel__title h2 {
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-lg);
+  letter-spacing: 0;
+}
+
+.adaptive-panel.ps-panel .adaptive-panel__badge.ps-chip {
+  border-color: color-mix(in srgb, var(--badge-color, var(--ps-color-accent)) 42%, var(--ps-color-border));
+  background: var(--ps-glass-soft);
+  color: var(--ps-color-text-muted);
+}
+
+.adaptive-panel.ps-panel .adaptive-panel__tools.ps-action-row {
+  gap: var(--ps-space-xs);
+}
+
+.adaptive-panel.ps-panel .adaptive-panel__tools .ps-icon-button,
+.adaptive-panel.ps-panel .adaptive-panel__edge-menu > .ps-icon-button,
+.adaptive-panel.ps-panel .adaptive-panel__overflow > .ps-icon-button {
+  width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border-radius: var(--ps-radius-full);
+}
+
+.adaptive-panel.ps-panel .adaptive-panel__edge-options,
+.adaptive-panel.ps-panel .adaptive-panel__overflow-menu {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface-raised) 82%, transparent);
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-md));
+}
+
+.adaptive-panel.ps-panel .adaptive-panel__edge-options button.is-active,
+.adaptive-panel.ps-panel .adaptive-panel__overflow-edges button.is-active {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 52%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 18%, var(--ps-glass-soft));
+  color: var(--ps-color-accent);
+}
+
+.adaptive-panel.ps-panel .ps-panel__body {
+  padding: 0;
+}
+
+/* Legacy action controls mapped to PROSPECTRE atoms. */
+.icon-button,
+.tool-button,
+.ghost-button,
+.primary-button,
+.secondary-button,
+.danger-button,
+.compact-action {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    var(--ps-glass-card);
+  color: var(--ps-color-text);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  transition:
+    transform var(--ps-duration-fast) var(--ps-ease-standard),
+    border-color var(--ps-duration-mid) var(--ps-ease-standard),
+    background var(--ps-duration-mid) var(--ps-ease-standard);
+}
+
+.icon-button:hover,
+.tool-button:hover,
+.ghost-button:hover,
+.primary-button:hover,
+.secondary-button:hover,
+.danger-button:hover,
+.compact-action:hover {
+  border-color: var(--ps-glass-border-bright);
+  transform: translateY(-1px);
+}
+
+.icon-button,
+.tool-button {
+  border-radius: var(--ps-radius-full);
+}
+
+.primary-button {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 44%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 34%, transparent), transparent),
+    var(--ps-glass-fill-strong);
+}
+
+.danger-button {
+  border-color: color-mix(in srgb, var(--ps-color-danger) 46%, transparent);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-danger) 24%, transparent), transparent),
+    var(--ps-glass-card);
+}
+
+.secondary-button,
+.ghost-button {
+  color: var(--ps-color-text-muted);
+}
+
+/* Floating menus and popovers share one glass menu surface. */
+.action-menu,
+.project-menu,
+.profile-menu,
+.toolbar-popover,
+.graph-popover,
+.link-preview-popover,
+.heart-menu-popover,
+.emoji-picker-popover {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface-raised) 84%, transparent);
+  box-shadow: var(--ps-glass-shadow-float);
+  backdrop-filter: blur(var(--ps-glass-blur-md));
+}
+
+.action-menu button,
+.project-menu button,
+.profile-menu button,
+.toolbar-popover button,
+.graph-popover button,
+.link-preview-popover button,
+.heart-menu-popover button,
+.emoji-picker-popover button {
+  border-color: transparent;
+  color: var(--ps-color-text-muted);
+}
+
+.action-menu button:hover,
+.project-menu button:hover,
+.project-menu button.active,
+.profile-menu button:hover,
+.toolbar-popover button:hover,
+.graph-popover button:hover,
+.link-preview-popover button:hover,
+.heart-menu-popover button:hover,
+.emoji-picker-popover button:hover {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 28%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 12%, var(--ps-glass-soft));
+  color: var(--ps-color-text);
+}
+
+/* Graph search consumes atoms while retaining graph-search-* behavior hooks. */
+.graph-search-popover.ps-surface {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface-raised) 86%, transparent);
+}
+
+.graph-search-field.ps-field {
+  gap: 0;
+}
+
+.graph-search-field .ps-input {
+  border-color: var(--ps-color-border);
+  background: color-mix(in srgb, var(--ps-color-surface) 84%, transparent);
+  color: var(--ps-color-text);
+}
+
+.graph-search-field .ps-icon-button {
+  width: 30px;
+  min-height: 30px;
+  height: 30px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+.graph-search-results.ps-meta-list {
+  gap: var(--ps-space-xs);
+}
+
+.graph-search-result.ps-card {
+  gap: var(--ps-space-sm);
+  padding: var(--ps-space-sm);
+  border-radius: var(--ps-radius-md);
+  background: color-mix(in srgb, var(--ps-color-surface) 76%, transparent);
+}
+
+.graph-search-result.ps-surface {
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.graph-search-result.ps-card.active,
+.graph-search-result.ps-card:hover {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 38%, var(--ps-glass-border));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 16%, transparent), transparent),
+    var(--ps-glass-card);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-button,
+  .tool-button,
+  .ghost-button,
+  .primary-button,
+  .secondary-button,
+  .danger-button,
+  .compact-action {
+    transition: none;
+  }
+
+  .icon-button:hover,
+  .tool-button:hover,
+  .ghost-button:hover,
+  .primary-button:hover,
+  .secondary-button:hover,
+  .danger-button:hover,
+  .compact-action:hover {
+    transform: none;
+  }
+}

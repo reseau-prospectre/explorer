@@ -1,0 +1,105 @@
+/*
+  PROSPECTRE atomic design system tokens.
+  Namespaced tokens avoid changing legacy app.css behavior during migration.
+*/
+
+:root {
+  /* Color roles */
+  --ps-color-bg: #071015;
+  --ps-color-surface: #0b171d;
+  --ps-color-surface-raised: #101f26;
+  --ps-color-surface-card: #14242b;
+  --ps-color-text: #edf7f6;
+  --ps-color-text-muted: #9fb3b8;
+  --ps-color-text-subtle: #71868d;
+  --ps-color-accent: #7dd3fc;
+  --ps-color-accent-2: #5ee7df;
+  --ps-color-accent-3: #b490f5;
+  --ps-color-danger: #fb7185;
+  --ps-color-warning: #fbbf24;
+  --ps-color-success: #86efac;
+  --ps-color-border: rgba(216, 239, 238, 0.16);
+  --ps-color-border-strong: rgba(216, 239, 238, 0.28);
+
+  /* Liquid glass surface model, adapted from the MIT Liquid Glass kit. */
+  --ps-glass-fill: color-mix(in srgb, var(--ps-color-surface) 30%, transparent);
+  --ps-glass-fill-strong: color-mix(in srgb, var(--ps-color-surface-raised) 42%, transparent);
+  --ps-glass-card: color-mix(in srgb, var(--ps-color-surface-card) 34%, transparent);
+  --ps-glass-soft: rgba(255, 255, 255, 0.035);
+  --ps-glass-border: rgba(255, 255, 255, 0.18);
+  --ps-glass-border-bright: rgba(255, 255, 255, 0.32);
+  --ps-glass-blur-sm: 4px;
+  --ps-glass-blur-md: 12px;
+  --ps-glass-blur-lg: 24px;
+  --ps-glass-shadow: 0 16px 44px rgba(0, 0, 0, 0.24), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  --ps-glass-shadow-float: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
+  --ps-glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 48%);
+
+  /* Type scale */
+  --ps-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --ps-font-size-2xs: 0.6875rem;
+  --ps-font-size-xs: 0.75rem;
+  --ps-font-size-sm: 0.8125rem;
+  --ps-font-size-md: 0.9375rem;
+  --ps-font-size-base: 1rem;
+  --ps-font-size-lg: 1.125rem;
+  --ps-font-size-xl: 1.375rem;
+  --ps-font-size-2xl: 1.75rem;
+  --ps-line-tight: 1.15;
+  --ps-line-normal: 1.45;
+  --ps-line-loose: 1.65;
+
+  /* Spacing */
+  --ps-space-2xs: 0.25rem;
+  --ps-space-xs: 0.375rem;
+  --ps-space-sm: 0.5rem;
+  --ps-space-md: 0.75rem;
+  --ps-space-lg: 1rem;
+  --ps-space-xl: 1.5rem;
+  --ps-space-2xl: 2rem;
+  --ps-space-3xl: 3rem;
+
+  /* Shape */
+  --ps-radius-xs: 4px;
+  --ps-radius-sm: 6px;
+  --ps-radius-md: 8px;
+  --ps-radius-lg: 12px;
+  --ps-radius-xl: 18px;
+  --ps-radius-full: 999px;
+
+  /* Motion */
+  --ps-duration-fast: 120ms;
+  --ps-duration-mid: 180ms;
+  --ps-duration-slow: 320ms;
+  --ps-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ps-ease-liquid: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* Layers */
+  --ps-z-base: 1;
+  --ps-z-chrome: 40;
+  --ps-z-panel: 90;
+  --ps-z-overlay: 220;
+  --ps-z-modal: 260;
+  --ps-z-toast: 320;
+  --ps-z-tooltip: 360;
+}
+
+:root[data-theme="light"] {
+  --ps-color-bg: #eef4f5;
+  --ps-color-surface: #f7fbfb;
+  --ps-color-surface-raised: #ffffff;
+  --ps-color-surface-card: #ffffff;
+  --ps-color-text: #12262e;
+  --ps-color-text-muted: #324c55;
+  --ps-color-text-subtle: #496168;
+  --ps-color-border: rgba(26, 54, 62, 0.16);
+  --ps-color-border-strong: rgba(26, 54, 62, 0.28);
+  --ps-glass-fill: color-mix(in srgb, var(--ps-color-surface) 48%, transparent);
+  --ps-glass-fill-strong: color-mix(in srgb, var(--ps-color-surface-raised) 58%, transparent);
+  --ps-glass-card: color-mix(in srgb, var(--ps-color-surface-card) 54%, transparent);
+  --ps-glass-soft: rgba(9, 35, 43, 0.035);
+  --ps-glass-border: rgba(26, 54, 62, 0.14);
+  --ps-glass-border-bright: rgba(26, 54, 62, 0.24);
+  --ps-glass-shadow: 0 16px 44px rgba(17, 43, 51, 0.12), inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  --ps-glass-shadow-float: 0 24px 70px rgba(17, 43, 51, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
