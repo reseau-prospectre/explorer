@@ -36,6 +36,10 @@ import { createNodeRenderer } from "./graph/node-renderer.js";
 import { createRealtimeProviders } from "./services/realtime.js";
 import { createMarkdownRenderer } from "./ui/markdown.js";
 import {
+  renderActivityItem as renderActivityItemView,
+  renderTrashItem
+} from "./ui/activity-view.js";
+import {
   htmlToMarkdown,
   looksLikeHtml,
   markdownToEditableHtml
@@ -57,6 +61,7 @@ import {
   renderLinkPreview,
   renderSmartText
 } from "./ui/smart-link-view.js";
+import { renderPresenceChips as renderPresenceChipsView } from "./ui/presence-view.js";
 import {
   getTypePresentation,
   renderTypeDistributionChart as renderTypeDistributionChartView
@@ -3685,18 +3690,12 @@ function renderPresenceStrip() {
 }
 
 function renderPresenceChips(users, limit = 5) {
-  const chips = users.map((user, index) => {
-    const isSelf = user.clientId === state.profile.clientId;
-    const node = user.selectedNodeId ? state.entities.get(user.selectedNodeId) : null;
-    const tip = user.selectedNodeId && !node
-      ? `${user.displayName} consulte une fiche absente de votre atlas`
-      : node ? `Rejoindre ${user.displayName} · ${node.label}` : `${user.displayName} · disponible`;
-    return `<button class="presence-top-chip${isSelf ? " self" : ""}${user.selectedNodeId && !node ? " missing-node" : ""}${index >= limit ? " presence-overflow" : ""}" type="button" data-follow="${escapeHtml(user.clientId)}" aria-label="${escapeHtml(tip)}">
-      ${avatarMarkup(user)}
-      <span class="tooltip bottom">${escapeHtml(tip)}</span>
-    </button>`;
-  }).join("");
-  return `${chips}${users.length > limit ? `<button class="presence-more" data-expand-presence type="button" aria-label="Afficher les ${users.length - limit} autres coprésences">+${users.length - limit}</button>` : ""}`;
+  return renderPresenceChipsView(users, {
+    limit,
+    currentClientId: state.profile.clientId,
+    getNode: (id) => state.entities.get(id),
+    renderAvatar: avatarMarkup
+  });
 }
 
 function followUser(clientId) {
@@ -4827,7 +4826,7 @@ function renderActivityPanel() {
   const wantsRead = state.activityTab === "read";
   const items = state.activity.filter((item) => VISIBLE_ACTIVITY_TYPES.has(item.type) && state.activityRead.has(item.id) === wantsRead);
   els.activityContent.innerHTML = items.length
-    ? `<div class="activity-list">${items.map(renderActivityItem).join("")}</div>`
+    ? `<div class="activity-list ps-meta-list">${items.map(renderActivityItem).join("")}</div>`
     : `<p class="empty-state">${wantsRead ? "Aucune activité consultée." : "Aucune nouvelle activité."}</p>`;
   els.activityContent.querySelectorAll("[data-activity-id]").forEach((button) => {
     button.addEventListener("click", () => openActivityItem(button.dataset.activityId));
@@ -4835,22 +4834,14 @@ function renderActivityPanel() {
 }
 
 function renderActivityItem(item) {
-  const labels = {
-    comment: "a commenté",
-    reply: "a répondu"
-  };
   const comment = findComment(item.commentId);
   const reactions = comment ? getCommentReactions(comment) : [];
-  return `<button class="activity-item" type="button" data-activity-id="${escapeHtml(item.id)}">
-    <span class="activity-timeline-dot" aria-hidden="true"></span>
-    ${avatarMarkup({ actorId: item.actorId, avatar: item.actorAvatar, photoURL: item.actorPhotoURL, color: item.actorColor })}
-    <span class="activity-copy">
-      <span class="activity-title"><strong>${escapeHtml(item.actorName || "Anonyme")} ${escapeHtml(labels[item.type] || "a interagi")}</strong>${relativeTimeMarkup(item.createdAt, "time")}</span>
-      <span class="activity-entity">${escapeHtml(item.entityLabel || "Élément")}</span>
-      ${item.text ? `<span class="activity-message">${escapeHtml(item.text)}</span>` : ""}
-      ${reactions.length ? `<span class="activity-reactions">${reactions.map((reaction) => `<span>${reactionEmojiMarkup(reaction)}${reaction.count ? `<strong>${reaction.count}</strong>` : ""}</span>`).join("")}</span>` : ""}
-    </span>
-  </button>`;
+  return renderActivityItemView(item, {
+    renderAvatar: avatarMarkup,
+    renderRelativeTime: relativeTimeMarkup,
+    renderReaction: reactionEmojiMarkup,
+    reactions
+  });
 }
 
 function openActivityItem(activityId) {
@@ -4875,17 +4866,10 @@ function openActivityItem(activityId) {
 function renderTrashActivity() {
   const deleted = getAllComments().filter((comment) => comment.deletedAt).sort((a, b) => b.deletedAt - a.deletedAt);
   els.activityContent.innerHTML = deleted.length
-    ? `<div class="trash-list">${deleted.map((comment) => `
-      <article class="trash-item">
-        <div><strong>${escapeHtml(comment.displayName || "Anonyme")}</strong><span>${escapeHtml(state.entities.get(comment.entityId)?.label || comment.entityId)}</span></div>
-        <p>${escapeHtml(shortLabel(comment.text || "", 160))}</p>
-        <small>Supprimé par ${escapeHtml(comment.deletedByName || "administrateur")} · ${relativeTimeMarkup(comment.deletedAt, "span")}</small>
-        <div class="comment-actions">
-          <button type="button" data-restore-comment="${escapeHtml(comment.id)}"><i>restore</i>Restaurer</button>
-          <button type="button" data-purge-comment="${escapeHtml(comment.id)}"><i>delete_forever</i>Supprimer définitivement</button>
-        </div>
-      </article>
-    `).join("")}</div>`
+    ? `<div class="trash-list ps-meta-list">${deleted.map((comment) => renderTrashItem(comment, {
+      entityLabel: state.entities.get(comment.entityId)?.label,
+      renderRelativeTime: relativeTimeMarkup
+    })).join("")}</div>`
     : `<p class="empty-state">La corbeille est vide.</p>`;
   els.activityContent.querySelectorAll("[data-restore-comment]").forEach((button) => {
     button.addEventListener("click", () => {

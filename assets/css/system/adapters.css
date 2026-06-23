@@ -271,6 +271,67 @@
     var(--ps-glass-card);
 }
 
+/* Activity feed cards keep their timeline behavior while using atomic surfaces. */
+.activity-list.ps-meta-list,
+.trash-list.ps-meta-list {
+  gap: var(--ps-space-sm);
+}
+
+.activity-item.ps-card,
+.trash-item.ps-card {
+  padding: var(--ps-space-md);
+  border-color: var(--ps-glass-border);
+  border-radius: var(--ps-radius-md);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 82%, transparent);
+  color: var(--ps-color-text);
+}
+
+.activity-item.ps-surface,
+.trash-item.ps-surface {
+  box-shadow: none;
+  backdrop-filter: blur(var(--ps-glass-blur-xs));
+}
+
+.activity-copy.ps-meta-item {
+  gap: var(--ps-space-xs);
+}
+
+.activity-item.ps-card:hover,
+.trash-item.ps-card:hover {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 38%, var(--ps-glass-border));
+}
+
+/* Presence chips keep their compact avatar geometry while sharing chip tokens. */
+.presence-top-chip.ps-chip {
+  display: grid;
+  place-items: center;
+  gap: 0;
+  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  flex: 0 0 34px;
+  padding: 0;
+  border-radius: var(--ps-radius-full);
+  background: transparent;
+}
+
+.presence-top-chip.ps-chip:hover {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 62%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 10%, transparent);
+}
+
+.presence-more.ps-chip {
+  display: grid;
+  place-items: center;
+  min-width: 28px;
+  min-height: 28px;
+  height: 28px;
+  padding: 0 var(--ps-space-xs);
+  border-radius: var(--ps-radius-full);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .icon-button,
   .tool-button,
