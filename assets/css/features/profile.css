@@ -1,0 +1,328 @@
+/* Profile feature extracted from app.css. */
+.profile-menu .panel-content {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  overflow-x: hidden;
+}
+
+.profile-identity {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 10px;
+  padding: 2px 0 10px;
+  border-bottom: 1px solid var(--line);
+}
+
+.profile-options-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.profile-options-tabs button {
+  display: flex;
+  min-width: 0;
+  min-height: 42px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--soft) 74%, transparent);
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.profile-options-tabs button.active {
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--line));
+  background: color-mix(in srgb, var(--accent) 14%, var(--soft));
+  color: var(--text);
+  box-shadow: inset 0 -2px 0 var(--accent);
+}
+
+.profile-options-tabs i {
+  font-size: 19px;
+}
+
+.profile-options-panels {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-tab-panel.hidden {
+  display: none !important;
+}
+
+.profile-settings-panel {
+  display: grid;
+  gap: 12px;
+}
+
+.profile-identity > i {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 18px;
+}
+
+.profile-identity > div {
+  display: grid;
+  min-width: 0;
+}
+
+.profile-identity > div span {
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 12px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.account-state {
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 750;
+}
+
+.account-state.connected {
+  background: color-mix(in srgb, #22c55e 15%, var(--soft));
+  color: color-mix(in srgb, #22c55e 65%, var(--text));
+}
+
+.profile-section {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin: 0;
+  margin-block: 0 !important;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.transfer-section {
+  display: grid;
+  gap: 12px;
+}
+
+.transfer-section-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.transfer-section-head h3 {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+.transfer-section-head > i {
+  display: grid;
+  width: 36px;
+  height: 36px;
+  flex: 0 0 36px;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--soft);
+  color: var(--accent);
+  font-size: 21px;
+}
+
+.transfer-action-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.transfer-action-card {
+  display: grid;
+  grid-template-columns: 32px minmax(0, 1fr);
+  align-items: center;
+  gap: 9px;
+  min-height: 74px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 72%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.transfer-action-card:hover {
+  border-color: color-mix(in srgb, var(--accent) 48%, var(--line));
+  background: color-mix(in srgb, var(--accent) 10%, var(--soft));
+}
+
+.transfer-action-card:disabled {
+  cursor: not-allowed;
+  opacity: 0.52;
+}
+
+.transfer-action-card > i {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent);
+  font-size: 20px;
+}
+
+.transfer-action-card span {
+  display: grid;
+  min-width: 0;
+  gap: 3px;
+}
+
+.transfer-action-card strong {
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.transfer-action-card small {
+  display: -webkit-box;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 11px;
+  line-height: 1.25;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.avatar-choice,
+.theme-choice {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+
+.theme-choice {
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  margin-block: 0 !important;
+  align-self: start;
+}
+
+.avatar-choice legend,
+.theme-choice legend {
+  margin-bottom: 7px;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.avatar-choice {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+}
+
+.avatar-choice legend {
+  grid-column: 1 / -1;
+}
+
+.avatar-choice label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 6px 8px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--card);
+}
+
+.avatar-choice-preview {
+  display: grid;
+  width: 32px;
+  height: 32px;
+  min-width: 32px;
+  min-height: 32px;
+  flex: 0 0 32px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  place-items: center;
+  border-radius: 50%;
+  color: #071015;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.segmented-control {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+  padding: 4px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--soft);
+}
+
+.segmented-control button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 38px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.segmented-control button.active {
+  background: var(--panel-2);
+  color: var(--text);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.12);
+}
+
+.auth-button.connected {
+  border-color: color-mix(in srgb, #22c55e 48%, var(--line));
+  color: var(--text);
+}
+
+.clear-local-button {
+  margin-top: 2px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.profile-menu .primary-button,
+.profile-menu .secondary-button {
+  display: flex;
+  width: auto !important;
+  inline-size: 100% !important;
+  max-width: 100%;
+  max-inline-size: 100% !important;
+  margin-inline: 0 !important;
+  box-sizing: border-box;
+}

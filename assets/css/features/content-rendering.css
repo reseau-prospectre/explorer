@@ -1,0 +1,483 @@
+/* Content rendering feature layer: rich Markdown/HTML output and scoped embedded Moodle tables. */
+.rendered-content a[data-smart-link],
+.comment-body a[data-smart-link] {
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  color: color-mix(in srgb, var(--accent) 82%, var(--text));
+  text-decoration: none;
+  transition: color 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.rendered-content a[data-smart-link]:hover,
+.comment-body a[data-smart-link]:hover,
+.rendered-content a[data-smart-link]:focus-visible,
+.comment-body a[data-smart-link]:focus-visible {
+  border-color: var(--accent);
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--text);
+}
+
+.rendered-content p,
+.rendered-content li {
+  font-size: 15px;
+  line-height: 1.64;
+}
+
+.rendered-content {
+  min-width: 0;
+}
+
+.rendered-content > :first-child {
+  margin-top: 0;
+}
+
+.rendered-content > :last-child {
+  margin-bottom: 0;
+}
+
+.rendered-content img {
+  display: block;
+  width: auto;
+  max-width: 100%;
+  max-height: 520px;
+  margin: 18px auto;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel-2) 88%, transparent);
+  object-fit: contain;
+}
+
+.rendered-content table {
+  width: 100%;
+  margin: 18px 0;
+  border-collapse: collapse;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel-2);
+  font-size: 13px;
+  overflow: hidden;
+}
+
+.rendered-content th,
+.rendered-content td {
+  padding: 9px 10px;
+  border: 1px solid var(--line);
+  text-align: left;
+  vertical-align: top;
+}
+
+.rendered-content th {
+  background: color-mix(in srgb, var(--accent) 12%, var(--card));
+  color: var(--text);
+  font-weight: 800;
+}
+
+.rendered-content tr:nth-child(even) td {
+  background: var(--soft);
+}
+
+.rendered-content blockquote {
+  margin: 18px 0;
+  padding: 12px 15px;
+  border-left: 4px solid var(--accent);
+  border-radius: 0 8px 8px 0;
+  background: color-mix(in srgb, var(--accent) 9%, var(--soft));
+}
+
+.rendered-content blockquote p {
+  margin: 0;
+}
+
+.rendered-content pre {
+  max-width: 100%;
+  margin: 18px 0;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: #071015;
+  overflow: auto;
+}
+
+.rendered-content code {
+  padding: 2px 5px;
+  border-radius: 5px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--soft));
+  color: #a7f3d0;
+  font-family: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  font-size: .9em;
+}
+
+.rendered-content pre code {
+  padding: 0;
+  background: transparent;
+  color: #d7f7ef;
+}
+
+.rendered-content hr {
+  height: 1px;
+  margin: 24px 0;
+  border: 0;
+  background: var(--line);
+}
+
+.rendered-content a {
+  color: var(--accent);
+  text-underline-offset: 3px;
+}
+
+.rendered-content del {
+  color: var(--muted);
+}
+
+.rendered-content .contains-task-list,
+.rendered-content .task-list-item,
+.rendered-content ul:has(> li > input[type="checkbox"]),
+.rendered-content li:has(> input[type="checkbox"]) {
+  list-style: none;
+}
+
+.rendered-content .contains-task-list,
+.rendered-content ul:has(> li > input[type="checkbox"]) {
+  padding-left: 0;
+}
+
+.rendered-content .task-list-item,
+.rendered-content li:has(> input[type="checkbox"]) {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.rendered-content .task-list-item input,
+.rendered-content li > input[type="checkbox"] {
+  flex: 0 0 auto;
+  margin: .32em 0 0;
+}
+
+.rich-image-frame {
+  position: relative;
+  display: grid;
+  min-height: 160px;
+  margin: 14px 0;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 10%, transparent), transparent 42%),
+    color-mix(in srgb, var(--soft) 78%, #000);
+}
+
+.rich-image-frame img {
+  position: relative;
+  z-index: 1;
+  display: block;
+  max-width: 100%;
+  height: auto;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+
+.rich-image-frame.is-loaded img {
+  opacity: 1;
+}
+
+.rich-image-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 4px;
+  padding: 20px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.rich-image-placeholder i {
+  color: var(--accent);
+  font-size: 32px;
+}
+
+.rich-image-placeholder span {
+  max-width: 100%;
+  overflow: hidden;
+  color: var(--text);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.rich-image-placeholder small {
+  color: var(--muted);
+}
+
+.rich-image-frame.is-loaded .rich-image-placeholder {
+  opacity: 0;
+}
+
+.rich-image-frame.is-broken {
+  border-style: dashed;
+}
+
+.rich-embed-frame {
+  position: relative;
+  width: 100%;
+  min-height: 280px;
+  margin: 14px 0;
+  overflow: hidden;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--soft) 78%, #000);
+}
+
+.rich-embed-frame iframe {
+  display: block;
+  width: 100%;
+  min-height: 360px;
+  border: 0;
+}
+
+.moodle-html-content {
+  --bs-gutter-x: 1.5rem;
+  --bs-gutter-y: 0;
+  margin: 0;
+  padding: 18px;
+  border-radius: 8px;
+  background: #f8f9fa;
+  color: #212529;
+  color-scheme: light;
+  overflow-wrap: anywhere;
+}
+
+.html-editor-preview .moodle-html-content {
+  min-height: 100%;
+  border-radius: 0;
+}
+
+.moodle-html-content,
+.moodle-html-content * {
+  box-sizing: border-box;
+}
+
+.moodle-html-content .container,
+.moodle-html-content .container-fluid {
+  width: 100%;
+  margin-right: auto;
+  margin-left: auto;
+  padding-right: calc(var(--bs-gutter-x) * .5);
+  padding-left: calc(var(--bs-gutter-x) * .5);
+}
+
+.moodle-html-content .row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-top: calc(-1 * var(--bs-gutter-y));
+  margin-right: calc(-.5 * var(--bs-gutter-x));
+  margin-left: calc(-.5 * var(--bs-gutter-x));
+}
+
+.moodle-html-content .row > * {
+  width: 100%;
+  max-width: 100%;
+  margin-top: var(--bs-gutter-y);
+  padding-right: calc(var(--bs-gutter-x) * .5);
+  padding-left: calc(var(--bs-gutter-x) * .5);
+}
+
+.moodle-html-content .col {
+  flex: 1 0 0%;
+}
+
+.moodle-html-content .card {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  border: 1px solid rgba(0, 0, 0, .175);
+  border-radius: 8px;
+  background: #fff;
+  color: #212529;
+  word-wrap: break-word;
+}
+
+.moodle-html-content .card-body {
+  flex: 1 1 auto;
+  padding: 1rem;
+}
+
+.moodle-html-content .rounded-0 {
+  border-radius: 0 !important;
+}
+
+.moodle-html-content .shadow {
+  box-shadow: 0 12px 32px color-mix(in srgb, #000 28%, transparent) !important;
+}
+
+.moodle-html-content .h-100 {
+  height: 100% !important;
+}
+
+.moodle-html-content p,
+.moodle-html-content li {
+  color: inherit;
+}
+
+.moodle-html-content .alert {
+  position: relative;
+  margin-bottom: 1rem;
+  padding: 1rem;
+  border: 1px solid transparent;
+  border-radius: .375rem;
+}
+
+.moodle-html-content .bg-light {
+  background-color: #f8f9fa !important;
+  color: #212529 !important;
+}
+
+.moodle-html-content .bg-dark {
+  background-color: #212529 !important;
+  color: #fff !important;
+}
+
+.moodle-html-content .bg-white {
+  background-color: #fff !important;
+  color: #212529 !important;
+}
+
+.moodle-html-content .bg-warning {
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+}
+
+.moodle-html-content .bg-info {
+  background-color: #cff4fc !important;
+  color: #055160 !important;
+}
+
+.moodle-html-content .bg-success {
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+}
+
+.moodle-html-content .bg-danger {
+  background-color: #f8d7da !important;
+  color: #842029 !important;
+}
+
+.moodle-html-content .alert-info,
+.moodle-html-content .list-group-item-info {
+  border-color: #b6effb !important;
+  background-color: #cff4fc !important;
+  color: #055160 !important;
+}
+
+.moodle-html-content .alert-info .text-white,
+.moodle-html-content .alert-info [class*="text-white"],
+.moodle-html-content .alert-info [style*="color"],
+.moodle-html-content .list-group-item-info .text-white,
+.moodle-html-content .list-group-item-info [class*="text-white"],
+.moodle-html-content .list-group-item-info [style*="color"] {
+  color: #055160 !important;
+}
+
+.moodle-html-content .alert-warning,
+.moodle-html-content .list-group-item-warning {
+  border-color: #ffecb5 !important;
+  background-color: #fff3cd !important;
+  color: #664d03 !important;
+}
+
+.moodle-html-content .alert-warning .text-white,
+.moodle-html-content .alert-warning [class*="text-white"],
+.moodle-html-content .alert-warning [style*="color"],
+.moodle-html-content .list-group-item-warning .text-white,
+.moodle-html-content .list-group-item-warning [class*="text-white"],
+.moodle-html-content .list-group-item-warning [style*="color"] {
+  color: #664d03 !important;
+}
+
+.moodle-html-content .alert-success,
+.moodle-html-content .list-group-item-success {
+  border-color: #badbcc !important;
+  background-color: #d1e7dd !important;
+  color: #0f5132 !important;
+}
+
+.moodle-html-content .alert-success [style*="color"],
+.moodle-html-content .list-group-item-success [style*="color"] {
+  color: #0f5132 !important;
+}
+
+.moodle-html-content .alert-danger,
+.moodle-html-content .list-group-item-danger {
+  border-color: #f5c2c7 !important;
+  background-color: #f8d7da !important;
+  color: #842029 !important;
+}
+
+.moodle-html-content .alert-danger [style*="color"],
+.moodle-html-content .list-group-item-danger [style*="color"] {
+  color: #842029 !important;
+}
+
+.moodle-html-content .list-group-item {
+  color: #212529;
+}
+
+.moodle-html-content .text-dark {
+  color: #212529 !important;
+}
+
+.moodle-html-content .text-white {
+  color: #fff !important;
+}
+
+.moodle-html-content .text-light {
+  color: #f8f9fa !important;
+}
+
+.moodle-html-content .bg-warning .text-white,
+.moodle-html-content .bg-warning [class*="text-white"],
+.moodle-html-content .bg-warning [style*="color"],
+.moodle-html-content .bg-info .text-white,
+.moodle-html-content .bg-info [class*="text-white"],
+.moodle-html-content .bg-info [style*="color"],
+.moodle-html-content .bg-light .text-white,
+.moodle-html-content .bg-light [class*="text-white"],
+.moodle-html-content .bg-light [style*="color"],
+.moodle-html-content .bg-white .text-white,
+.moodle-html-content .bg-white [class*="text-white"],
+.moodle-html-content .bg-white [style*="color"] {
+  color: inherit !important;
+}
+
+
+.moodle-html-content .py-2 {
+  padding-top: .5rem !important;
+  padding-bottom: .5rem !important;
+}
+
+.moodle-html-content .mt-4 {
+  margin-top: 1.5rem !important;
+}
+
+.moodle-html-content .mb-4 {
+  margin-bottom: 1.5rem !important;
+}
+
+.rendered-content .moodle-html-content table {
+  border-color: #dee2e6;
+  background: #fff;
+  color: #212529;
+}
+
+.rendered-content .moodle-html-content th,
+.rendered-content .moodle-html-content td {
+  border-color: #dee2e6;
+}
+
+.rendered-content .moodle-html-content tr:nth-child(even) td {
+  background: transparent;
+}

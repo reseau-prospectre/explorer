@@ -1,0 +1,381 @@
+/* Entity editor feature layer: edit surface, options, Toast UI shell and HTML preview. */
+.content-editor {
+  margin: 8px 0 16px;
+}
+
+.content-editor-fallback {
+  display: none;
+}
+
+.edit-surface {
+  display: grid;
+  gap: 12px;
+  margin: -16px -18px 0;
+  padding: 0 0 8px;
+}
+
+.edit-surface > :not(.edit-surface-head) {
+  margin-right: 18px;
+  margin-left: 18px;
+}
+
+.edit-surface-head {
+  position: sticky;
+  top: -16px;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0;
+  padding: 16px 22px 14px;
+  border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background: linear-gradient(180deg, color-mix(in srgb, var(--panel) 96%, transparent) 82%, color-mix(in srgb, var(--panel) 0%, transparent));
+  backdrop-filter: blur(14px);
+}
+
+.edit-surface-head h2 {
+  margin: 0;
+  color: var(--text);
+  font-size: 18px;
+  line-height: 1.2;
+}
+
+.edit-surface .kicker {
+  display: none;
+}
+
+.edit-card {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--card) 86%, transparent);
+}
+
+.edit-card.compact-card {
+  gap: 8px;
+}
+
+.edit-card-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.edit-card-head h3 {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 15px;
+  line-height: 1.2;
+}
+
+.edit-card-head p {
+  margin: 4px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.edit-option-card {
+  opacity: .72;
+}
+
+.edit-option-card.is-enabled {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 38%, var(--line));
+}
+
+.edit-option-card textarea[disabled] {
+  display: none;
+}
+
+.summary-appearance {
+  border-top: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+  padding-top: 10px;
+}
+
+.summary-appearance summary {
+  display: flex;
+  min-height: 34px;
+  align-items: center;
+  gap: 8px;
+  color: var(--muted);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 850;
+  list-style: none;
+}
+
+.summary-appearance summary::-webkit-details-marker {
+  display: none;
+}
+
+.summary-appearance summary i {
+  font-size: 18px;
+}
+
+.summary-appearance summary strong {
+  margin-left: auto;
+  color: var(--text);
+  font-size: 12px;
+}
+
+.summary-style-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.summary-style-preview {
+  display: grid;
+  min-width: 0;
+  gap: 8px;
+  padding: 9px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--soft) 78%, transparent);
+  color: var(--muted);
+  text-align: left;
+  font-weight: 850;
+}
+
+.summary-style-preview.active {
+  border-color: color-mix(in srgb, var(--accent) 58%, var(--line));
+  background: color-mix(in srgb, var(--accent) 9%, var(--soft));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 24%, transparent);
+}
+
+.summary-style-preview__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+}
+
+.summary-style-preview__label i {
+  font-size: 17px;
+}
+
+.summary-style-preview__card.entity-summary-card {
+  margin: 0;
+  padding: 8px 9px 9px 11px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.summary-style-preview__card .entity-summary-card__head {
+  font-size: 8px;
+}
+
+.summary-style-preview__card .entity-summary-card__head i {
+  font-size: 13px;
+}
+
+.summary-style-preview__line {
+  display: block;
+  margin-top: 4px;
+  color: var(--text);
+  font-size: 10px;
+  font-weight: 760;
+  line-height: 1.25;
+}
+
+.edit-option-card:not(.is-enabled) .summary-appearance {
+  display: none;
+}
+
+.graph-image-editor {
+  display: grid;
+  gap: 10px;
+}
+
+.edit-option-card:not(.is-enabled) .graph-image-editor {
+  display: none;
+}
+
+.graph-image-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.graph-image-actions input[type="file"] {
+  display: none;
+}
+
+.graph-image-actions .ghost-button {
+  width: auto;
+  min-height: 36px;
+  padding: 0 10px;
+}
+
+.edit-editor-card {
+  padding: 0;
+  overflow: hidden;
+}
+
+.edit-editor-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--soft) 58%, transparent);
+}
+
+.edit-editor-head h3 {
+  margin: 2px 0 0;
+  color: var(--text);
+  font-size: 15px;
+}
+
+.editor-format-badge {
+  display: inline-flex;
+  min-height: 28px;
+  align-items: center;
+  padding: 0 9px;
+  border: 1px solid color-mix(in srgb, var(--accent) 28%, var(--line));
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.editor-mode-bar {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 1px;
+  padding: 4px;
+  border-bottom: 1px solid var(--line);
+  background: color-mix(in srgb, var(--panel) 78%, transparent);
+}
+
+.editor-mode-bar button {
+  display: inline-flex;
+  min-width: 0;
+  min-height: 38px;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--muted);
+  font-weight: 850;
+}
+
+.editor-mode-bar button.active {
+  background: color-mix(in srgb, var(--accent) 16%, var(--soft));
+  color: var(--text);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 42%, transparent);
+}
+
+.editor-workbench {
+  position: relative;
+  display: block;
+  min-height: min(62vh, 720px);
+  max-height: min(62vh, 720px);
+  background: color-mix(in srgb, var(--panel) 88%, transparent);
+  overflow: hidden;
+}
+
+.edit-editor-card .content-editor {
+  margin: 0;
+}
+
+.edit-editor-card .content-editor.hidden,
+.edit-editor-card .html-preview-shell.hidden,
+.edit-editor-card #adjust-body.content-editor-fallback {
+  display: none !important;
+}
+
+.edit-editor-card .content-editor,
+.edit-editor-card .toastui-editor-defaultUI {
+  height: min(62vh, 720px) !important;
+}
+
+.edit-editor-card .toastui-editor-main {
+  height: calc(min(62vh, 720px) - 43px) !important;
+  overflow: hidden;
+}
+
+.edit-editor-card #adjust-body:not(.content-editor-fallback) {
+  display: block;
+  width: 100%;
+  height: min(62vh, 720px);
+  min-height: 0;
+  margin: 0;
+  padding: 14px;
+  border: 0;
+  border-radius: 0;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--soft) 72%, #000) 0 46px, transparent 46px),
+    color-mix(in srgb, #02070a 72%, var(--panel));
+  color: var(--text);
+  font: 500 13px/1.55 "Cascadia Code", "Fira Code", Consolas, monospace;
+  tab-size: 2;
+  resize: vertical;
+  white-space: pre;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.html-editor-preview {
+  height: min(62vh, 720px);
+  min-height: 0;
+  max-height: none;
+  overflow: auto;
+  padding: 16px;
+  background: color-mix(in srgb, var(--panel) 92%, transparent);
+}
+
+.html-preview-shell {
+  background: color-mix(in srgb, var(--soft) 32%, transparent);
+}
+
+.edit-export-footer {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.edit-download-card {
+  max-width: 280px;
+}
+
+.edit-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 12px 0 0;
+  background: linear-gradient(0deg, var(--panel) 78%, color-mix(in srgb, var(--panel) 0%, transparent));
+}
+
+.edit-actions button {
+  min-height: 42px;
+}
+
+.content-editor .toastui-editor-defaultUI {
+  border-color: var(--line);
+  border-radius: 9px;
+  overflow: hidden;
+}
+
+.content-editor .toastui-editor-toolbar,
+.content-editor .toastui-editor-mode-switch {
+  background: var(--soft);
+  border-color: var(--line);
+}
+
+.content-editor .toastui-editor-mode-switch {
+  display: none !important;
+}

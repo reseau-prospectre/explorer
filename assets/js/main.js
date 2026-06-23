@@ -4,7 +4,6 @@ import {
   FALLBACK_MODEL_SCHEMA as DEFAULT_MODEL_SCHEMA,
   HIDDEN_NODE_TYPES,
   KNOWN_PROJECT_MANIFESTS,
-  MODEL_SCHEMA_VERSION,
   PACK_ASSET_EXTENSIONS,
   PACK_ASSET_MIME_TYPES,
   STORAGE_KEYS,
@@ -29,11 +28,79 @@ import {
 import { createProfileStore } from "./core/profile.js";
 import { createProjectModel } from "./model/project.js";
 import {
+  applySchemaFieldInput,
+  applySchemaTypeInput,
+  bumpPatchVersion,
+  addSchemaField as addSchemaFieldValue,
+  createSchemaField,
+  createSchemaType,
+  fieldKindLabel,
+  getSchemaCompatibilityReport as getSchemaCompatibilityReportValue,
+  getSchemaEntityCount as getSchemaEntityCountValue,
+  getSelectedSchemaField as getSelectedSchemaFieldValue,
+  getSelectedSchemaType,
+  mergeModelSchemas,
   normalizeModelSchema,
-  normalizeSchemaField
+  parseSchemaFieldValues,
+  removeSchemaField,
+  removeSchemaType,
+  reorderSchemaTypes as reorderSchemaTypesValue,
+  safeSchemaId,
+  validateModelSchema
 } from "./model/schema.js";
+import { computeCameraFitForNodes } from "./graph/camera-model.js";
+import {
+  buildVisibleGraph,
+  getSelectedLinkPath as getSelectedLinkPathModel,
+  getSelectedNodePath as getSelectedNodePathModel,
+  getSelectedPathIds as getSelectedPathIdsModel
+} from "./graph/focus-model.js";
+import {
+  getLinkDistance as getLinkDistanceValue,
+  getLinkKey as getLinkKeyValue,
+  getLinkTargetColor as getLinkTargetColorValue,
+  getScoreBoost
+} from "./graph/link-model.js";
 import { createNodeRenderer } from "./graph/node-renderer.js";
+import {
+  getExportFiles,
+  getFileExtension,
+  getImageExtensionFromBlob as getImageExtensionFromBlobValue,
+  serializeEntity,
+  updateMarkdownFileFromEntity
+} from "./services/export-model.js";
+import {
+  getIdentityState as getIdentityStateValue,
+  minimalPresence as minimalPresenceValue,
+  resolveAvatarProfile as resolveAvatarProfileValue
+} from "./services/identity-model.js";
+import {
+  createProjectNavigationHref,
+  createImportedFilesPlan,
+  createRemoteSingleFileManifest as createRemoteSingleFileManifestValue,
+  createRemoteResourceHref,
+  createRecentProjectList,
+  createSelectionDeepLinkUrl,
+  ensureUniqueMoodleNamespace as ensureUniqueMoodleNamespaceValue,
+  getInitialDeepLinkRequest,
+  getLaunchRequestFromSearch,
+  getRemoteFileName as getRemoteFileNameValue,
+  mergeProjectManifestWithMoodlePack as mergeProjectManifestWithMoodlePackValue,
+  resolveProjectRestore,
+  sameProjectUrl as sameProjectUrlValue
+} from "./services/project-launch.js";
 import { createRealtimeProviders } from "./services/realtime.js";
+import {
+  applyNodePositionToSource,
+  applyStoredGraphLayout,
+  clearGraphNodePosition,
+  createSessionSnapshot,
+  draftKey,
+  getProjectSessionKey as getProjectSessionKeyValue,
+  groupCommentsByEntity,
+  persistGraphNodePosition,
+  syncGraphPositionsFromVisible
+} from "./services/session-model.js";
 import { createMarkdownRenderer } from "./ui/markdown.js";
 import {
   renderActivityItem as renderActivityItemView,
@@ -45,27 +112,87 @@ import {
   markdownToEditableHtml
 } from "./ui/content-format.js";
 import {
+  applyEditorSyntaxHighlighting,
+  createEditFormValues,
+  getEditedBodyAndFormatValue,
   normalizeSummaryStyle,
-  renderEditorModeButton,
+  renderEditFormView,
   renderSummaryCallout,
-  renderSummaryStyleChoice,
+  resetEditorScrollPositions,
+  setGraphImageOptionEnabled,
+  setGraphImageValue,
+  setSummaryOptionEnabled,
+  setSummaryStyleSelection,
   summaryStyleLabel
 } from "./ui/editor-view.js";
+import {
+  getEntityRenderFormat,
+  getVisibleEntitySummary,
+  renderEntityReadView,
+  renderInlineRelations
+} from "./ui/entity-view.js";
+import {
+  computeGraphQualityMetrics,
+  formatCompactNumber,
+  formatGraphNumber
+} from "./ui/graph-quality-model.js";
+import {
+  renderGraphOptionsView,
+  renderQuickTypeFiltersView
+} from "./ui/graph-options-view.js";
 import { renderGraphQualityCard as renderGraphQualityCardView } from "./ui/graph-quality-view.js";
 import {
-  getFallbackExcerpt,
-  getSearchExcerpt
+  formatManifestDate,
+  getBreadcrumbEntities,
+  getEntityMetadataEntries
+} from "./ui/insight-model.js";
+import {
+  renderOverviewDetailsView,
+  renderOverviewEditView
+} from "./ui/overview-view.js";
+import {
+  emojiToId,
+  getCommentReactions as getCommentReactionsView,
+  getEntityReactions as getEntityReactionsView,
+  reactionEmojiMarkup,
+  renderEntityReactionBlock
+} from "./ui/reactions-view.js";
+import {
+  formatRelativeTime as formatRelativeTimeView,
+  relativeTimeMarkup as relativeTimeMarkupView
+} from "./ui/relative-time-view.js";
+import {
+  buildSearchDocuments,
+  fallbackSearchDocuments,
+  getSearchExcerpt,
+  renderSearchResultsView
 } from "./ui/search-view.js";
+import {
+  getGamificationViewModel,
+  renderGamificationCard as renderGamificationCardView
+} from "./ui/gamification-view.js";
 import {
   decorateSmartLinks,
   renderLinkPreview,
   renderSmartText
 } from "./ui/smart-link-view.js";
+import {
+  renderSchemaFieldsView,
+  renderSchemaTransferView,
+  renderSchemaTypesView
+} from "./ui/schema-view.js";
+import {
+  applyAvatarElement,
+  avatarMarkup as avatarMarkupView,
+  renderProfileIdentity as renderProfileIdentityView,
+  resolveAvatarAssetURL
+} from "./ui/profile-view.js";
 import { renderPresenceChips as renderPresenceChipsView } from "./ui/presence-view.js";
 import {
   getTypePresentation,
   renderTypeDistributionChart as renderTypeDistributionChartView
 } from "./ui/type-distribution-chart.js";
+import { renderToast } from "./ui/toast-view.js";
 import { bootstrapProspectre } from "./app/bootstrap.js";
 import { PanelManager } from "./panels/panel-manager.js";
 import {
@@ -80,12 +207,17 @@ import {
 } from "./controllers/comments-controller.js";
 import { createGraphController } from "./controllers/graph-controller.js";
 import {
+  destroyEditorState,
   getEntityEditSignature,
   getEntityEditorFormat,
+  getEditorModeViewState,
   getInitialEditorMode,
   getNextEditorState,
+  isEditorBodyDirty,
+  markEditorSurfaceDirty,
   normalizeEditorFormat,
-  normalizeEditorMode
+  normalizeEditorMode,
+  scheduleEditorAutosave
 } from "./controllers/editor-controller.js";
 import { overlays } from "./ui/overlay-manager.js";
 import { confirmAction, requestChoice } from "./ui/confirm-dialog.js";
@@ -1074,36 +1206,18 @@ function closeContextPanelState() {
 }
 
 function sameProjectUrl(a, b) {
-  if (!a || !b) return false;
-  return new URL(a, window.location.href).href === new URL(b, window.location.href).href;
+  return sameProjectUrlValue(a, b, window.location.href);
 }
 
 function updateProjectUrl(manifestUrl) {
-  const url = new URL(window.location.href);
-  if (sameProjectUrl(manifestUrl, DEFAULT_PROJECT_MANIFEST_URL)) url.searchParams.delete("project");
-  else url.searchParams.set("project", manifestUrl);
-  url.searchParams.delete("source");
-  url.searchParams.delete("url");
-  url.searchParams.delete("file");
-  url.searchParams.delete("pack");
-  url.searchParams.delete("select");
-  url.searchParams.delete("tab");
-  url.searchParams.delete("comment");
-  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  window.history.replaceState(null, "", createProjectNavigationHref(window.location.href, manifestUrl, {
+    defaultManifestUrl: DEFAULT_PROJECT_MANIFEST_URL
+  }));
 }
 
 function registerRecentProject(manifest) {
   const recent = loadJson(RECENT_PROJECTS_KEY, []);
-  const entry = {
-    id: manifest.id,
-    title: manifest.titre || manifest.id,
-    version: manifest.version || "",
-    group: "Imports récents"
-  };
-  localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify([
-    entry,
-    ...recent.filter((item) => item.id !== manifest.id)
-  ].slice(0, 8)));
+  localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(createRecentProjectList(recent, manifest)));
 }
 
 function setupGraph() {
@@ -1280,41 +1394,10 @@ async function loadDefaultProject() {
 }
 
 function getUrlLaunchRequest() {
-  const params = new URLSearchParams(window.location.search);
-  const pack = params.get("pack");
-  if (pack) {
-    const manifestUrl = resolveKnownProjectAlias(pack);
-    if (manifestUrl) return { kind: "project", value: manifestUrl };
-  }
-  const project = params.get("project");
-  if (project) return { kind: "project", value: project };
-  const resource = params.get("source") || params.get("url") || params.get("file");
-  if (resource) return { kind: "resource", value: resource };
-  return { kind: "default", value: DEFAULT_PROJECT_MANIFEST_URL };
-}
-
-function resolveKnownProjectAlias(value) {
-  const normalized = normalizeAlias(value);
-  const match = KNOWN_PROJECT_MANIFESTS.find((entry) => {
-    const ids = [
-      entry.id,
-      entry.id?.replace(/^pack:/, ""),
-      entry.title,
-      entry.url
-    ];
-    return ids.some((item) => normalizeAlias(item) === normalized);
+  return getLaunchRequestFromSearch(window.location.search, {
+    defaultManifestUrl: DEFAULT_PROJECT_MANIFEST_URL,
+    knownManifests: KNOWN_PROJECT_MANIFESTS
   });
-  return match?.url || "";
-}
-
-function normalizeAlias(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/^pack:/, "")
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
 }
 
 async function discoverAvailableProjectManifests() {
@@ -1362,12 +1445,10 @@ async function loadProject(manifestUrl, options = {}) {
   const sessions = loadJson(PROJECT_SESSIONS_KEY, {});
   const sessionKey = getProjectSessionKey(manifest);
   const saved = sessions[sessionKey] || loadJson(SESSION_KEY, null);
-  const canRestore = saved?.projectId === manifest.id
-    && saved?.projectVersion === manifest.version
-    && Array.isArray(saved.files);
-  state.projectManifest = canRestore && saved?.manifest ? { ...manifest, ...saved.manifest } : manifest;
+  const restore = resolveProjectRestore(manifest, canonicalFiles, saved);
+  state.projectManifest = restore.manifest;
   if (options.updateUrl !== false) updateProjectUrl(manifestUrl);
-  loadFiles(canRestore ? saved.files : canonicalFiles, canRestore ? "Contenus restaurés" : "Exploration prête", { resetFilters: true });
+  loadFiles(restore.files, restore.message, { resetFilters: true });
   state.appStore?.dispatch({
     type: "state:patch",
     scope: "project",
@@ -1376,7 +1457,7 @@ async function loadProject(manifestUrl, options = {}) {
         manifest: state.projectManifest,
         manifestUrl,
         datasetId: state.datasetId,
-        restored: Boolean(canRestore)
+        restored: restore.restored
       }
     }
   });
@@ -1461,47 +1542,20 @@ async function loadRemoteImportedFiles(files, options = {}) {
 }
 
 function createRemoteSingleFileManifest(files, options = {}) {
-  const markdownFiles = files.filter((file) => file.path.toLowerCase().endsWith(".md"));
-  const seed = options.sourceUrl || markdownFiles.map((file) => file.path).join("|") || options.title || "remote";
-  return {
-    id: `pack:remote-${safeFileName(seed).slice(0, 80)}`,
-    titre: options.title || "Fichier distant",
-    version: "1.0.0",
-    format_version: "1.0.0",
-    date_generation: new Date().toISOString().slice(0, 10),
-    description: "Contenu chargé depuis une ressource distante.",
-    source: {
-      type: "remote-file",
-      url: options.sourceUrl || ""
-    },
-    modele: DEFAULT_MODEL_SCHEMA,
-    fichiers: [...markdownFiles.map((file) => file.path), "manifest.json"]
-  };
+  return createRemoteSingleFileManifestValue(files, {
+    ...options,
+    safeFileName,
+    defaultModelSchema: DEFAULT_MODEL_SCHEMA
+  });
 }
 
 function updateRemoteResourceUrl(resourceUrl) {
-  if (!resourceUrl) return;
-  const url = new URL(window.location.href);
-  url.searchParams.delete("project");
-  url.searchParams.delete("pack");
-  url.searchParams.delete("url");
-  url.searchParams.delete("file");
-  url.searchParams.set("source", resourceUrl);
-  url.searchParams.delete("select");
-  url.searchParams.delete("tab");
-  url.searchParams.delete("comment");
-  window.history.replaceState(null, "", `${url.pathname}${url.search}${url.hash}`);
+  const href = createRemoteResourceHref(window.location.href, resourceUrl);
+  if (href) window.history.replaceState(null, "", href);
 }
 
 function getRemoteFileName(resourceUrl) {
-  try {
-    const url = new URL(resourceUrl, window.location.href);
-    const hinted = url.searchParams.get("filename") || url.searchParams.get("name");
-    const lastPath = decodeURIComponent(url.pathname.split("/").filter(Boolean).pop() || "");
-    return hinted || lastPath || "ressource";
-  } catch {
-    return String(resourceUrl || "").split(/[\\/]/).pop() || "ressource";
-  }
+  return getRemoteFileNameValue(resourceUrl, window.location.href);
 }
 
 function beginProjectSwitch(manifestUrl) {
@@ -1570,11 +1624,10 @@ async function importUserFiles(fileList) {
     showToast("Aucun contenu lisible détecté");
     return;
   }
-  const importedManifestFile = imported.find((file) => file.path.toLowerCase() === "manifest.json");
-  const importedManifest = importedManifestFile ? parseJson(importedManifestFile.text) : null;
-  let baseFiles = [...state.files.values()];
-  let replacesProject = false;
-  if (importedManifest?.id && importedManifest.id !== state.projectManifest?.id) {
+  const importPlan = createImportedFilesPlan(imported, [...state.files.values()], state.projectManifest, parseJson);
+  const { importedManifest, conflicts } = importPlan;
+  const { baseFiles, replacesProject } = importPlan;
+  if (replacesProject) {
     const replace = await confirmAction({
       title: "Charger un autre projet",
       message: `Le pack « ${importedManifest.titre || importedManifest.id} » ne correspond pas au projet actif.`,
@@ -1585,16 +1638,12 @@ async function importUserFiles(fileList) {
       tone: "danger"
     });
     if (!replace) return;
-    replacesProject = true;
     state.files.clear();
-    baseFiles = [];
     state.projectManifest = importedManifest;
   } else if (importedManifest) {
     state.projectManifest = { ...state.projectManifest, ...importedManifest };
   }
   if (importedManifest?.id) registerRecentProject(importedManifest);
-  const existingPaths = new Set(baseFiles.map((file) => file.path));
-  const conflicts = imported.filter((file) => existingPaths.has(file.path) && file.path !== "manifest.json");
   if (conflicts.length) {
     const replaceConflicts = await confirmAction({
       title: "Fichiers déjà présents",
@@ -1607,7 +1656,7 @@ async function importUserFiles(fileList) {
     });
     if (!replaceConflicts) return;
   }
-  loadFiles([...baseFiles, ...imported], importedManifest ? "Pack chargé" : "Contenus ajoutés", { resetFilters: replacesProject });
+  loadFiles([...baseFiles, ...imported], importPlan.message, { resetFilters: replacesProject });
   if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
   els.dropOverlay.classList.add("hidden");
   els.packInput.value = "";
@@ -1657,68 +1706,19 @@ async function importMoodleCsvFile(file) {
 }
 
 function ensureUniqueMoodleNamespace(text, fileName, pack) {
-  if (!moodlePackCollides(pack)) return pack;
-  for (let index = 2; index < 100; index += 1) {
-    const candidate = convertMoodleCompetencyCsv(text, {
-      fileName,
-      namespaceSuffix: `-${index}`
-    });
-    if (!moodlePackCollides(candidate)) return candidate;
-  }
-  return pack;
-}
-
-function moodlePackCollides(pack) {
-  const entityIds = new Set([...state.entities.keys()]);
-  return pack.files
-    .filter((file) => file.path.endsWith(".md"))
-    .some((file) => {
-      const parsed = parseMarkdownFile(file.text);
-      return parsed.meta?.id && entityIds.has(parsed.meta.id);
-    });
+  return ensureUniqueMoodleNamespaceValue(text, fileName, pack, {
+    entityIds: new Set([...state.entities.keys()]),
+    parseMarkdownFile,
+    convertMoodleCompetencyCsv
+  });
 }
 
 function mergeProjectManifestWithMoodlePack(currentManifest, importedManifest, importedFiles) {
-  const mergedModel = mergeModelSchemas(currentManifest?.modele || state.modelSchema || DEFAULT_MODEL_SCHEMA, importedManifest.modele);
-  const currentFiles = Array.isArray(currentManifest?.fichiers) ? currentManifest.fichiers : [];
-  return {
-    ...(currentManifest || {}),
-    modele: mergedModel,
-    fichiers: [...new Set([...currentFiles, ...importedFiles.map((file) => file.path)])],
-    imports: [
-      ...(Array.isArray(currentManifest?.imports) ? currentManifest.imports : []),
-      importedManifest.source
-    ].filter(Boolean)
-  };
-}
-
-function mergeModelSchemas(baseSchema, incomingSchema) {
-  const base = normalizeModelSchema(baseSchema);
-  const incoming = normalizeModelSchema(incomingSchema);
-  const types = base.types.map((type) => ({ ...type, fields: [...(type.fields || [])] }));
-  const typeMap = new Map(types.map((type) => [type.id, type]));
-  for (const incomingType of incoming.types) {
-    const existing = typeMap.get(incomingType.id);
-    if (!existing) {
-      const copy = { ...incomingType, fields: [...(incomingType.fields || [])] };
-      typeMap.set(copy.id, copy);
-      types.push(copy);
-      continue;
-    }
-    const existingFieldKeys = new Set((existing.fields || []).map((field) => field.key));
-    for (const field of incomingType.fields || []) {
-      if (!existingFieldKeys.has(field.key)) existing.fields.push(field);
-    }
-  }
-  return {
-    version: base.version || incoming.version || MODEL_SCHEMA_VERSION,
-    updatedAt: new Date().toISOString(),
-    relations: {
-      ...(base.relations || {}),
-      ...(incoming.relations || {})
-    },
-    types
-  };
+  return mergeProjectManifestWithMoodlePackValue(currentManifest, importedManifest, importedFiles, {
+    currentModelSchema: state.modelSchema,
+    defaultModelSchema: DEFAULT_MODEL_SCHEMA,
+    mergeModelSchemas
+  });
 }
 
 async function reconnectRealtimeForDataset() {
@@ -1788,38 +1788,19 @@ function updateVisibleGraph(options = {}) {
   state.selectedPathIds = selectedPathIds;
   state.selectedPathLinkKeys = selectedPathLinkKeys;
   const focusActive = isGraphFocusActive();
-  const nodes = state.graph.nodes
-    .filter((node) => {
-      const typeVisible = node.type === "contribution"
-      ? state.realtimeStatus === "firebase" && state.activeTypes.has("contribution")
-      : state.activeTypes.has(node.type);
-      return typeVisible && (!focusActive || selectedPathIds.has(node.id));
-    })
-    .map((node) => ({ ...node }));
-  const nodeIds = new Set(nodes.map((node) => node.id));
-  const links = state.graph.links
-    .filter((link) => nodeIds.has(getId(link.source)) && nodeIds.has(getId(link.target)))
-    .filter((link) => {
-      if (!focusActive) return true;
-      const source = getId(link.source);
-      const target = getId(link.target);
-      if (state.selectedLinkKey) return selectedLinkPaths.linkKeys.has(getLinkKey(link));
-      if (state.selectedId) return selectedPathLinkKeys.has(getLinkKey(link));
-      return true;
-    })
-    .map((link) => {
-      const source = getId(link.source);
-      const target = getId(link.target);
-      const linkKey = getLinkKey(link);
-      return {
-        ...link,
-        source,
-        target,
-        highlight: selectedPathLinkKeys.has(linkKey),
-        hover: state.hoveredLinkKey === linkKey
-      };
-    });
-  state.visibleGraph = { nodes, links };
+  state.visibleGraph = buildVisibleGraph({
+    graph: state.graph,
+    activeTypes: state.activeTypes,
+    realtimeStatus: state.realtimeStatus,
+    focusActive,
+    selectedPathIds,
+    selectedPathLinkKeys,
+    selectedLinkKey: state.selectedLinkKey,
+    selectedId: state.selectedId,
+    selectedLinkPaths,
+    hoveredLinkKey: state.hoveredLinkKey,
+    getLinkKey
+  });
   state.graphView.graphData(state.visibleGraph);
   softenGraphMotion();
   updateFocusDepthLabel();
@@ -1830,113 +1811,37 @@ function updateVisibleGraph(options = {}) {
 }
 
 function syncGraphPositionsFromView() {
-  if (!state.visibleGraph?.nodes?.length) return;
-  const byId = new Map(state.visibleGraph.nodes.map((node) => [node.id, node]));
-  for (const node of state.graph.nodes) {
-    const current = byId.get(node.id);
-    if (!current || current.x == null) continue;
-    node.x = current.x;
-    node.y = current.y;
-    node.z = current.z;
-    if (current.vx != null) node.vx = current.vx;
-    if (current.vy != null) node.vy = current.vy;
-    if (current.vz != null) node.vz = current.vz;
-    if (current.fx != null) node.fx = current.fx;
-    if (current.fy != null) node.fy = current.fy;
-    if (current.fz != null) node.fz = current.fz;
-  }
+  syncGraphPositionsFromVisible(state.graph.nodes, state.visibleGraph?.nodes);
 }
 
 function getSelectedPathIds(selectedLinkPaths = getSelectedLinkPath(), selectedNodePaths = getSelectedNodePath()) {
-  const ids = new Set([...state.searchMatchedIds]);
-  if (state.selectedLinkKey) {
-    for (const id of selectedLinkPaths.nodeIds || []) ids.add(id);
-    if (state.selectedId) ids.add(state.selectedId);
-    return ids;
-  }
-  if (state.selectedId) {
-    for (const id of selectedNodePaths.nodeIds || []) ids.add(id);
-    return ids;
-  }
-  return ids;
+  return getSelectedPathIdsModel({
+    searchMatchedIds: state.searchMatchedIds,
+    selectedLinkKey: state.selectedLinkKey,
+    selectedId: state.selectedId,
+    selectedLinkPaths,
+    selectedNodePaths
+  });
 }
 
 function getSelectedNodePath() {
-  if (!state.selectedId) return { nodeIds: new Set(), linkKeys: new Set() };
-  const nodeIds = new Set([state.selectedId]);
-  const linkKeys = new Set();
-  let frontier = new Set([state.selectedId]);
-  const visited = new Set([state.selectedId]);
-  const depth = getFocusDepth();
-  for (let step = 0; step < depth; step += 1) {
-    const next = new Set();
-    for (const link of state.graph.links) {
-      const source = getId(link.source);
-      const target = getId(link.target);
-      const sourceInFrontier = frontier.has(source);
-      const targetInFrontier = frontier.has(target);
-      if (!sourceInFrontier && !targetInFrontier) continue;
-      const other = sourceInFrontier ? target : source;
-      linkKeys.add(getLinkKey(link));
-      nodeIds.add(source);
-      nodeIds.add(target);
-      if (!visited.has(other)) {
-        visited.add(other);
-        next.add(other);
-      }
-    }
-    if (!next.size) break;
-    frontier = next;
-  }
-  return { nodeIds, linkKeys };
+  return getSelectedNodePathModel({
+    selectedId: state.selectedId,
+    links: state.graph.links,
+    focusDepth: getFocusDepth(),
+    getLinkKey
+  });
 }
 
 function getSelectedLinkPath() {
-  if (!state.selectedLinkKey) return { nodeIds: new Set(), linkKeys: new Set() };
-  const selected = state.graph.links.find((link) => getLinkKey(link) === state.selectedLinkKey);
-  if (!selected) return { nodeIds: new Set(), linkKeys: new Set() };
-  const nodeIds = new Set([getId(selected.source), getId(selected.target)]);
-  const linkKeys = new Set([getLinkKey(selected)]);
-  const depth = getFocusDepth();
-  collectPrimaryIncomingLink(getId(selected.source), nodeIds, linkKeys, 0, new Set(), depth);
-  collectPrimaryOutgoingLink(getId(selected.target), nodeIds, linkKeys, 0, new Set(), depth);
-  return { nodeIds, linkKeys };
-}
-
-function collectPrimaryIncomingLink(nodeId, nodeIds, linkKeys, depth = 0, visitedNodes = new Set(), maxDepth = getFocusDepth()) {
-  if (depth >= maxDepth || linkKeys.size >= LINK_FOCUS_MAX_LINKS || visitedNodes.has(nodeId)) return;
-  visitedNodes.add(nodeId);
-  const link = pickPrimaryLink(state.graph.links.filter((item) => getId(item.target) === nodeId && !linkKeys.has(getLinkKey(item))));
-  if (!link) return;
-  const key = getLinkKey(link);
-  linkKeys.add(key);
-  const source = getId(link.source);
-  nodeIds.add(source);
-  nodeIds.add(nodeId);
-  collectPrimaryIncomingLink(source, nodeIds, linkKeys, depth + 1, new Set(visitedNodes), maxDepth);
-}
-
-function collectPrimaryOutgoingLink(nodeId, nodeIds, linkKeys, depth = 0, visitedNodes = new Set(), maxDepth = getFocusDepth()) {
-  if (depth >= maxDepth || linkKeys.size >= LINK_FOCUS_MAX_LINKS || visitedNodes.has(nodeId)) return;
-  visitedNodes.add(nodeId);
-  const link = pickPrimaryLink(state.graph.links.filter((item) => getId(item.source) === nodeId && !linkKeys.has(getLinkKey(item))));
-  if (!link) return;
-  const key = getLinkKey(link);
-  linkKeys.add(key);
-  const target = getId(link.target);
-  nodeIds.add(nodeId);
-  nodeIds.add(target);
-  collectPrimaryOutgoingLink(target, nodeIds, linkKeys, depth + 1, new Set(visitedNodes), maxDepth);
-}
-
-function pickPrimaryLink(links) {
-  return [...links].sort((a, b) => {
-    const weight = Number(b.weight || 0) - Number(a.weight || 0);
-    if (weight) return weight;
-    const bTarget = state.entities.get(getId(b.target));
-    const aTarget = state.entities.get(getId(a.target));
-    return Number(bTarget?.influence_score || bTarget?.dependence_score || 0) - Number(aTarget?.influence_score || aTarget?.dependence_score || 0);
-  })[0] || null;
+  return getSelectedLinkPathModel({
+    selectedLinkKey: state.selectedLinkKey,
+    links: state.graph.links,
+    entities: state.entities,
+    focusDepth: getFocusDepth(),
+    getLinkKey,
+    maxLinks: LINK_FOCUS_MAX_LINKS
+  });
 }
 
 function getFocusDepth() {
@@ -2012,82 +1917,16 @@ function renderTypeFilters() {
   const enabledCount = entries.filter(([type]) => state.activeTypes.has(type)).length;
   const focusSummary = getFocusSummary();
   const focusDepthDisabled = !state.graphPrefs.focusMode || (!state.selectedId && !state.selectedLinkKey);
-  const labelModes = [
-    ["auto", "Labels utiles", "label_important"],
-    ["all", "Tous les labels", "subtitles"],
-    ["none", "Sans labels", "label_off"]
-  ];
   renderQuickTypeFilters(entries);
-  els.typeFilters.innerHTML = `
-    <header class="graph-options-head graph-popover-head">
-      <span class="graph-popover-icon"><i>tune</i></span>
-      <div>
-        <strong>Affichage du graphe</strong>
-        <small>${enabledCount}/${entries.length} types visibles · labels, relations et contexte</small>
-      </div>
-    </header>
-    <section class="graph-options-section">
-      <div class="graph-options-section-head">
-        <p class="graph-options-kicker"><i>category</i>Types d’éléments</p>
-        <button class="graph-options-mini" type="button" data-filter-action="all">
-          <i>visibility</i>
-          <span>Tout afficher</span>
-        </button>
-      </div>
-      <div class="graph-type-grid">
-        ${entries.map(([type, config]) => `
-          <button class="graph-type-toggle${state.activeTypes.has(type) ? " active" : ""}" type="button" data-type-filter="${escapeHtml(type)}" aria-pressed="${state.activeTypes.has(type)}">
-            <span class="dot" style="background:${config.color}"></span>
-            <span>${escapeHtml(config.label)}</span>
-          </button>
-        `).join("")}
-      </div>
-    </section>
-    <section class="graph-options-section graph-options-reading">
-      <p class="graph-options-kicker"><i>visibility</i>Lecture</p>
-      <div class="graph-reading-block">
-        <div class="graph-reading-copy">
-          <i>subtitles</i>
-          <span>
-            <strong>Labels</strong>
-            <small>Choisit la densité de libellés visibles.</small>
-          </span>
-        </div>
-        <div class="graph-label-mode" role="group" aria-label="Mode d’affichage des labels">
-          ${labelModes.map(([value, label, icon]) => `
-            <button class="${state.graphPrefs.labelMode === value ? "active" : ""}" type="button" data-label-mode="${value}" aria-pressed="${state.graphPrefs.labelMode === value}">
-              <i>${icon}</i>
-              <span>${label}</span>
-            </button>
-          `).join("")}
-        </div>
-      </div>
-      <div class="graph-option-switches">
-        ${renderGraphOptionSwitch("showLinks", "Liens visibles", "Affiche ou masque les relations", "polyline")}
-        ${renderGraphOptionSwitch("showMotion", "Animations", "Active les particules de direction", "auto_awesome_motion")}
-        ${renderGraphOptionSwitch("focusMode", "Mode focus", "Atténue les éléments hors contexte", "center_focus_strong")}
-      </div>
-      <label class="graph-depth-control">
-        <i class="graph-depth-icon">share</i>
-        <span>
-          <strong>Voisinage</strong>
-          <small data-focus-depth-label>${focusDepthDisabled ? "Sélectionnez un nœud ou un lien pour l’appliquer" : `${getFocusDepth()} niveau${getFocusDepth() > 1 ? "x" : ""} · ${focusSummary}`}</small>
-        </span>
-        <input type="range" min="1" max="5" step="1" value="${getFocusDepth()}" data-focus-depth ${focusDepthDisabled ? "disabled" : ""}>
-      </label>
-    </section>
-    <section class="graph-options-section graph-options-actions">
-      <p class="graph-options-kicker"><i>restart_alt</i>Actions</p>
-      <span>
-        <strong>Réinitialiser la vue</strong>
-        <small>Réactive les types, vide la recherche, ferme la fiche et efface les positions libres.</small>
-      </span>
-      <button class="graph-reset-inline" type="button" data-reset-arm>
-        <i>restart_alt</i>
-        <span>Réinitialiser</span>
-      </button>
-    </section>
-  `;
+  els.typeFilters.innerHTML = renderGraphOptionsView({
+    entries,
+    activeTypes: state.activeTypes,
+    enabledCount,
+    graphPrefs: state.graphPrefs,
+    focusDepth: getFocusDepth(),
+    focusSummary,
+    focusDepthDisabled
+  });
   els.typeFilters.querySelector("[data-filter-action='all']")?.addEventListener("click", () => {
     state.activeTypes = new Set(entries.map(([type]) => type));
     renderTypeFilters();
@@ -2173,12 +2012,7 @@ function updateFocusDepthLabel() {
 
 function renderQuickTypeFilters(entries) {
   if (!els.quickTypeFilters) return;
-  els.quickTypeFilters.innerHTML = entries.map(([type, config]) => `
-    <button class="quick-type-filter${state.activeTypes.has(type) ? "" : " muted"}" type="button" data-quick-type-filter="${escapeHtml(type)}" aria-pressed="${state.activeTypes.has(type)}">
-      <span class="dot" style="background:${config.color}"></span>
-      <span>${escapeHtml(config.label)}</span>
-    </button>
-  `).join("");
+  els.quickTypeFilters.innerHTML = renderQuickTypeFiltersView(entries, state.activeTypes);
   els.quickTypeFilters.querySelectorAll("[data-quick-type-filter]").forEach((button) => {
     button.addEventListener("click", () => {
       const type = button.dataset.quickTypeFilter;
@@ -2189,22 +2023,6 @@ function renderQuickTypeFilters(entries) {
       updateVisibleGraph();
     });
   });
-}
-
-function renderGraphOptionSwitch(key, label, hint, icon = "toggle_on") {
-  return `
-    <div class="graph-option-switch">
-      <i class="graph-option-icon">${escapeHtml(icon)}</i>
-      <span>
-        <strong>${escapeHtml(label)}</strong>
-        <small>${escapeHtml(hint)}</small>
-      </span>
-      <label class="switch">
-        <input type="checkbox" data-graph-pref="${key}" ${state.graphPrefs[key] ? "checked" : ""}>
-        <span></span>
-      </label>
-    </div>
-  `;
 }
 
 function persistGraphPrefs() {
@@ -2276,13 +2094,12 @@ function exitGraphFocus() {
 }
 
 function applyInitialDeepLink() {
-  const params = new URLSearchParams(window.location.search);
-  const entityId = params.get("select");
-  if (!entityId || !state.entities.has(entityId)) return;
-  state.activeTab = params.get("tab") === "discussion" ? "discussion" : "overview";
-  state.highlightedCommentId = params.get("comment");
-  selectNode(entityId, false);
-  state.highlightedCommentId = params.get("comment");
+  const request = getInitialDeepLinkRequest(window.location.search, state.entities);
+  if (!request) return;
+  state.activeTab = request.activeTab;
+  state.highlightedCommentId = request.commentId;
+  selectNode(request.entityId, false);
+  state.highlightedCommentId = request.commentId;
   document.querySelectorAll("#panel-tabs .tab").forEach((tab) => {
     tab.classList.toggle("active", tab.dataset.tab === state.activeTab);
   });
@@ -2296,14 +2113,7 @@ function applyInitialDeepLink() {
 }
 
 function buildDeepLink({ entityId = state.selectedId, tab = state.activeTab, commentId = null } = {}) {
-  const url = new URL(window.location.href);
-  if (entityId) url.searchParams.set("select", entityId);
-  else url.searchParams.delete("select");
-  if (entityId && tab === "discussion") url.searchParams.set("tab", "discussion");
-  else url.searchParams.delete("tab");
-  if (entityId && commentId) url.searchParams.set("comment", commentId);
-  else url.searchParams.delete("comment");
-  return url;
+  return createSelectionDeepLinkUrl(window.location.href, { entityId, tab, commentId });
 }
 
 function updateDeepLink(commentId = state.highlightedCommentId) {
@@ -2382,32 +2192,12 @@ function renderOverviewMetaDetails() {
   }
   const generatedAt = formatManifestDate(manifest.date_generation);
   const fileCount = Array.isArray(manifest.fichiers) ? manifest.fichiers.length : state.files.size;
-  els.panelContent.innerHTML = `
-    <article class="readable-card overview-details-card">
-      ${manifest.description ? `<p class="lead">${escapeHtml(manifest.description)}</p>` : ""}
-      <h2>${escapeHtml(manifest.titre || manifest.id || "Vue d’ensemble")}</h2>
-      <dl class="overview-detail-list">
-        <div><dt>Identifiant</dt><dd>${escapeHtml(manifest.id || state.datasetId || "Non renseigné")}</dd></div>
-        <div><dt>Version</dt><dd>${escapeHtml(manifest.version || "Non renseignée")}</dd></div>
-        <div><dt>Génération</dt><dd>${escapeHtml(generatedAt || "Non renseignée")}</dd></div>
-        <div><dt>Fichiers chargés</dt><dd>${fileCount}</dd></div>
-      </dl>
-    </article>
-    <footer class="reading-actions reading-footer">
-      <span class="quiet">Manifest du projet</span>
-      <div class="reading-footer-actions">
-        <div class="edit-toggle">
-          <i>edit</i>
-          <span>Modifier</span>
-          <label class="switch">
-            <input id="overview-edit-toggle" type="checkbox">
-            <span></span>
-          </label>
-          <span class="tooltip top">Modifier les détails locaux du projet</span>
-        </div>
-      </div>
-    </footer>
-  `;
+  els.panelContent.innerHTML = renderOverviewDetailsView({
+    manifest,
+    datasetId: state.datasetId,
+    generatedAt,
+    fileCount
+  });
   els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
     state.editMode = event.target.checked;
     renderOverviewMetaDetails();
@@ -2418,62 +2208,12 @@ function renderOverviewEditForm() {
   const manifest = state.projectManifest || {};
   const generatedAt = formatManifestDate(manifest.date_generation);
   const fileCount = Array.isArray(manifest.fichiers) ? manifest.fichiers.length : state.files.size;
-  els.panelContent.innerHTML = `
-    <section class="edit-surface overview-edit-surface">
-      <header class="edit-surface-head">
-        <div>
-          <p class="kicker">Édition locale</p>
-          <h2>${escapeHtml(manifest.titre || manifest.id || "Vue d’ensemble")}</h2>
-        </div>
-        <label class="edit-toggle">
-          <i>edit</i>
-          <span>Modifier</span>
-          <span class="switch">
-            <input id="overview-edit-toggle" type="checkbox" checked>
-            <span></span>
-          </span>
-        </label>
-      </header>
-      <div class="local-edit-warning"><i>info</i><span>Ces détails restent locaux jusqu’à l’export d’un nouveau pack.</span></div>
-      <div class="edit-card">
-        <label class="field-label">Titre du projet
-          <input id="overview-title" class="text-field" type="text" value="${escapeHtml(manifest.titre || "")}" placeholder="Titre affiché du projet">
-        </label>
-      </div>
-      <section class="edit-card edit-option-card ${manifest.description ? "is-enabled" : ""}" data-edit-option="overview-description">
-        <div class="edit-card-head">
-          <div>
-            <p class="kicker">Option</p>
-            <h3>Description</h3>
-            <p>Texte libre du manifeste PROSPECTRE. Vide par défaut pour les imports Moodle.</p>
-          </div>
-          <label class="switch" aria-label="Activer la description">
-            <input id="overview-description-toggle" type="checkbox"${manifest.description ? " checked" : ""}>
-            <span></span>
-          </label>
-        </div>
-        <textarea id="overview-description" rows="6"${manifest.description ? "" : " disabled"} placeholder="Ajouter une description du projet…">${escapeHtml(manifest.description || "")}</textarea>
-      </section>
-      <section class="edit-card overview-static-meta">
-        <div class="edit-card-head">
-          <div>
-            <p class="kicker">Métadonnées</p>
-            <h3>Lecture seule</h3>
-          </div>
-        </div>
-        <dl class="overview-detail-list">
-          <div><dt>Identifiant</dt><dd>${escapeHtml(manifest.id || state.datasetId || "Non renseigné")}</dd></div>
-          <div><dt>Version</dt><dd>${escapeHtml(manifest.version || "Non renseignée")}</dd></div>
-          <div><dt>Génération</dt><dd>${escapeHtml(generatedAt || "Non renseignée")}</dd></div>
-          <div><dt>Fichiers chargés</dt><dd>${fileCount}</dd></div>
-        </dl>
-      </section>
-      <footer class="edit-actions">
-        <button id="apply-overview-adjust" class="primary-button" type="button"><i>save</i><span>Enregistrer</span></button>
-        <button id="cancel-overview-adjust" class="secondary-button" type="button"><i>close</i><span>Annuler</span></button>
-      </footer>
-    </section>
-  `;
+  els.panelContent.innerHTML = renderOverviewEditView({
+    manifest,
+    datasetId: state.datasetId,
+    generatedAt,
+    fileCount
+  });
   els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
     state.editMode = event.target.checked;
     renderOverviewMetaDetails();
@@ -2518,32 +2258,17 @@ function renderOverview(entity) {
     renderEditForm(entity);
     return;
   }
-  const related = renderInlineRelations(entity);
-  const summary = getVisibleEntitySummary(entity);
-  els.panelContent.innerHTML = `
-    <article class="readable-card">
-      ${summary ? renderSummaryCallout(entity, summary) : ""}
-      <div class="rendered-content">${renderContentWithEntityLinks(entity.body, entity.path, renderFormat)}</div>
-    </article>
-    ${related ? `<section class="meta-section relation-section"><h3>Éléments liés</h3>${related}</section>` : ""}
-    <footer class="reading-actions reading-footer">
-      <span class="quiet">${escapeHtml(entity.path || "")}</span>
-      <div class="reading-footer-actions">
-        <div class="edit-toggle">
-          <i>edit</i>
-          <span>Modifier</span>
-          <label class="switch">
-            <input id="edit-toggle" type="checkbox">
-            <span></span>
-          </label>
-          <span class="tooltip top">Modifier cette fiche sur cet appareil</span>
-        </div>
-        <button class="comment-permalink fiche-permalink" data-copy-entity-link="${escapeHtml(entity.id)}" type="button" aria-label="Copier le lien de cette fiche">
-          <i>link</i>
-        </button>
-      </div>
-    </footer>
-  `;
+  const relatedHtml = renderInlineRelations(entity, {
+    links: state.graph.links.filter((link) => getId(link.source) === entity.id || getId(link.target) === entity.id),
+    entities: state.entities
+  });
+  const summary = getVisibleEntitySummary(entity, { isMoodleHtmlEntity });
+  els.panelContent.innerHTML = renderEntityReadView({
+    entity,
+    summaryHtml: summary ? renderSummaryCallout(entity, summary) : "",
+    contentHtml: renderContentWithEntityLinks(entity.body, entity.path, renderFormat),
+    relatedHtml
+  });
   els.panelContent.querySelector("#edit-toggle").addEventListener("change", (event) => {
     state.editMode = event.target.checked;
     renderRightPanel();
@@ -2555,39 +2280,8 @@ function renderOverview(entity) {
   bindInlineEntityClicks();
 }
 
-function getEntityRenderFormat(entity) {
-  return entity?.content_format === "html" && looksLikeHtml(entity?.body) ? "html" : "markdown";
-}
-
-function getVisibleEntitySummary(entity) {
-  if (!entity?.summary) return "";
-  if (entity.summary_enabled === false) return "";
-  if (isMoodleHtmlEntity(entity) && entity.summary_enabled !== true) return "";
-  return entity.summary;
-}
-
 function isSummaryOptionEnabled(entity) {
-  return Boolean(getVisibleEntitySummary(entity));
-}
-
-function renderInlineRelations(entity) {
-  const links = state.graph.links.filter((link) => getId(link.source) === entity.id || getId(link.target) === entity.id);
-  const items = [];
-  for (const link of links) {
-    const otherId = getId(link.source) === entity.id ? getId(link.target) : getId(link.source);
-    const other = state.entities.get(otherId);
-    if (!other || items.some((item) => item.id === other.id)) continue;
-    items.push(other);
-  }
-  if (!items.length) return "";
-  return `<div class="relation-chips">${items.slice(0, 24).map((item) => inlineEntityButton(item)).join("")}</div>`;
-}
-
-function inlineEntityButton(entity) {
-  const color = TYPE_CONFIG[entity.type]?.color || "#9aa6ad";
-  return `<button class="inline-entity" data-node="${escapeHtml(entity.id)}" type="button">
-    <span class="dot" style="background:${color}"></span>${escapeHtml(entity.label)}
-  </button>`;
+  return Boolean(getVisibleEntitySummary(entity, { isMoodleHtmlEntity }));
 }
 
 function bindInlineEntityClicks() {
@@ -2703,142 +2397,34 @@ function renderEditForm(entity) {
   const summaryStyle = normalizeSummaryStyle(entity.summary_style);
   const graphImageEnabled = Boolean(entity.graph_image_enabled && entity.graph_image);
   const graphImageValue = entity.graph_image || "";
-  els.panelContent.innerHTML = `
-    <section class="edit-surface" data-edit-dirty="false" data-body-dirty="false">
-      <header class="edit-surface-head">
-        <div>
-          <h2>${escapeHtml(entity.label || "Fiche")}</h2>
-        </div>
-        <label class="edit-toggle">
-          <i>edit</i>
-          <span>Modifier</span>
-          <span class="switch">
-            <input id="edit-toggle" type="checkbox" checked>
-            <span></span>
-          </span>
-        </label>
-      </header>
-      <div class="local-edit-warning ps-chip"><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span></div>
-      <div class="edit-card ps-card ps-surface">
-        <label class="field-label ps-field ps-text-label">Titre
-          <input id="adjust-label" class="text-field ps-input" type="text" value="${escapeHtml(entity.label)}">
-        </label>
-      </div>
-      <section class="edit-card edit-option-card ps-card ps-surface ${summaryEnabled ? "is-enabled" : ""}" data-edit-option="summary">
-        <div class="edit-card-head">
-          <div>
-            <h3>Résumé</h3>
-            <p>Afficher un résumé distinct du contenu principal.</p>
-          </div>
-          <label class="switch" aria-label="Activer le résumé">
-            <input id="summary-toggle" type="checkbox"${summaryEnabled ? " checked" : ""}>
-            <span></span>
-          </label>
-        </div>
-        <textarea id="adjust-summary" class="ps-input" rows="4"${summaryEnabled ? "" : " disabled"}>${escapeHtml(entity.summary || "")}</textarea>
-        <details class="summary-appearance" ${summaryEnabled ? "" : "hidden"}>
-          <summary><i>palette</i><span>Apparence du résumé</span><strong>${escapeHtml(summaryStyleLabel(summaryStyle))}</strong></summary>
-          <div class="summary-style-preview-grid" role="radiogroup" aria-label="Style du résumé">
-            ${renderSummaryStyleChoice("focus", summaryStyle)}
-            ${renderSummaryStyleChoice("note", summaryStyle)}
-            ${renderSummaryStyleChoice("typing", summaryStyle)}
-          </div>
-        </details>
-      </section>
-      <section class="edit-card edit-editor-card ps-editor-shell ps-surface is-${editorMode}-mode" data-editor-format="${contentFormat}">
-        <header class="edit-editor-head ps-card__header">
-          <div>
-            <h3 class="ps-card__title">Contenu</h3>
-          </div>
-          <span class="editor-format-badge ps-chip">${contentFormat === "html" ? "HTML" : "Markdown"}</span>
-        </header>
-        <input id="content-format" type="hidden" value="${contentFormat}">
-        <input id="editor-format" type="hidden" value="${contentFormat}">
-        <input id="editor-mode" type="hidden" value="${editorMode}">
-        <div class="editor-mode-bar ps-tab-list" role="toolbar" aria-label="Vues d’édition du contenu">
-          ${renderEditorModeButton("visual", editorMode, "stylus_note", "Visuel")}
-          ${renderEditorModeButton("markdown", editorMode, "notes", "Markdown")}
-          ${renderEditorModeButton("html", editorMode, "code_blocks", "HTML")}
-          ${renderEditorModeButton("preview", editorMode, "visibility", "Aperçu")}
-        </div>
-        <div class="editor-workbench ps-editor-surface">
-          <div id="content-editor" class="content-editor ps-editor-surface"></div>
-          <textarea id="adjust-body" class="content-editor-fallback ps-input" rows="18" spellcheck="false">${escapeHtml(entity.body || "")}</textarea>
-          <div class="html-preview-shell hidden">
-            <div id="html-preview" class="html-editor-preview" aria-live="polite"></div>
-          </div>
-        </div>
-      </section>
-      <section class="edit-card edit-option-card ps-card ps-surface ${graphImageEnabled ? "is-enabled" : ""}" data-edit-option="graph-image">
-        <div class="edit-card-head">
-          <div>
-            <p class="kicker">Graphe</p>
-            <h3>Image du nœud</h3>
-            <p>Utiliser une image comme texture du nœud sélectionné.</p>
-          </div>
-          <label class="switch" aria-label="Activer l’image du graphe">
-            <input id="graph-image-toggle" type="checkbox"${graphImageEnabled ? " checked" : ""}>
-            <span></span>
-          </label>
-        </div>
-        <div class="graph-image-editor ${graphImageEnabled ? "" : "hidden"}">
-          <label class="field-label">URL ou chemin d’asset
-            <input id="graph-image-source" class="text-field" type="text" value="${escapeHtml(graphImageValue)}" placeholder="https://… ou assets/uploads/image.png">
-          </label>
-          <div class="graph-image-actions">
-            <label class="secondary-button compact-action">
-              <i>add_photo_alternate</i><span>Ajouter une image</span>
-              <input id="graph-image-file" type="file" accept=".png,.jpg,.jpeg,.gif,.webp,.svg,image/*">
-            </label>
-            <button id="clear-graph-image" class="ghost-button" type="button"><i>backspace</i><span>Vider</span></button>
-          </div>
-        </div>
-      </section>
-      <footer class="edit-export-footer">
-        <button id="download-current" class="transfer-action-card edit-download-card" type="button">
-          <i>description</i>
-          <span><strong>Fiche</strong><small>Télécharger le Markdown sélectionné</small></span>
-        </button>
-      </footer>
-    </section>
-  `;
+  els.panelContent.innerHTML = renderEditFormView({
+    entity,
+    contentFormat,
+    editorMode,
+    summaryEnabled,
+    summaryStyle,
+    graphImageEnabled,
+    graphImageValue
+  });
   els.panelContent.querySelector("#edit-toggle").addEventListener("change", (event) => {
     if (event.target.checked) return;
     persistEditForm(entity, { exitEdit: true });
   });
   els.panelContent.querySelector("#summary-toggle")?.addEventListener("change", (event) => {
     const enabled = event.target.checked;
-    const card = event.target.closest(".edit-option-card");
-    const summary = els.panelContent.querySelector("#adjust-summary");
-    card?.classList.toggle("is-enabled", enabled);
-    els.panelContent.querySelector(".summary-appearance")?.toggleAttribute("hidden", !enabled);
-    if (summary) {
-      summary.disabled = !enabled;
-      if (enabled) summary.focus();
-    }
+    setSummaryOptionEnabled(els.panelContent, enabled);
     markEditDirty();
     scheduleEditAutosave(entity);
   });
   els.panelContent.querySelectorAll("[data-summary-style]").forEach((button) => {
     button.addEventListener("click", () => {
-      els.panelContent.querySelectorAll("[data-summary-style]").forEach((item) => {
-        const active = item === button;
-        item.classList.toggle("active", active);
-        item.setAttribute("aria-checked", String(active));
-      });
-      const label = els.panelContent.querySelector(".summary-appearance summary strong");
-      if (label) label.textContent = summaryStyleLabel(button.dataset.summaryStyle);
+      setSummaryStyleSelection(els.panelContent, button, summaryStyleLabel(button.dataset.summaryStyle));
       markEditDirty();
       scheduleEditAutosave(entity);
     });
   });
   els.panelContent.querySelector("#graph-image-toggle")?.addEventListener("change", (event) => {
-    const enabled = event.target.checked;
-    const card = event.target.closest(".edit-option-card");
-    const editor = els.panelContent.querySelector(".graph-image-editor");
-    card?.classList.toggle("is-enabled", enabled);
-    editor?.classList.toggle("hidden", !enabled);
-    if (enabled) els.panelContent.querySelector("#graph-image-source")?.focus();
+    setGraphImageOptionEnabled(els.panelContent, event.target.checked);
     markEditDirty();
     scheduleEditAutosave(entity);
   });
@@ -2849,18 +2435,12 @@ function renderEditForm(entity) {
     const path = `assets/uploads/${crypto.randomUUID()}.${extension}`;
     state.files.set(path, { path, dataUrl: await blobToDataUrl(file), binary: true });
     const relativePath = getRelativePackPath(entity.path, path);
-    els.panelContent.querySelector("#graph-image-source").value = relativePath;
-    els.panelContent.querySelector("#graph-image-toggle").checked = true;
-    els.panelContent.querySelector("[data-edit-option='graph-image']")?.classList.add("is-enabled");
-    els.panelContent.querySelector(".graph-image-editor")?.classList.remove("hidden");
+    setGraphImageValue(els.panelContent, relativePath);
     markEditDirty();
     scheduleEditAutosave(entity);
   });
   els.panelContent.querySelector("#clear-graph-image")?.addEventListener("click", () => {
-    els.panelContent.querySelector("#graph-image-source").value = "";
-    els.panelContent.querySelector("#graph-image-toggle").checked = false;
-    els.panelContent.querySelector("[data-edit-option='graph-image']")?.classList.remove("is-enabled");
-    els.panelContent.querySelector(".graph-image-editor")?.classList.add("hidden");
+    setGraphImageValue(els.panelContent, "");
     markEditDirty();
     scheduleEditAutosave(entity);
   });
@@ -2882,19 +2462,18 @@ function renderEditForm(entity) {
 }
 
 function markEditDirty(options = {}) {
-  const surface = els.panelContent.querySelector(".edit-surface");
-  if (!surface) return;
-  surface.dataset.editDirty = "true";
-  if (options.body) surface.dataset.bodyDirty = "true";
+  markEditorSurfaceDirty(els.panelContent.querySelector(".edit-surface"), options);
 }
 
 function isBodyEditDirty() {
-  return els.panelContent.querySelector(".edit-surface")?.dataset.bodyDirty === "true";
+  return isEditorBodyDirty(els.panelContent.querySelector(".edit-surface"));
 }
 
 function scheduleEditAutosave(entity) {
-  clearTimeout(state.editAutosaveTimer);
-  state.editAutosaveTimer = setTimeout(() => persistEditForm(entity, { rebuild: false, silent: true }), 700);
+  state.editAutosaveTimer = scheduleEditorAutosave(
+    state.editAutosaveTimer,
+    () => persistEditForm(entity, { rebuild: false, silent: true })
+  );
 }
 
 function readEditFormValues(entity) {
@@ -2907,18 +2486,16 @@ function readEditFormValues(entity) {
       body: entity.body || "",
       format: getEntityEditorFormat(entity)
     };
-  return {
-    label: els.panelContent.querySelector("#adjust-label")?.value.trim() || entity.label,
-    summary: summaryEnabledNow ? els.panelContent.querySelector("#adjust-summary")?.value.trim() || "" : "",
-    summary_enabled: summaryEnabledNow,
-    summary_style: summaryEnabledNow
-      ? normalizeSummaryStyle(els.panelContent.querySelector("[data-summary-style].active")?.dataset.summaryStyle)
-      : "",
-    content_format: edited.format,
-    graph_image: graphImage,
-    graph_image_enabled: Boolean(graphImageEnabledNow && graphImage),
-    body: edited.body
-  };
+  return createEditFormValues({
+    entity,
+    label: els.panelContent.querySelector("#adjust-label")?.value || "",
+    summary: els.panelContent.querySelector("#adjust-summary")?.value || "",
+    summaryEnabled: summaryEnabledNow,
+    summaryStyle: els.panelContent.querySelector("[data-summary-style].active")?.dataset.summaryStyle,
+    graphImageEnabled: graphImageEnabledNow,
+    graphImage,
+    edited
+  });
 }
 
 function persistEditForm(entity, options = {}) {
@@ -3052,33 +2629,20 @@ function updateEditorPreview(entity) {
 }
 
 function applySyntaxHighlighting(root = els.panelContent) {
-  if (!root || !window.Prism?.highlightAllUnder) return;
-  root.querySelectorAll("pre").forEach((block) => {
-    block.classList.add("line-numbers");
-    const code = block.querySelector("code");
-    if (code && ![...code.classList].some((className) => className.startsWith("language-"))) {
-      code.classList.add("language-markdown");
-    }
-  });
-  window.Prism.highlightAllUnder(root);
-}
-
-function getEditedMarkdown() {
-  return getEditedBodyAndFormat().body;
+  applyEditorSyntaxHighlighting(root, window.Prism);
 }
 
 function getEditedBodyAndFormat() {
   const mode = getEditorMode();
   const format = getEditorFormat();
-  let body = mode === "visual"
-    ? state.contentEditor?.getMarkdown()
-    ?? els.panelContent.querySelector("#adjust-body")?.value
-    ?? ""
-    : els.panelContent.querySelector("#adjust-body")?.value ?? "";
-  for (const [resolved, original] of state.contentEditorAssetMap) {
-    body = body.split(resolved).join(original);
-  }
-  return { body, format };
+  const fallbackBody = els.panelContent.querySelector("#adjust-body")?.value ?? "";
+  return getEditedBodyAndFormatValue({
+    mode,
+    format,
+    visualBody: state.contentEditor?.getMarkdown() ?? fallbackBody,
+    fallbackBody,
+    assetMap: state.contentEditorAssetMap
+  });
 }
 
 function getEditorMode() {
@@ -3090,20 +2654,19 @@ function getEditorFormat() {
 }
 
 function setEditorMode(mode, format) {
-  const normalizedMode = normalizeEditorMode(mode);
-  const normalizedFormat = normalizeEditorFormat(format);
+  const viewState = getEditorModeViewState(mode, format);
   const modeInput = els.panelContent.querySelector("#editor-mode");
   const formatInput = els.panelContent.querySelector("#editor-format");
   const card = els.panelContent.querySelector(".edit-editor-card");
   const badge = els.panelContent.querySelector(".editor-format-badge");
-  if (modeInput) modeInput.value = normalizedMode;
-  if (formatInput) formatInput.value = normalizedFormat;
+  if (modeInput) modeInput.value = viewState.mode;
+  if (formatInput) formatInput.value = viewState.format;
   card?.classList.remove("is-visual-mode", "is-markdown-mode", "is-html-mode", "is-preview-mode");
-  card?.classList.add(`is-${normalizedMode}-mode`);
-  card?.setAttribute("data-editor-format", normalizedFormat);
-  if (badge) badge.textContent = normalizedFormat === "html" ? "HTML" : "Markdown";
+  card?.classList.add(viewState.modeClass);
+  card?.setAttribute("data-editor-format", viewState.format);
+  if (badge) badge.textContent = viewState.formatBadge;
   els.panelContent.querySelectorAll("[data-editor-mode]").forEach((button) => {
-    const active = button.dataset.editorMode === normalizedMode;
+    const active = button.dataset.editorMode === viewState.mode;
     button.classList.toggle("active", active);
     button.classList.toggle("is-active", active);
     button.setAttribute("aria-pressed", String(active));
@@ -3111,33 +2674,11 @@ function setEditorMode(mode, format) {
 }
 
 function resetEditorScroll() {
-  const reset = () => {
-    [
-      "#adjust-body",
-      "#html-preview",
-      ".toastui-editor-contents",
-      ".toastui-editor-md-container",
-      ".toastui-editor-ww-container",
-      ".toastui-editor-main",
-      ".editor-workbench"
-    ].forEach((selector) => {
-      const node = els.panelContent.querySelector(selector);
-      if (!node) return;
-      node.scrollTop = 0;
-      node.scrollLeft = 0;
-    });
-  };
-  reset();
-  requestAnimationFrame(() => {
-    reset();
-    setTimeout(reset, 60);
-  });
+  resetEditorScrollPositions(els.panelContent, requestAnimationFrame);
 }
 
 function destroyContentEditor() {
-  state.contentEditor?.destroy?.();
-  state.contentEditor = null;
-  state.contentEditorAssetMap = new Map();
+  Object.assign(state, destroyEditorState(state.contentEditor));
 }
 
 function getAnalysisGraphScope() {
@@ -3162,158 +2703,6 @@ function renderGraphQualityCard(focusNodes, selected, selectedLink, scopeLinks) 
   });
 }
 
-function computeGraphQualityMetrics(focusNodes, scopeLinks) {
-  const nodeIds = new Set(focusNodes.map((node) => node.id));
-  const typeCount = new Set(focusNodes.map((node) => node.type).filter(Boolean)).size;
-  const links = scopeLinks.filter((link) => nodeIds.has(getId(link.source)) && nodeIds.has(getId(link.target)));
-  const nodeCount = nodeIds.size;
-  const linkCount = links.length;
-  const maxUndirectedLinks = nodeCount > 1 ? nodeCount * (nodeCount - 1) / 2 : 0;
-  const densityValue = maxUndirectedLinks ? linkCount / maxUndirectedLinks : 0;
-  const linksPerNode = nodeCount ? linkCount / nodeCount : 0;
-  const averageDegree = nodeCount ? (2 * linkCount) / nodeCount : 0;
-  const { componentCount, largestComponentSize, isolateCount, maxDegree, degreeStdDev } = computeVisibleComponents(nodeIds, links);
-  const largestRatio = nodeCount ? largestComponentSize / nodeCount : 0;
-  const isolateRatio = nodeCount ? isolateCount / nodeCount : 0;
-  const hubDominance = averageDegree ? maxDegree / averageDegree : 0;
-  const degreeVariation = averageDegree ? degreeStdDev / averageDegree : 0;
-  const idealDegree = idealAverageDegree(nodeCount);
-  const densityLimit = idealDensityLimit(nodeCount);
-  const visualLoad = nodeCount * Math.max(1, averageDegree);
-
-  const readabilityScore = clampScore(
-    100
-    - Math.max(0, nodeCount - 70) * 0.26
-    - Math.max(0, nodeCount - 160) * 0.34
-    - Math.max(0, visualLoad - 520) * 0.018
-    - Math.max(0, densityValue - densityLimit) * 85
-  );
-  const cohesionScore = clampScore(
-    largestRatio * 82
-    + (isolateCount === 0 ? 12 : 0)
-    + (componentCount === 1 ? 6 : 0)
-    - Math.max(0, componentCount - 1) * 7
-    - isolateRatio * 55
-  );
-  const meshScore = clampScore(
-    100
-    - Math.abs(averageDegree - idealDegree) * 8
-    - Math.max(0, averageDegree - idealDegree * 1.9) * 10
-    - Math.max(0, densityValue - densityLimit) * 80
-    - isolateRatio * 35
-  );
-  const balanceScore = clampScore(
-    100
-    - Math.max(0, hubDominance - 3.6) * 12
-    - Math.max(0, degreeVariation - 0.9) * 24
-    - isolateRatio * 35
-  );
-  const overallScore = Math.round(readabilityScore * 0.30 + cohesionScore * 0.30 + meshScore * 0.22 + balanceScore * 0.18);
-
-  return {
-    nodeCount,
-    linkCount,
-    typeCount,
-    componentCount,
-    isolateCount,
-    densityValue,
-    linksPerNode,
-    averageDegree,
-    largestComponentSize,
-    largestRatio,
-    maxDegree,
-    degreeStdDev,
-    hubDominance,
-    readability: gradeMetric(readabilityScore),
-    cohesion: gradeMetric(cohesionScore),
-    mesh: gradeMetric(meshScore),
-    balance: gradeMetric(balanceScore),
-    overall: gradeMetric(overallScore)
-  };
-}
-
-function computeVisibleComponents(nodeIds, links) {
-  const adjacency = new Map([...nodeIds].map((id) => [id, new Set()]));
-  for (const link of links) {
-    const source = getId(link.source);
-    const target = getId(link.target);
-    if (!nodeIds.has(source) || !nodeIds.has(target)) continue;
-    adjacency.get(source).add(target);
-    adjacency.get(target).add(source);
-  }
-  const seen = new Set();
-  let componentCount = 0;
-  let largestComponentSize = 0;
-  let isolateCount = 0;
-  let degreeTotal = 0;
-  let maxDegree = 0;
-  const degrees = [];
-  for (const id of nodeIds) {
-    const degree = adjacency.get(id)?.size || 0;
-    degrees.push(degree);
-    degreeTotal += degree;
-    maxDegree = Math.max(maxDegree, degree);
-    if (degree === 0) isolateCount += 1;
-    if (seen.has(id)) continue;
-    componentCount += 1;
-    const queue = [id];
-    let size = 0;
-    seen.add(id);
-    while (queue.length) {
-      const current = queue.shift();
-      size += 1;
-      for (const next of adjacency.get(current) || []) {
-        if (seen.has(next)) continue;
-        seen.add(next);
-        queue.push(next);
-      }
-    }
-    largestComponentSize = Math.max(largestComponentSize, size);
-  }
-  const meanDegree = nodeIds.size ? degreeTotal / nodeIds.size : 0;
-  const degreeVariance = nodeIds.size
-    ? degrees.reduce((sum, degree) => sum + (degree - meanDegree) ** 2, 0) / nodeIds.size
-    : 0;
-  return { componentCount, largestComponentSize, isolateCount, maxDegree, degreeStdDev: Math.sqrt(degreeVariance) };
-}
-
-function idealAverageDegree(nodeCount) {
-  if (nodeCount < 25) return 5;
-  if (nodeCount < 60) return 4.2;
-  if (nodeCount < 120) return 3.5;
-  if (nodeCount < 220) return 3.1;
-  return 2.8;
-}
-
-function idealDensityLimit(nodeCount) {
-  if (nodeCount < 25) return 0.34;
-  if (nodeCount < 60) return 0.18;
-  if (nodeCount < 120) return 0.10;
-  if (nodeCount < 220) return 0.065;
-  return 0.04;
-}
-
-function clampScore(value) {
-  return Math.max(0, Math.min(100, Math.round(Number(value) || 0)));
-}
-
-function gradeMetric(score) {
-  if (score >= 85) return { score, grade: "A" };
-  if (score >= 70) return { score, grade: "B" };
-  if (score >= 55) return { score, grade: "C" };
-  if (score >= 40) return { score, grade: "D" };
-  return { score, grade: "E" };
-}
-
-function formatGraphNumber(value) {
-  if (!Number.isFinite(value)) return "0";
-  return value >= 10 ? String(Math.round(value)) : value.toFixed(1).replace(".", ",");
-}
-
-function formatCompactNumber(value) {
-  return new Intl.NumberFormat("fr-FR", { maximumFractionDigits: 0 }).format(Number(value) || 0);
-}
-
 function renderAnalysis() {
   const selected = state.entities.get(state.selectedId);
   const selectedLink = state.selectedLinkKey ? state.graph.links.find((link) => getLinkKey(link) === state.selectedLinkKey) : null;
@@ -3334,7 +2723,10 @@ function renderAnalysis() {
     ? state.graph.links.filter((link) => getId(link.source) === selected.id || getId(link.target) === selected.id).length
     : state.graph.links.length;
   if (selected) {
-    const metadata = getEntityMetadataEntries(selected, relatedNodes.length, linkedCount);
+    const metadata = getEntityMetadataEntries(selected, relatedNodes.length, linkedCount, {
+      modelSchema: state.modelSchema,
+      commentsByEntity: state.comments
+    });
     const selectedSummary = getVisibleEntitySummary(selected);
     els.kpiGrid.classList.add("project-metadata");
     els.kpiGrid.innerHTML = `
@@ -3524,71 +2916,21 @@ function getAnalysisSocialContext(selected, selectedLink) {
 }
 
 function getEntityReactions(entityId) {
-  const anchor = (state.comments[entityId] || []).find((comment) => comment.systemKind === "entity-reactions");
-  if (anchor) return getReactionGroups(anchor);
-  return getReactionGroups(state.entityReactions?.[entityId] || {});
-}
-
-function entityReactionButtonMarkup(entityId, reaction) {
-  return `<button class="reaction-button${reaction.selected ? " active" : ""}${reaction.isDefault ? " default-reaction" : ""}" data-entity-reaction="${escapeHtml(reaction.emoji)}" data-annotation="${escapeHtml(reaction.annotation || "")}" data-entity-id="${escapeHtml(entityId)}" type="button" aria-label="Réagir avec ${escapeHtml(reaction.annotation || reaction.emoji)}">${reactionEmojiMarkup(reaction)}${reaction.count ? `<strong>${reaction.count}</strong>` : ""}</button>`;
-}
-
-function renderEntityReactionBlock(entityId, reactions) {
-  return `
-    <div class="entity-reaction-head">
-      <span>Réactions</span>
-      <button class="entity-reaction-add" data-entity-reaction-picker="${escapeHtml(entityId)}" type="button" aria-label="Ajouter une réaction">
-        <i>add_reaction</i><span>Ajouter</span>
-      </button>
-    </div>
-    <div class="reaction-bar compact-reactions${reactions.length ? "" : " empty"}">
-      ${reactions.length
-        ? reactions.map((reaction) => entityReactionButtonMarkup(entityId, reaction)).join("")
-        : `<small>Aucune réaction pour le moment.</small>`}
-    </div>
-  `;
-}
-
-function getEntityMetadataEntries(entity, relatedCount, linkCount) {
-  const type = state.modelSchema.types.find((item) => item.id === entity.type);
-  const entries = [
-    ["Type", type?.singular || entity.type],
-    ["Identifiant", entity.id],
-    ["Fichier", entity.path || "Non renseigné"]
-  ];
-  const ignored = new Set(["titre", "title", "resume", "summary", "relations"]);
-  for (const field of type?.fields || []) {
-    if (ignored.has(field.key) || entries.length >= 6) continue;
-    const value = formatMetadataValue(entity[field.key]);
-    if (value) entries.push([field.label, value]);
-  }
-  entries.push(
-    ["Éléments liés", String(relatedCount)],
-    ["Relations directes", String(linkCount)],
-    ["Échanges", String((state.comments[entity.id] || []).filter((comment) => !comment.deletedAt).length)]
-  );
-  return entries;
-}
-
-function formatMetadataValue(value) {
-  if (value == null || value === "") return "";
-  if (Array.isArray(value)) return value.map((item) => typeof item === "object" ? item.target || item.id || "" : item).filter(Boolean).join(", ");
-  if (typeof value === "boolean") return value ? "Oui" : "Non";
-  if (typeof value === "object") return "";
-  return String(value);
-}
-
-function formatManifestDate(value) {
-  if (!value) return "";
-  const date = new Date(`${value}T00:00:00`);
-  if (Number.isNaN(date.getTime())) return String(value);
-  return date.toLocaleDateString("fr-FR", { day: "numeric", month: "long", year: "numeric" });
+  return getEntityReactionsView(entityId, {
+    commentsByEntity: state.comments,
+    entityReactions: state.entityReactions,
+    authUid: state.authUid
+  });
 }
 
 function renderInsightBreadcrumb(selected) {
   const container = document.querySelector("#insight-breadcrumb");
   if (!container) return;
-  const entities = getBreadcrumbEntities(selected);
+  const entities = getBreadcrumbEntities(selected, {
+    entities: state.entities,
+    links: state.graph.links,
+    typeConfig: TYPE_CONFIG
+  });
   container.innerHTML = `
     <button type="button" data-breadcrumb-root>Vue d’ensemble</button>
     ${entities.map((entity) => `
@@ -3600,29 +2942,6 @@ function renderInsightBreadcrumb(selected) {
   container.querySelectorAll("[data-node]").forEach((button) => {
     button.addEventListener("click", () => selectNode(button.dataset.node, true));
   });
-}
-
-function getBreadcrumbEntities(selected) {
-  if (!selected) return [];
-  const chain = [selected];
-  const visited = new Set([selected.id]);
-  let currentId = selected.id;
-  while (chain.length < 5) {
-    const current = state.entities.get(currentId);
-    const currentOrder = TYPE_CONFIG[current?.type]?.order ?? Number.MAX_SAFE_INTEGER;
-    const parentLink = state.graph.links.find((link) => {
-      if (getId(link.source) !== currentId || ["related_to", "comment_on"].includes(link.type)) return false;
-      const target = state.entities.get(getId(link.target));
-      return (TYPE_CONFIG[target?.type]?.order ?? Number.MAX_SAFE_INTEGER) < currentOrder;
-    });
-    const parentId = parentLink ? getId(parentLink.target) : null;
-    const parent = parentId ? state.entities.get(parentId) : null;
-    if (!parent || visited.has(parent.id)) break;
-    chain.unshift(parent);
-    visited.add(parent.id);
-    currentId = parent.id;
-  }
-  return chain;
 }
 
 function renderTypeDistributionChart(nodes) {
@@ -3822,43 +3141,7 @@ function selectEmojiReaction(reaction) {
 }
 
 function getCommentReactions(comment) {
-  return getReactionGroups(comment);
-}
-
-function getReactionGroups(source) {
-  const groups = new Map();
-  const add = (reaction, entries, isDefault = false) => {
-    if (!reaction?.emoji) return;
-    const values = Object.entries(entries || {});
-    const count = values.filter(([, value]) => !value?.isAdmin).length;
-    const selected = Boolean(entries?.[state.authUid]);
-    const current = groups.get(reaction.emoji) || {
-      emoji: reaction.emoji,
-      annotation: reaction.annotation || "",
-      count: 0,
-      selected: false,
-      isDefault: false
-    };
-    current.count = Math.max(current.count, count);
-    current.selected ||= selected;
-    current.isDefault ||= isDefault;
-    groups.set(reaction.emoji, current);
-  };
-  if (source.likes && Object.keys(source.likes).length) add({ emoji: "👍", annotation: "pouce levé" }, source.likes);
-  Object.values(source.defaultReactions || {}).forEach((reaction) => add(reaction, null, true));
-  Object.values(source.reactions || {}).forEach((entries) => {
-    const reaction = Object.values(entries || {})[0];
-    if (reaction?.emoji) add(reaction, entries);
-  });
-  return [...groups.values()];
-}
-
-function emojiToId(emoji) {
-  return [...emoji].map((char) => char.codePointAt(0).toString(16)).join("-");
-}
-
-function reactionEmojiMarkup(reaction) {
-  return `<span class="reaction-emoji">${escapeHtml(reaction?.emoji || "")}</span>`;
+  return getCommentReactionsView(comment, { authUid: state.authUid });
 }
 
 async function addComment() {
@@ -3920,14 +3203,18 @@ function exportSelected() {
     showToast("Aucune fiche sélectionnée");
     return;
   }
-  downloadBlob(new Blob([entity.rawText || serializeEntity(entity)], { type: "text/markdown;charset=utf-8" }), `${safeFileName(entity.label)}.md`);
+  downloadBlob(new Blob([entity.rawText || serializeEntity(entity, jsyaml.dump.bind(jsyaml))], { type: "text/markdown;charset=utf-8" }), `${safeFileName(entity.label)}.md`);
 }
 
 async function exportAll() {
   const zip = new JSZip();
   const projectName = safeFileName(state.projectManifest?.titre || state.projectManifest?.id || "prospectre");
   const projectRoot = zip.folder(projectName);
-  const files = getExportFiles();
+  const files = getExportFiles({
+    files: state.files,
+    entities: state.entities,
+    modelSchema: state.modelSchema
+  });
   for (const file of files) {
     if (file.dataUrl) {
       projectRoot.file(file.exportPath, file.dataUrl.split(",")[1] || "", { base64: true });
@@ -3947,63 +3234,14 @@ async function exportAll() {
   downloadBlob(await zip.generateAsync({ type: "blob" }), `${projectName}.zip`);
 }
 
-function getExportFiles() {
-  const entityByPath = new Map([...state.entities.values()].map((entity) => [entity.path, entity]));
-  const usedPaths = new Set();
-  return [...state.files.values()]
-    .filter((file) => file.path !== "manifest.json")
-    .map((file) => {
-      const entity = entityByPath.get(file.path);
-      const type = entity ? state.modelSchema.types.find((item) => item.id === entity.type) : null;
-      const parts = file.path.split("/");
-      let exportPath = file.path;
-      if (type?.folder && parts.length) {
-        parts[0] = type.folder;
-        exportPath = parts.join("/");
-      }
-      if (usedPaths.has(exportPath)) {
-        const extensionIndex = exportPath.lastIndexOf(".");
-        const base = extensionIndex > -1 ? exportPath.slice(0, extensionIndex) : exportPath;
-        const extension = extensionIndex > -1 ? exportPath.slice(extensionIndex) : "";
-        let suffix = 2;
-        while (usedPaths.has(`${base}-${suffix}${extension}`)) suffix += 1;
-        exportPath = `${base}-${suffix}${extension}`;
-      }
-      usedPaths.add(exportPath);
-      return { ...file, exportPath };
-    });
-}
-
 function updateFileFromEntity(entity) {
   const file = state.files.get(entity.path);
   if (!file) return;
-  const parsed = parseMarkdownFile(file.text);
-  if ("titre" in parsed.meta) parsed.meta.titre = entity.label;
-  else parsed.meta.label = entity.label;
-  if (entity.summary_enabled && entity.summary) {
-    if ("resume" in parsed.meta || !("summary" in parsed.meta)) parsed.meta.resume = entity.summary;
-    else parsed.meta.summary = entity.summary;
-    parsed.meta.summary_enabled = true;
-    const summaryStyle = normalizeSummaryStyle(entity.summary_style);
-    if (summaryStyle === "focus") delete parsed.meta.summary_style;
-    else parsed.meta.summary_style = summaryStyle;
-  } else {
-    delete parsed.meta.resume;
-    delete parsed.meta.summary;
-    delete parsed.meta.summary_enabled;
-    delete parsed.meta.summary_style;
-  }
-  if (entity.content_format === "html") parsed.meta.content_format = "html";
-  else delete parsed.meta.content_format;
-  if (entity.graph_image_enabled && entity.graph_image) {
-    parsed.meta.graph_image_enabled = true;
-    parsed.meta.graph_image = entity.graph_image;
-  } else {
-    delete parsed.meta.graph_image_enabled;
-    delete parsed.meta.graph_image;
-  }
-  const yaml = jsyaml.dump(parsed.meta, { lineWidth: 100 });
-  file.text = `---\n${yaml}---\n\n${entity.body || ""}`;
+  updateMarkdownFileFromEntity(file, entity, {
+    parseMarkdownFile,
+    normalizeSummaryStyle,
+    dumpYaml: jsyaml.dump.bind(jsyaml)
+  });
   entity.rawText = file.text;
   saveSession();
 }
@@ -4022,12 +3260,6 @@ function updateManifestFile() {
   }
 }
 
-function serializeEntity(entity) {
-  const meta = { ...entity };
-  for (const key of ["body", "rawText", "path", "size", "color", "x", "y", "z", "vx", "vy", "vz", "index"]) delete meta[key];
-  return `---\n${jsyaml.dump(meta, { lineWidth: 100 })}---\n\n${entity.body || ""}`;
-}
-
 function downloadBlob(blob, filename) {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -4044,10 +3276,6 @@ function blobToDataUrl(blob) {
     reader.onerror = reject;
     reader.readAsDataURL(blob);
   });
-}
-
-function getFileExtension(path) {
-  return String(path || "").split(".").pop().toLowerCase();
 }
 
 function showDropOverlay() {
@@ -4096,53 +3324,19 @@ function renderSchemaAdmin() {
 }
 
 function renderSchemaTypes() {
-  const rows = [...state.schemaDraft.types].sort((a, b) => a.order - b.order).map((type) => {
-    const count = [...state.entities.values()].filter((entity) => entity.type === type.id).length;
-    return `
-      <div class="schema-type-row" data-type-row="${escapeHtml(type.id)}">
-        <button class="schema-drag" type="button" aria-label="Déplacer ${escapeHtml(type.label)}" title="Glisser pour réordonner"><i>drag_indicator</i></button>
-        <label><span>Nom affiché</span><input data-schema-type="${escapeHtml(type.id)}" data-schema-prop="label" value="${escapeHtml(type.label)}"></label>
-        <label><span>Singulier</span><input data-schema-type="${escapeHtml(type.id)}" data-schema-prop="singular" value="${escapeHtml(type.singular)}"></label>
-        <label><span>Identifiant technique</span><input value="${escapeHtml(type.id)}" disabled></label>
-        <label><span>Dossier</span><input data-schema-type="${escapeHtml(type.id)}" data-schema-prop="folder" value="${escapeHtml(type.folder)}"></label>
-        <label class="schema-color-control"><span>Couleur</span><input type="color" data-schema-type="${escapeHtml(type.id)}" data-schema-prop="color" value="${escapeHtml(type.color)}"></label>
-        <label class="schema-label-control"><span>Label</span><input type="checkbox" data-schema-type="${escapeHtml(type.id)}" data-schema-prop="showLabel"${type.showLabel ? " checked" : ""} aria-label="Afficher les labels de ce type"></label>
-        <span class="schema-count">${count} élément${count > 1 ? "s" : ""}</span>
-        <button class="schema-icon-action" data-delete-type="${escapeHtml(type.id)}" type="button" aria-label="Supprimer ce type"><i>delete</i></button>
-      </div>
-    `;
-  }).join("");
-  const preview = [...state.schemaDraft.types].sort((a, b) => a.order - b.order).map((type) => `
-    <span class="schema-filter-preview" data-schema-preview="${escapeHtml(type.id)}" style="--schema-color:${escapeHtml(type.color)}"><span></span>${escapeHtml(type.label)}</span>
-  `).join("");
-  els.schemaAdminContent.innerHTML = `
-    <section class="schema-section-head">
-      <div><p class="kicker">Vocabulaire métier</p><h2>Types d’éléments</h2><p>Les libellés modifient l’interface. Les identifiants restent stables pour préserver les fichiers.</p></div>
-      <button class="primary-button compact-action" data-add-type type="button"><i>add</i>Nouveau type</button>
-    </section>
-    <div class="schema-dashboard">
-      <article><strong>${state.schemaDraft.types.length}</strong><span>types actifs</span></article>
-      <article><strong>${state.schemaDraft.types.reduce((sum, type) => sum + type.fields.length, 0)}</strong><span>champs configurés</span></article>
-      <article><strong>${getSchemaEntityCount(state.schemaDraft)}</strong><span>éléments chargés</span></article>
-    </div>
-    <div class="schema-types-layout">
-      <section class="schema-card schema-type-list">
-        <div class="schema-type-columns"><span></span><span>Nom affiché</span><span>Singulier</span><span>Identifiant</span><span>Dossier</span><span>Couleur</span><span>Label</span><span>Contenu</span><span></span></div>
-        ${rows || `<p class="empty-state">Aucun type configuré.</p>`}
-      </section>
-      <aside class="schema-card schema-preview-card">
-        <p class="kicker">Aperçu</p>
-        <h3>Filtres de l’application</h3>
-        <p>Les changements sont visibles après enregistrement.</p>
-        <div class="schema-filter-list">${preview}</div>
-        <div class="schema-notice"><i>lock</i><span>Les identifiants techniques ne sont pas renommés automatiquement.</span></div>
-      </aside>
-    </div>
-  `;
+  const entityCounts = new Map();
+  for (const entity of state.entities.values()) {
+    entityCounts.set(entity.type, (entityCounts.get(entity.type) || 0) + 1);
+  }
+  els.schemaAdminContent.innerHTML = renderSchemaTypesView({
+    schema: state.schemaDraft,
+    entityCounts,
+    entityCount: getSchemaEntityCount(state.schemaDraft)
+  });
 }
 
 function renderSchemaFields() {
-  const selectedType = state.schemaDraft.types.find((type) => type.id === state.schemaSelectedType) || state.schemaDraft.types[0];
+  const selectedType = getSelectedSchemaType(state.schemaDraft, state.schemaSelectedType);
   if (!selectedType) {
     els.schemaAdminContent.innerHTML = `<p class="empty-state">Créez d’abord un type d’élément.</p>`;
     return;
@@ -4150,95 +3344,28 @@ function renderSchemaFields() {
   state.schemaSelectedType = selectedType.id;
   const selectedField = selectedType.fields.find((field) => field.key === state.schemaSelectedField) || selectedType.fields[0] || null;
   state.schemaSelectedField = selectedField?.key || "";
-  const options = state.schemaDraft.types.map((type) => `<option value="${escapeHtml(type.id)}"${type.id === selectedType.id ? " selected" : ""}>${escapeHtml(type.label)}</option>`).join("");
-  const fieldRows = selectedType.fields.map((field) => `
-    <button class="schema-field-row${field.key === selectedField?.key ? " active" : ""}" data-select-field="${escapeHtml(field.key)}" type="button">
-      <i>${field.kind === "reference" ? "link" : field.kind === "select" ? "list" : field.kind === "number" ? "tag" : "text_fields"}</i>
-      <span><strong>${escapeHtml(field.label)}</strong><small>${escapeHtml(field.key)}</small></span>
-      <em>${escapeHtml(fieldKindLabel(field.kind))}</em>
-      <b>${field.required ? "Requis" : "Optionnel"}</b>
-    </button>
-  `).join("");
-  els.schemaAdminContent.innerHTML = `
-    <section class="schema-section-head">
-      <div><p class="kicker">Structure des contenus</p><h2>Champs</h2><p>Configurez le front matter YAML et les formulaires associés.</p></div>
-      <label class="schema-type-select"><span>Type édité</span><select data-schema-selected-type>${options}</select></label>
-    </section>
-    <div class="schema-fields-layout">
-      <section class="schema-card schema-fields-list">
-        <header><div><h3>${escapeHtml(selectedType.singular)}</h3><p>${selectedType.fields.length} champ${selectedType.fields.length > 1 ? "s" : ""}</p></div><button class="secondary-button compact-action" data-add-field type="button"><i>add</i>Ajouter un champ</button></header>
-        <div>${fieldRows || `<p class="empty-state">Aucun champ configuré.</p>`}</div>
-      </section>
-      ${selectedField ? renderFieldInspector(selectedType, selectedField) : `<aside class="schema-card"><p class="empty-state">Sélectionnez ou ajoutez un champ.</p></aside>`}
-    </div>
-  `;
-}
-
-function renderFieldInspector(type, field) {
-  const kindOptions = ["text", "textarea", "number", "boolean", "select", "reference"]
-    .map((kind) => `<option value="${kind}"${kind === field.kind ? " selected" : ""}>${fieldKindLabel(kind)}</option>`).join("");
-  const targetOptions = [`<option value="*"${field.target === "*" ? " selected" : ""}>Tous les types</option>`]
-    .concat(state.schemaDraft.types.map((item) => `<option value="${escapeHtml(item.id)}"${field.target === item.id ? " selected" : ""}>${escapeHtml(item.label)}</option>`)).join("");
-  const yamlValue = field.kind === "select" ? field.values?.[0] || "valeur"
-    : field.kind === "reference" ? `${field.target === "*" ? "type" : field.target}:identifiant`
-      : field.kind === "number" ? "2040" : field.kind === "boolean" ? "true" : `"Exemple"`;
-  return `
-    <aside class="schema-card schema-field-inspector">
-      <header><div><p class="kicker">Propriétés du champ</p><h3>${escapeHtml(field.label)}</h3></div><button class="schema-icon-action" data-delete-field="${escapeHtml(field.key)}" type="button"><i>delete</i></button></header>
-      <label><span>Libellé</span><input data-field-prop="label" value="${escapeHtml(field.label)}"></label>
-      <label><span>Clé YAML</span><input value="${escapeHtml(field.key)}" disabled></label>
-      <div class="schema-warning"><i>warning</i>Renommer le libellé ne modifie pas la clé YAML.</div>
-      <label><span>Type de champ</span><select data-field-prop="kind">${kindOptions}</select></label>
-      <label class="schema-check"><input type="checkbox" data-field-prop="required"${field.required ? " checked" : ""}><span>Champ obligatoire</span></label>
-      ${field.kind === "reference" ? `
-        <label><span>Type ciblé</span><select data-field-prop="target">${targetOptions}</select></label>
-        <label class="schema-check"><input type="checkbox" data-field-prop="multiple"${field.multiple ? " checked" : ""}><span>Autoriser plusieurs références</span></label>
-      ` : ""}
-      ${field.kind === "select" ? `
-        <label><span>Valeurs autorisées <small>une par ligne</small></span><textarea data-field-values>${escapeHtml((field.values || []).join("\n"))}</textarea></label>
-      ` : ""}
-      <div class="schema-yaml-preview"><span>Aperçu YAML</span><code>${escapeHtml(field.key)}: ${escapeHtml(yamlValue)}</code></div>
-    </aside>
-  `;
+  els.schemaAdminContent.innerHTML = renderSchemaFieldsView({
+    schema: state.schemaDraft,
+    selectedType,
+    selectedField,
+    fieldKindLabel
+  });
 }
 
 function renderSchemaTransfer() {
   const report = getSchemaCompatibilityReport(state.schemaDraft);
-  els.schemaAdminContent.innerHTML = `
-    <section class="schema-section-head">
-      <div><p class="kicker">Portabilité</p><h2>Import / export du schéma</h2><p>Le schéma est embarqué dans le manifeste des prochains exports de pack.</p></div>
-    </section>
-    <div class="schema-transfer-grid">
-      <section class="schema-card schema-compatibility">
-        <p class="kicker">Contrôle de compatibilité</p>
-        <div class="schema-score"><strong>${report.score}%</strong><span>compatible avec le projet courant</span></div>
-        <div class="schema-dashboard">
-          <article><strong>${report.valid}</strong><span>fichiers valides</span></article>
-          <article><strong>${report.warnings.length}</strong><span>avertissements</span></article>
-          <article><strong>${report.errors.length}</strong><span>erreurs</span></article>
-        </div>
-        <div class="schema-report-list">
-          ${[...report.errors, ...report.warnings].map((item) => `<p class="${item.level}"><i>${item.level === "error" ? "error" : "warning"}</i>${escapeHtml(item.message)}</p>`).join("") || `<p class="success"><i>check_circle</i>Aucune incompatibilité détectée.</p>`}
-        </div>
-      </section>
-      <section class="schema-card schema-transfer-actions">
-        <article><i>download</i><div><h3>Exporter le schéma</h3><p>Télécharge un JSON réutilisable dans un autre projet.</p><button class="primary-button compact-action" data-export-schema type="button">Télécharger</button></div></article>
-        <article><i>upload</i><div><h3>Importer un schéma</h3><p>Charge une configuration et contrôle sa compatibilité avant enregistrement.</p><button class="secondary-button compact-action" data-import-schema type="button">Choisir un fichier</button></div></article>
-        <article><i>inventory_2</i><div><h3>Exporter le pack complet</h3><p>Le manifeste contiendra la version actuellement enregistrée du schéma.</p><button class="secondary-button compact-action" data-export-pack type="button">Exporter le projet</button></div></article>
-      </section>
-    </div>
-  `;
+  els.schemaAdminContent.innerHTML = renderSchemaTransferView(report);
 }
 
 function handleSchemaAdminInput(event) {
   if (!state.schemaDraft) return;
   const typeId = event.target.dataset.schemaType;
   if (typeId) {
-    const type = state.schemaDraft.types.find((item) => item.id === typeId);
-    if (!type) return;
-    type[event.target.dataset.schemaProp] = event.target.type === "checkbox"
+    const value = event.target.type === "checkbox"
       ? event.target.checked
       : event.target.type === "number" ? Number(event.target.value) : event.target.value;
+    const type = applySchemaTypeInput(state.schemaDraft, typeId, event.target.dataset.schemaProp, value);
+    if (!type) return;
     if (event.target.dataset.schemaProp === "color") {
       els.schemaAdminContent.querySelector(`[data-schema-preview="${cssEscape(type.id)}"]`)
         ?.style.setProperty("--schema-color", type.color);
@@ -4253,19 +3380,17 @@ function handleSchemaAdminInput(event) {
   }
   const fieldProp = event.target.dataset.fieldProp;
   if (fieldProp) {
-    const field = getSelectedSchemaField();
+    const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    const field = applySchemaFieldInput(state.schemaDraft, state.schemaSelectedType, state.schemaSelectedField, fieldProp, value);
     if (!field) return;
-    field[fieldProp] = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     if (fieldProp === "kind") {
-      field.values = field.kind === "select" ? field.values || [] : undefined;
-      field.target = field.kind === "reference" ? field.target || "*" : undefined;
       renderSchemaFields();
     }
     return;
   }
   if (event.target.matches("[data-field-values]")) {
     const field = getSelectedSchemaField();
-    if (field) field.values = [...new Set(event.target.value.split(/\r?\n/).map((value) => value.trim()).filter(Boolean))];
+    if (field) field.values = parseSchemaFieldValues(event.target.value);
   }
 }
 
@@ -4360,17 +3485,7 @@ function dropSchemaTypeDrag(event) {
 }
 
 function reorderSchemaTypes(sourceId, targetId) {
-  const ordered = [...state.schemaDraft.types].sort((a, b) => a.order - b.order);
-  const sourceIndex = ordered.findIndex((type) => type.id === sourceId);
-  const targetIndex = ordered.findIndex((type) => type.id === targetId);
-  if (sourceIndex < 0 || targetIndex < 0) return false;
-  const [moved] = ordered.splice(sourceIndex, 1);
-  ordered.splice(targetIndex, 0, moved);
-  ordered.forEach((type, index) => {
-    type.order = index;
-  });
-  state.schemaDraft.types = ordered;
-  return true;
+  return reorderSchemaTypesValue(state.schemaDraft, sourceId, targetId);
 }
 
 function endSchemaTypeDrag() {
@@ -4391,17 +3506,11 @@ function addSchemaType() {
     showToast("Identifiant invalide ou déjà utilisé");
     return;
   }
-  state.schemaDraft.types.push({
+  state.schemaDraft.types.push(createSchemaType({
     id: normalizedId,
-    label: label.trim().endsWith("s") ? label.trim() : `${label.trim()}s`,
-    singular: label.trim(),
-    folder: `${normalizedId}s`,
-    color: "#7dd3fc",
-    size: 12,
-    order: state.schemaDraft.types.length,
-    showLabel: true,
-    fields: [{ key: "titre", label: "Titre", kind: "text", required: true }]
-  });
+    label,
+    order: state.schemaDraft.types.length
+  }));
   renderSchemaTypes();
 }
 
@@ -4421,12 +3530,12 @@ async function deleteSchemaType(typeId, anchor = null) {
     tone: "danger"
   });
   if (!confirmed) return;
-  state.schemaDraft.types = state.schemaDraft.types.filter((type) => type.id !== typeId);
+  removeSchemaType(state.schemaDraft, typeId);
   renderSchemaTypes();
 }
 
 function addSchemaField() {
-  const type = state.schemaDraft.types.find((item) => item.id === state.schemaSelectedType);
+  const type = getSelectedSchemaType(state.schemaDraft, state.schemaSelectedType);
   if (!type) return;
   const label = window.prompt("Libellé du champ");
   if (!label?.trim()) return;
@@ -4435,7 +3544,7 @@ function addSchemaField() {
     showToast("Clé YAML invalide ou déjà utilisée");
     return;
   }
-  type.fields.push({ key, label: label.trim(), kind: "text", required: false });
+  addSchemaFieldValue(state.schemaDraft, state.schemaSelectedType, createSchemaField({ key, label }));
   state.schemaSelectedField = key;
   renderSchemaFields();
 }
@@ -4456,14 +3565,12 @@ async function deleteSchemaField(fieldKey, anchor = null) {
     tone: "danger"
   });
   if (!confirmed) return;
-  type.fields = type.fields.filter((field) => field.key !== fieldKey);
-  state.schemaSelectedField = type.fields[0]?.key || "";
+  state.schemaSelectedField = removeSchemaField(state.schemaDraft, state.schemaSelectedType, fieldKey);
   renderSchemaFields();
 }
 
 function getSelectedSchemaField() {
-  return state.schemaDraft?.types.find((type) => type.id === state.schemaSelectedType)
-    ?.fields.find((field) => field.key === state.schemaSelectedField);
+  return state.schemaDraft ? getSelectedSchemaFieldValue(state.schemaDraft, state.schemaSelectedType, state.schemaSelectedField) : null;
 }
 
 function saveSchemaDraft() {
@@ -4505,52 +3612,15 @@ async function resetSchemaDraft(event) {
   renderSchemaAdmin();
 }
 
-function validateModelSchema(schema) {
-  if (!schema.types.length) return ["Le schéma doit contenir au moins un type"];
-  const ids = new Set();
-  for (const type of schema.types) {
-    if (!type.label.trim() || !type.singular.trim()) return [`Le type ${type.id} doit avoir un libellé`];
-    if (ids.has(type.id)) return [`Identifiant de type dupliqué : ${type.id}`];
-    ids.add(type.id);
-    const keys = new Set();
-    for (const field of type.fields) {
-      if (keys.has(field.key)) return [`Clé YAML dupliquée dans ${type.label} : ${field.key}`];
-      keys.add(field.key);
-      if (field.kind === "select" && !field.values?.length) return [`Le champ ${field.label} doit contenir au moins une valeur`];
-    }
-  }
-  return [];
-}
-
 function getSchemaCompatibilityReport(schema) {
-  const errors = [];
-  const warnings = [];
-  let valid = 0;
-  const types = new Map(schema.types.map((type) => [type.id, type]));
-  for (const entity of state.entities.values()) {
-    if (HIDDEN_NODE_TYPES.has(entity.type)) continue;
-    const type = types.get(entity.type);
-    if (!type) {
-      errors.push({ level: "error", message: `${entity.label} utilise le type absent « ${entity.type} ».` });
-      continue;
-    }
-    const parsed = parseMarkdownFile(entity.rawText || "");
-    const missing = type.fields.filter((field) => field.required && parsed.meta[field.key] == null && !(field.key === "titre" && entity.label));
-    if (missing.length) {
-      warnings.push({ level: "warning", message: `${entity.label} : ${missing.map((field) => field.label).join(", ")} manquant(s).` });
-    } else {
-      valid += 1;
-    }
-  }
-  const issueCount = errors.length + warnings.length;
-  const entityCount = getSchemaEntityCount(schema);
-  const score = entityCount ? Math.max(0, Math.round((1 - issueCount / entityCount) * 100)) : 100;
-  return { errors: errors.slice(0, 12), warnings: warnings.slice(0, 12), valid, score };
+  return getSchemaCompatibilityReportValue(schema, state.entities, {
+    hiddenNodeTypes: HIDDEN_NODE_TYPES,
+    parseMarkdownFile
+  });
 }
 
 function getSchemaEntityCount(schema) {
-  const typeIds = new Set(schema.types.map((type) => type.id));
-  return [...state.entities.values()].filter((entity) => typeIds.has(entity.type)).length;
+  return getSchemaEntityCountValue(schema, state.entities);
 }
 
 function exportSchemaDraft() {
@@ -4571,31 +3641,6 @@ async function importSchemaFile(event) {
   state.schemaView = "transfer";
   renderSchemaAdmin();
   showToast("Schéma chargé en brouillon");
-}
-
-function fieldKindLabel(kind) {
-  return {
-    text: "Texte court",
-    textarea: "Texte long",
-    number: "Nombre",
-    boolean: "Oui / non",
-    select: "Liste de valeurs",
-    reference: "Référence"
-  }[kind] || kind;
-}
-
-function safeSchemaId(value) {
-  return String(value || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-}
-
-function bumpPatchVersion(version) {
-  const parts = String(version || MODEL_SCHEMA_VERSION).split(".").map((part) => Number(part) || 0);
-  return `${parts[0] || 1}.${parts[1] || 0}.${(parts[2] || 0) + 1}`;
 }
 
 function hideRightPanel() {
@@ -4983,106 +4028,25 @@ function renderGamificationCard() {
   const globalScore = Number(state.gamification.scores?.global?.totalHearts || 0);
   const projectScore = Number(state.gamification.scores?.project?.projectHearts || 0);
   const cycle = state.gamification.cycle;
-  const remaining = Math.max(0, HEART_CYCLE_SECONDS - cycle.activeSeconds);
-  const progress = Math.min(1, cycle.activeSeconds / HEART_CYCLE_SECONDS);
   const active = isGamificationActive();
-  const signature = [
+  const viewModel = getGamificationViewModel({
     online,
     active,
     globalScore,
     projectScore,
-    cycle.points,
-    cycle.activeSeconds,
-    cycle.breakdown.click,
-    cycle.breakdown.reaction,
-    cycle.breakdown.reply,
-    cycle.breakdown.comment,
-    cycle.breakdown.linkPreview,
-    cycle.breakdown.linkOpen,
-    cycle.breakdown.linkCopy,
-    cycle.breakdown.linkEmbed
-  ].join("|");
-  if (state.gamification.lastRenderSignature !== signature) {
-    state.gamification.lastRenderSignature = signature;
-    els.gamificationCard.innerHTML = online ? `
-      <div class="heart-hero">
-        <div class="heart-reactor" aria-hidden="true" style="--progress:${progress}; --beat:0;">
-          <span class="heart-aura"></span>
-          <span class="heart-orbit orbit-a"></span>
-          <span class="heart-orbit orbit-b"></span>
-          <svg class="heart-core" viewBox="0 0 160 160" role="img" aria-label="">
-            <defs>
-              <linearGradient id="heart-core-gradient" x1="20%" y1="0%" x2="84%" y2="100%">
-                <stop offset="0%" stop-color="#ff9ec8"></stop>
-                <stop offset="48%" stop-color="#ff3f87"></stop>
-                <stop offset="100%" stop-color="#b3165f"></stop>
-              </linearGradient>
-              <filter id="heart-core-glow" x="-80%" y="-80%" width="260%" height="260%">
-                <feGaussianBlur stdDeviation="7" result="blur"></feGaussianBlur>
-                <feColorMatrix in="blur" type="matrix" values="1 0 0 0 0.95 0 0.1 0 0 0.18 0 0 1 0 0.62 0 0 0 0.78 0"></feColorMatrix>
-                <feMerge><feMergeNode></feMergeNode><feMergeNode in="SourceGraphic"></feMergeNode></feMerge>
-              </filter>
-            </defs>
-            <path class="heart-core-path" filter="url(#heart-core-glow)" fill="url(#heart-core-gradient)" d="M80 133C37 102 20 78 20 51c0-19 14-33 33-33 12 0 22 6 27 16 5-10 15-16 27-16 19 0 33 14 33 33 0 27-17 51-60 82Z"></path>
-            <path class="heart-sheen" d="M46 36c13-11 31-7 38 9" fill="none" stroke="rgba(255,255,255,.62)" stroke-width="7" stroke-linecap="round"></path>
-          </svg>
-          <svg class="heart-progress" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52"></circle>
-            <circle cx="60" cy="60" r="52"></circle>
-          </svg>
-          <span class="heart-signal signal-a"></span>
-          <span class="heart-signal signal-b"></span>
-          <span class="heart-cycle">${formatHeartTime(remaining)}</span>
-        </div>
-        <div class="heart-copy">
-          <p class="kicker">Coprésence</p>
-          <h3><span data-heart-counter="cycle">${cycle.points}</span> ❤️</h3>
-          <span>${active ? "✨ Attention active" : "⏸️ En pause douce"} ⏲️ prochain cycle : ${formatHeartTime(remaining)}</span>
-          <div class="heart-actions">
-            <button class="heart-menu-toggle" type="button" data-widget-menu="gamification" aria-label="Actions de la coprésence">
-              <i>more_vert</i>
-            </button>
-            <div class="heart-menu-popover" hidden>
-              <button type="button" data-external-widget="gamification">
-                <i>open_in_new</i>
-                <span>Ouvrir en popup</span>
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="heart-score-grid">
-        <span><small>Total</small><strong data-heart-counter="global">${globalScore}</strong></span>
-        <span><small>Projet</small><strong data-heart-counter="project">${projectScore}</strong></span>
-      </div>
-      <div class="heart-breakdown" aria-label="Détail des cœurs du cycle">
-        ${heartBreakdownItem("schedule", "Temps", cycle.breakdown.second)}
-        ${heartBreakdownItem("touch_app", "Clics", cycle.breakdown.click)}
-        ${heartBreakdownItem("add_reaction", "Réactions", cycle.breakdown.reaction)}
-        ${heartBreakdownItem("reply", "Réponses", cycle.breakdown.reply)}
-        ${heartBreakdownItem("chat", "Contributions", cycle.breakdown.comment)}
-        ${heartBreakdownItem("visibility", "Aperçus", cycle.breakdown.linkPreview)}
-        ${heartBreakdownItem("open_in_new", "Ouvertures", cycle.breakdown.linkOpen)}
-        ${heartBreakdownItem("content_copy", "Copies", cycle.breakdown.linkCopy)}
-        ${heartBreakdownItem("fullscreen", "Intégrations", cycle.breakdown.linkEmbed)}
-      </div>
-    ` : `
-      <div class="heart-idle">
-        <i>favorite</i>
-        <div>
-          <p class="kicker">💓 coprésence</p>
-          <strong>Activez la coprésence pour lancer les cycles d’attention.</strong>
-          <span>Les points sont synchronisés par sessions actives de ${HEART_CYCLE_SECONDS} secondes.</span>
-        </div>
-      </div>
-    `;
+    cycle,
+    cycleSeconds: HEART_CYCLE_SECONDS
+  });
+  if (state.gamification.lastRenderSignature !== viewModel.signature) {
+    state.gamification.lastRenderSignature = viewModel.signature;
+    els.gamificationCard.innerHTML = renderGamificationCardView({
+      ...viewModel,
+      cycle,
+      cycleSeconds: HEART_CYCLE_SECONDS
+    });
   }
   updateHeartCounters({ globalScore, projectScore, cyclePoints: cycle.points });
-  syncGamificationVisual({ online, active, progress, cyclePoints: cycle.points });
-}
-
-function heartBreakdownItem(icon, label, value) {
-  return `<span><i aria-hidden="true">${icon}</i><small>${escapeHtml(label)}</small><strong>${Number(value || 0)}</strong></span>`;
+  syncGamificationVisual({ online, active, progress: viewModel.progress, cyclePoints: cycle.points });
 }
 
 function handleWidgetExternalAction(event) {
@@ -5122,12 +4086,6 @@ function handleWidgetExternalAction(event) {
     item.previousElementSibling?.setAttribute("aria-expanded", "false");
   });
   state.windowBridge?.openExternal({ kind: "panel", panelId: widgetId, title: "PROSPECTRE — Coprésence" });
-}
-
-function formatHeartTime(seconds) {
-  const minutes = Math.floor(seconds / 60);
-  const rest = seconds % 60;
-  return `${minutes}:${String(rest).padStart(2, "0")}`;
 }
 
 function updateHeartCounters(values) {
@@ -5238,11 +4196,11 @@ class GamificationHeartView {
 function renderProfileIdentity() {
   if (!els.profileIdentity) return;
   const identity = getIdentityState();
-  els.profileIdentity.innerHTML = `
-    ${avatarMarkup(state.profile, "width:34px;height:34px;")}
-    <div><strong>${escapeHtml(identity.label)}</strong><span>${escapeHtml(identity.detail)}</span></div>
-    <span class="account-state ${identity.connected ? "connected" : ""}">${escapeHtml(identity.connected ? "Actif" : "Local")}</span>
-  `;
+  els.profileIdentity.innerHTML = renderProfileIdentityView({
+    profile: state.profile,
+    identity,
+    avatarHtml: avatarMarkup(state.profile, "width:34px;height:34px;")
+  });
   const initialsPreview = document.querySelector("#avatar-choice-initials");
   if (initialsPreview) {
     initialsPreview.textContent = state.profile.avatar;
@@ -5462,25 +4420,7 @@ function positionToolbarPopover(popover, anchor) {
 }
 
 function buildSearchIndex() {
-  const docs = [...state.graph.nodes]
-    .filter((node) => node.type !== "contribution")
-    .map((node) => {
-      const metadata = Object.entries(node)
-        .filter(([key, value]) => !["body", "rawText", "imageURL"].includes(key) && typeof value !== "object")
-        .map(([key, value]) => `${key}: ${value}`)
-        .join("\n");
-      return {
-        id: node.id,
-        type: node.type,
-        label: node.label || "",
-        summary: node.summary || "",
-        body: node.body || "",
-        tags: Array.isArray(node.tags) ? node.tags.join(" ") : String(node.tags || ""),
-        keywords: Array.isArray(node.keywords) ? node.keywords.join(" ") : String(node.keywords || ""),
-        metadata,
-        haystack: getSearchText(node)
-      };
-    });
+  const docs = buildSearchDocuments(state.graph.nodes);
   state.searchDocs = docs;
   state.searchIndex = window.Fuse
     ? new window.Fuse(docs, {
@@ -5530,40 +4470,20 @@ function runGraphSearch(value) {
 }
 
 function fallbackSearch(value) {
-  const term = normalizeSearchText(value);
-  return (state.searchDocs || [])
-    .filter((item) => item.haystack.includes(term))
-    .slice(0, SEARCH_RESULT_LIMIT)
-    .map((item) => ({ item, score: 0.5, excerpt: getFallbackExcerpt(item, term) }));
+  return fallbackSearchDocuments(state.searchDocs, value, SEARCH_RESULT_LIMIT);
 }
 
 function renderSearchResults() {
   if (!els.graphSearchResults || !els.graphSearchStatus) return;
-  if (!state.searchTerm) {
-    els.graphSearchStatus.textContent = "Tapez un mot-clé, un titre ou un fragment de contenu.";
-    els.graphSearchResults.innerHTML = "";
-    return;
-  }
-  if (!state.searchResults.length) {
-    els.graphSearchStatus.textContent = "Aucun résultat.";
-    els.graphSearchResults.innerHTML = `<p class="empty-state compact">Aucune fiche ne correspond à cette recherche.</p>`;
-    return;
-  }
-  els.graphSearchStatus.textContent = `${state.searchResults.length} résultat${state.searchResults.length > 1 ? "s" : ""}`;
-  els.graphSearchResults.innerHTML = state.searchResults.map((result, index) => {
-    const entity = state.entities.get(result.item.id);
-    const type = TYPE_CONFIG[entity?.type]?.singular || entity?.type || "Fiche";
-    const active = index === state.searchActiveIndex;
-    return `
-      <button class="graph-search-result ps-card ps-surface${active ? " active" : ""}" type="button" role="option" aria-selected="${active}" data-search-index="${index}">
-        <span class="dot" style="background:${TYPE_CONFIG[entity?.type]?.color || "#9aa6ad"}"></span>
-        <span class="ps-meta-item">
-          <strong>${escapeHtml(result.item.label)}</strong>
-          <small>${escapeHtml(type)} · ${escapeHtml(result.excerpt || result.item.summary || "")}</small>
-        </span>
-      </button>
-    `;
-  }).join("");
+  const view = renderSearchResultsView({
+    searchTerm: state.searchTerm,
+    results: state.searchResults,
+    activeIndex: state.searchActiveIndex,
+    entities: state.entities,
+    typeConfig: TYPE_CONFIG
+  });
+  els.graphSearchStatus.textContent = view.status;
+  els.graphSearchResults.innerHTML = view.html;
   els.graphSearchResults.querySelectorAll("[data-search-index]").forEach((button) => {
     button.addEventListener("click", () => navigateToSearchResult(Number(button.dataset.searchIndex)));
   });
@@ -5670,33 +4590,10 @@ function fitNodeSet(ids, options = {}) {
 }
 
 function tightenCameraOnNodes(nodes, options = {}) {
-  const points = nodes.filter((node) => node.x != null);
-  if (!points.length) return;
-  const center = points.reduce((acc, node) => ({
-    x: acc.x + node.x,
-    y: acc.y + node.y,
-    z: acc.z + node.z
-  }), { x: 0, y: 0, z: 0 });
-  center.x /= points.length;
-  center.y /= points.length;
-  center.z /= points.length;
-  const radius = Math.max(18, ...points.map((node) => Math.hypot(node.x - center.x, node.y - center.y, node.z - center.z) + (node.size || 8)));
   const camera = state.graphView.camera();
-  const current = camera.position;
-  const direction = {
-    x: current.x - center.x,
-    y: current.y - center.y,
-    z: current.z - center.z
-  };
-  const length = Math.hypot(direction.x, direction.y, direction.z) || 1;
-  const aspect = getGraphAspectRatio();
-  const distance = Math.max(46, radius * (aspect > 1.35 ? 1.35 : 1.7));
-  const target = {
-    x: center.x + direction.x / length * distance,
-    y: center.y + direction.y / length * distance,
-    z: center.z + direction.z / length * distance
-  };
-  state.graphView.cameraPosition(target, center, options.duration || 620);
+  const fit = computeCameraFitForNodes(nodes, camera.position, getGraphAspectRatio());
+  if (!fit) return;
+  state.graphView.cameraPosition(fit.target, fit.center, options.duration || 620);
 }
 
 function getGraphAspectRatio() {
@@ -5720,39 +4617,22 @@ function scheduleGraphResize() {
 }
 
 function getImageExtensionFromBlob(blob) {
-  const extension = String(blob?.name || "").split(".").pop().toLowerCase();
-  if (PACK_ASSET_EXTENSIONS.has(extension)) return extension;
-  return {
-    "image/png": "png",
-    "image/jpeg": "jpg",
-    "image/gif": "gif",
-    "image/webp": "webp",
-    "image/svg+xml": "svg"
-  }[blob?.type] || "png";
-}
-
-function getScoreBoost(entity) {
-  const score = Math.max(Number(entity.influence_score || 0), Number(entity.dependence_score || 0));
-  return score ? score * 0.32 : 0;
+  return getImageExtensionFromBlobValue(blob, PACK_ASSET_EXTENSIONS);
 }
 
 function getLinkDistance(link) {
-  const source = state.graph.nodes.find((node) => node.id === getId(link.source));
-  const target = state.graph.nodes.find((node) => node.id === getId(link.target));
-  return Math.min(112, 68 + Math.max(source?.size || 8, target?.size || 8) * 1.3);
+  return getLinkDistanceValue(link, state.graph.nodes);
 }
 
 function getLinkTargetColor(link) {
-  const target = state.entities.get(getId(link.target));
-  return TYPE_CONFIG[target?.type]?.color || "#e0a336";
+  return getLinkTargetColorValue(link, {
+    entities: state.entities,
+    typeConfig: TYPE_CONFIG
+  });
 }
 
 function getLinkKey(link) {
-  return `${getId(link.source)}|${getId(link.target)}|${link.type || "related_to"}`;
-}
-
-function getSearchText(node) {
-  return normalizeSearchText([node.id, node.label, node.summary, ...(node.keywords || []), ...(node.tags || []), node.body].join(" "));
+  return getLinkKeyValue(link);
 }
 
 function isTextInputActive() {
@@ -5853,78 +4733,32 @@ function closeLinkEmbed() {
 }
 
 function minimalPresence(profile) {
-  return {
-    clientId: profile.clientId,
-    displayName: profile.displayName,
-    avatar: profile.avatar,
-    photoURL: profile.photoURL || null,
-    color: profile.color,
-    selectedNodeId: state.selectedId,
-    lastSeen: Date.now()
-  };
+  return minimalPresenceValue(profile, { selectedNodeId: state.selectedId });
 }
 
 function getIdentityState() {
-  if (state.authProvider === "google") {
-    return {
-      label: state.isAdmin ? "Google · admin" : "Google",
-      detail: state.authEmail || "Compte Google connecté",
-      connected: true
-    };
-  }
-  if (state.realtimeStatus === "firebase") {
-    return { label: "Anonyme", detail: "Identité anonyme connectée à Firebase", connected: true };
-  }
-  return { label: "Local", detail: "Identité enregistrée uniquement sur cet appareil", connected: false };
+  return getIdentityStateValue({
+    authProvider: state.authProvider,
+    isAdmin: state.isAdmin,
+    authEmail: state.authEmail,
+    realtimeStatus: state.realtimeStatus
+  });
 }
 
 function avatarMarkup(profile, extraStyle = "") {
   const resolved = resolveAvatarProfile(profile);
-  const color = resolved?.color || "#a7f3d0";
-  const photoURL = resolveAvatarAssetURL(resolved?.photoURL);
-  const fallback = escapeHtml(resolved?.avatar || "?");
-  const image = photoURL
-    ? `<span class="avatar-fallback">${fallback}</span><img src="${escapeHtml(photoURL)}" alt="" loading="lazy" decoding="async" draggable="false" referrerpolicy="no-referrer" onerror="this.remove()">`
-    : fallback;
-  return `<span class="avatar-chip${photoURL ? " has-photo" : ""}" style="background-color:${color};${extraStyle}">${image}</span>`;
+  return avatarMarkupView(resolved, extraStyle);
 }
 
 function resolveAvatarProfile(profile) {
-  const isCurrentUser = profile?.ownerId && profile.ownerId === state.authUid
-    || profile?.actorId && profile.actorId === state.authUid
-    || profile?.clientId && profile.clientId === state.profile.clientId;
-  return isCurrentUser ? state.profile : profile;
-}
-
-function applyAvatarElement(element, profile) {
-  if (!element) return;
-  const photoURL = resolveAvatarAssetURL(profile?.photoURL);
-  element.classList.toggle("has-photo", Boolean(photoURL));
-  element.style.background = profile?.color || "#a7f3d0";
-  element.replaceChildren();
-  if (photoURL) {
-    const image = document.createElement("img");
-    image.src = photoURL;
-    image.alt = "";
-    image.decoding = "async";
-    image.loading = "lazy";
-    image.referrerPolicy = "no-referrer";
-    image.addEventListener("error", () => {
-      element.classList.remove("has-photo");
-      element.textContent = profile?.avatar || "?";
-    }, { once: true });
-    element.append(image);
-  } else {
-    element.textContent = profile?.avatar || "?";
-  }
-}
-
-function resolveAvatarAssetURL(url) {
-  return url || null;
+  return resolveAvatarProfileValue(profile, {
+    currentProfile: state.profile,
+    authUid: state.authUid
+  });
 }
 
 function getProjectSessionKey(manifest = state.projectManifest) {
-  return `${manifest?.id || state.datasetId || "local"}::${manifest?.version || "noversion"}`;
+  return getProjectSessionKeyValue({ manifest, datasetId: state.datasetId });
 }
 
 function getStoredLayouts() {
@@ -5933,47 +4767,23 @@ function getStoredLayouts() {
 
 function restoreGraphLayout() {
   const layout = getStoredLayouts()[getProjectSessionKey()] || {};
-  for (const node of state.graph.nodes) {
-    const position = layout[node.id];
-    if (!position) continue;
-    node.x = Number(position.x);
-    node.y = Number(position.y);
-    node.z = Number(position.z);
-    node.fx = node.x;
-    node.fy = node.y;
-    node.fz = node.z;
-  }
+  applyStoredGraphLayout(state.graph.nodes, layout);
 }
 
 function persistNodePosition(node) {
-  if (!node?.id || node.type === "contribution") return;
   const layouts = getStoredLayouts();
-  const key = getProjectSessionKey();
-  layouts[key] ||= {};
-  layouts[key][node.id] = { x: node.x, y: node.y, z: node.z };
+  persistGraphNodePosition(layouts, getProjectSessionKey(), node);
   localStorage.setItem(GRAPH_LAYOUT_KEY, JSON.stringify(layouts));
 }
 
 function clearPersistedNodeLayout(nodeId) {
-  if (!nodeId) return;
   const layouts = getStoredLayouts();
-  const key = getProjectSessionKey();
-  if (!layouts[key]?.[nodeId]) return;
-  delete layouts[key][nodeId];
-  if (!Object.keys(layouts[key]).length) delete layouts[key];
+  clearGraphNodePosition(layouts, getProjectSessionKey(), nodeId);
   localStorage.setItem(GRAPH_LAYOUT_KEY, JSON.stringify(layouts));
 }
 
 function applyNodePosition(node) {
-  if (!node?.id) return;
-  const source = state.graph.nodes.find((item) => item.id === node.id);
-  if (!source || source === node) return;
-  source.x = node.x;
-  source.y = node.y;
-  source.z = node.z;
-  source.fx = node.fx;
-  source.fy = node.fy;
-  source.fz = node.fz;
+  applyNodePositionToSource(state.graph.nodes, node);
 }
 
 function releaseNodeFreeformPosition(node) {
@@ -6019,13 +4829,12 @@ function resetGraphInteractionState() {
 }
 
 function saveSession() {
-  const snapshot = {
-    projectId: state.projectManifest?.id || state.datasetId,
-    projectVersion: state.projectManifest?.version || null,
+  const snapshot = createSessionSnapshot({
+    projectManifest: state.projectManifest,
+    datasetId: state.datasetId,
     projectManifestUrl: state.projectManifestUrl,
-    manifest: state.projectManifest,
-    files: [...state.files.values()]
-  };
+    files: state.files
+  });
   localStorage.setItem(SESSION_KEY, JSON.stringify(snapshot));
   const sessions = loadJson(PROJECT_SESSIONS_KEY, {});
   sessions[getProjectSessionKey(state.projectManifest)] = snapshot;
@@ -6040,15 +4849,6 @@ function persistEntityReactions() {
   localStorage.setItem(ENTITY_REACTIONS_KEY, JSON.stringify(state.entityReactions));
 }
 
-function groupCommentsByEntity(comments) {
-  return comments.reduce((groups, comment) => {
-    if (!comment?.entityId || !comment?.id) return groups;
-    groups[comment.entityId] ||= [];
-    groups[comment.entityId].push(comment);
-    return groups;
-  }, {});
-}
-
 function getAllComments() {
   return Object.values(state.comments).flat();
 }
@@ -6059,10 +4859,6 @@ function findComment(commentId) {
 
 function isComposerActive() {
   return ["comment-input", "reply-input"].includes(document.activeElement?.id);
-}
-
-function draftKey(entityId, parentId) {
-  return `${entityId}::${parentId || "root"}`;
 }
 
 function getDraft(entityId, parentId) {
@@ -6095,45 +4891,16 @@ function updateRelativeTimes(root = document) {
 }
 
 function relativeTimeMarkup(timestamp, tag = "span") {
-  if (!timestamp) return "";
-  const absolute = new Date(timestamp).toLocaleString("fr-FR", {
-    dateStyle: "medium",
-    timeStyle: "short"
-  });
-  return `<${tag} class="social-time" data-relative-time="${Number(timestamp)}" title="${escapeHtml(absolute)}">${escapeHtml(formatRelativeTime(timestamp))}</${tag}>`;
+  return relativeTimeMarkupView(timestamp, tag, { dayjs: window.dayjs });
 }
 
 function formatRelativeTime(timestamp) {
-  if (!timestamp) return "";
-  if (window.dayjs) {
-    const value = window.dayjs(timestamp).fromNow();
-    return value.charAt(0).toUpperCase() + value.slice(1);
-  }
-  const seconds = Math.round((Number(timestamp) - Date.now()) / 1000);
-  const formatter = new Intl.RelativeTimeFormat("fr-FR", { numeric: "auto" });
-  const ranges = [
-    ["year", 31536000],
-    ["month", 2592000],
-    ["week", 604800],
-    ["day", 86400],
-    ["hour", 3600],
-    ["minute", 60]
-  ];
-  const [unit, divisor] = ranges.find(([, value]) => Math.abs(seconds) >= value) || ["second", 1];
-  const value = formatter.format(Math.round(seconds / divisor), unit);
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return formatRelativeTimeView(timestamp, { dayjs: window.dayjs });
 }
 
 function showToast(message) {
   if (!els.toast) return;
-  els.toast.innerHTML = `
-    <div class="toast-content">
-      <i aria-hidden="true">notifications</i>
-      <span>${escapeHtml(message)}</span>
-      <button class="toast-close" type="button" aria-label="Fermer la notification"><i>close</i></button>
-    </div>
-    <span class="toast-progress" aria-hidden="true"></span>
-  `;
+  els.toast.innerHTML = renderToast(message);
   els.toast.classList.remove("hidden");
   els.toast.querySelector(".toast-close")?.addEventListener("click", hideToast, { once: true });
   els.toast.querySelector(".toast-progress")?.addEventListener("animationend", hideToast, { once: true });

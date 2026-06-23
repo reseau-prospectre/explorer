@@ -332,6 +332,110 @@
   border-radius: var(--ps-radius-full);
 }
 
+/* Entity read mode starts consuming card/chip atoms without changing content rules. */
+.readable-card.ps-card,
+.relation-section.ps-card {
+  padding: var(--ps-space-lg);
+  border-color: var(--ps-glass-border);
+  border-radius: var(--ps-radius-md);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 84%, transparent);
+}
+
+.readable-card.ps-surface,
+.relation-section.ps-surface {
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-xs));
+}
+
+.rendered-content.ps-card__body {
+  color: var(--ps-color-text);
+  font-size: inherit;
+}
+
+.relation-chips.ps-action-row {
+  gap: var(--ps-space-sm);
+}
+
+.inline-entity.ps-chip {
+  min-height: 30px;
+  padding: var(--ps-space-xs) var(--ps-space-sm);
+  border-color: var(--ps-color-border);
+  background: var(--ps-glass-soft);
+  color: var(--ps-color-text);
+}
+
+.inline-entity.ps-chip:hover {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 52%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 12%, var(--ps-glass-soft));
+}
+
+.fiche-permalink.ps-icon-button {
+  width: 28px;
+  min-height: 28px;
+  height: 28px;
+  border-color: transparent;
+  background: transparent;
+  box-shadow: none;
+}
+
+/* Schema admin maps its dense forms to card/surface tokens progressively. */
+.schema-card.ps-card,
+.schema-dashboard article.ps-card,
+.schema-transfer-actions article.ps-card {
+  border-color: var(--ps-glass-border);
+  border-radius: var(--ps-radius-md);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 84%, transparent);
+}
+
+.schema-card.ps-surface,
+.schema-dashboard article.ps-surface,
+.schema-transfer-actions article.ps-surface {
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-xs));
+}
+
+.schema-card.ps-card {
+  gap: var(--ps-space-md);
+}
+
+.schema-transfer-actions article.ps-card,
+.schema-dashboard article.ps-card {
+  padding: var(--ps-space-md);
+}
+
+/* Profile identity adopts meta/chip atoms while preserving the existing layout. */
+.profile-identity .ps-meta-item {
+  gap: var(--ps-space-2xs);
+}
+
+.profile-identity .account-state.ps-chip {
+  min-height: 24px;
+  padding: 0 var(--ps-space-sm);
+  border-color: var(--ps-color-border);
+  background: var(--ps-glass-soft);
+}
+
+.profile-identity .account-state.ps-chip.connected {
+  border-color: color-mix(in srgb, var(--ps-color-success) 44%, transparent);
+  background: color-mix(in srgb, var(--ps-color-success) 14%, var(--ps-glass-soft));
+  color: color-mix(in srgb, var(--ps-color-success) 72%, var(--ps-color-text));
+}
+
+/* Gamification keeps its bespoke heart animation, only the card shell joins tokens. */
+.gamification-card.ps-surface {
+  border-color: color-mix(in srgb, #fb7185 28%, var(--ps-glass-border));
+  background:
+    radial-gradient(circle at 24% 0%, color-mix(in srgb, #fb7185 18%, transparent), transparent 46%),
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 82%, transparent);
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-xs));
+}
+
 @media (prefers-reduced-motion: reduce) {
   .icon-button,
   .tool-button,

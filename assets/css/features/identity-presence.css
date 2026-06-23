@@ -1,0 +1,210 @@
+/* Identity and presence feature layer: compact profile identity controls, connection status and graph presence markers. */
+.identity-editor {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.identity-color {
+  position: relative;
+  display: grid;
+  width: 54px;
+  height: 54px;
+  margin: 0;
+  place-items: center;
+  cursor: pointer;
+}
+
+.identity-color-preview {
+  display: grid;
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  min-height: 52px;
+  aspect-ratio: 1;
+  overflow: hidden;
+  place-items: center;
+  border: 2px solid var(--line-strong);
+  border-radius: 50%;
+  color: #071015;
+  font-size: 14px;
+  font-weight: 900;
+}
+
+.identity-color input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+}
+
+.identity-color i {
+  position: absolute;
+  right: -2px;
+  bottom: -2px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  border: 2px solid var(--card);
+  border-radius: 50%;
+  background: var(--accent);
+  color: #071015;
+  font-size: 13px;
+}
+
+.identity-fields {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 74px;
+  gap: 8px;
+}
+
+.compact-field {
+  display: grid;
+  min-width: 0;
+  gap: 4px;
+  margin: 0;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.compact-field .text-field {
+  width: 100%;
+  height: 38px;
+  margin: 0;
+}
+
+.profile-status {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.profile-status strong {
+  display: inline;
+  color: var(--text);
+}
+
+.profile-status span {
+  display: inline;
+}
+
+.connection-section {
+  display: grid;
+  gap: 10px;
+}
+
+.connection-section .switch-row {
+  min-height: 34px;
+}
+
+.connection-section .auth-button {
+  min-height: 40px;
+}
+
+.help-dot {
+  display: inline-grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: var(--soft);
+  color: var(--text);
+  font-weight: 900;
+}
+
+.status-dot {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  margin-right: 7px;
+  border-radius: 50%;
+}
+
+.status-dot.offline {
+  background: #ef4444;
+}
+
+.status-dot.online {
+  background: #22c55e;
+}
+
+.presence-layer {
+  position: fixed;
+  z-index: 12;
+  top: calc(var(--topbar-height) + var(--graph-top-offset));
+  right: var(--graph-right);
+  bottom: var(--graph-bottom);
+  left: var(--graph-left);
+  pointer-events: none;
+  transition: inset 180ms ease;
+}
+
+.presence-marker {
+  position: absolute;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 86%, transparent);
+  color: var(--text);
+  pointer-events: auto;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.presence-marker .avatar-chip {
+  width: 24px !important;
+  height: 24px !important;
+  min-width: 24px;
+  min-height: 24px;
+  flex-basis: 24px;
+}
+
+.presence-marker-user,
+.presence-marker-more {
+  display: grid;
+  min-width: 0;
+  padding: 0;
+  place-items: center;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text);
+}
+
+.presence-marker-user:hover {
+  outline: 2px solid var(--accent);
+}
+
+.presence-marker-user img,
+.presence-marker-user .avatar-chip {
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+.presence-marker-more {
+  min-width: 28px;
+  height: 28px;
+  padding: 0 7px;
+  background: var(--soft);
+  font-size: 11px;
+  font-weight: 850;
+}
+
+.presence-marker.cluster {
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 850;
+}

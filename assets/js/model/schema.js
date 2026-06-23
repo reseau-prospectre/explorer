@@ -75,3 +75,186 @@ export function applyTypeRegistry(schema) {
     };
   }
 }
+
+export function validateModelSchema(schema) {
+  if (!schema.types.length) return ["Le schéma doit contenir au moins un type"];
+  const ids = new Set();
+  for (const type of schema.types) {
+    if (!type.label.trim() || !type.singular.trim()) return [`Le type ${type.id} doit avoir un libellé`];
+    if (ids.has(type.id)) return [`Identifiant de type dupliqué : ${type.id}`];
+    ids.add(type.id);
+    const keys = new Set();
+    for (const field of type.fields) {
+      if (keys.has(field.key)) return [`Clé YAML dupliquée dans ${type.label} : ${field.key}`];
+      keys.add(field.key);
+      if (field.kind === "select" && !field.values?.length) return [`Le champ ${field.label} doit contenir au moins une valeur`];
+    }
+  }
+  return [];
+}
+
+export function getSchemaCompatibilityReport(schema, entities, { hiddenNodeTypes, parseMarkdownFile }) {
+  const errors = [];
+  const warnings = [];
+  let valid = 0;
+  const types = new Map(schema.types.map((type) => [type.id, type]));
+  for (const entity of entities.values()) {
+    if (hiddenNodeTypes.has(entity.type)) continue;
+    const type = types.get(entity.type);
+    if (!type) {
+      errors.push({ level: "error", message: `${entity.label} utilise le type absent « ${entity.type} ».` });
+      continue;
+    }
+    const parsed = parseMarkdownFile(entity.rawText || "");
+    const missing = type.fields.filter((field) => field.required && parsed.meta[field.key] == null && !(field.key === "titre" && entity.label));
+    if (missing.length) {
+      warnings.push({ level: "warning", message: `${entity.label} : ${missing.map((field) => field.label).join(", ")} manquant(s).` });
+    } else {
+      valid += 1;
+    }
+  }
+  const issueCount = errors.length + warnings.length;
+  const entityCount = getSchemaEntityCount(schema, entities);
+  const score = entityCount ? Math.max(0, Math.round((1 - issueCount / entityCount) * 100)) : 100;
+  return { errors: errors.slice(0, 12), warnings: warnings.slice(0, 12), valid, score };
+}
+
+export function getSchemaEntityCount(schema, entities) {
+  const typeIds = new Set(schema.types.map((type) => type.id));
+  return [...entities.values()].filter((entity) => typeIds.has(entity.type)).length;
+}
+
+export function getSelectedSchemaType(schema, selectedTypeId) {
+  return schema.types.find((type) => type.id === selectedTypeId) || schema.types[0] || null;
+}
+
+export function getSelectedSchemaField(schema, selectedTypeId, selectedFieldKey) {
+  return getSelectedSchemaType(schema, selectedTypeId)
+    ?.fields.find((field) => field.key === selectedFieldKey) || null;
+}
+
+export function applySchemaTypeInput(schema, typeId, prop, value) {
+  const type = schema.types.find((item) => item.id === typeId);
+  if (!type) return null;
+  type[prop] = value;
+  return type;
+}
+
+export function applySchemaFieldInput(schema, selectedTypeId, selectedFieldKey, prop, value) {
+  const field = getSelectedSchemaField(schema, selectedTypeId, selectedFieldKey);
+  if (!field) return null;
+  field[prop] = value;
+  if (prop === "kind") {
+    field.values = field.kind === "select" ? field.values || [] : undefined;
+    field.target = field.kind === "reference" ? field.target || "*" : undefined;
+  }
+  return field;
+}
+
+export function parseSchemaFieldValues(value) {
+  return [...new Set(String(value || "").split(/\r?\n/).map((item) => item.trim()).filter(Boolean))];
+}
+
+export function reorderSchemaTypes(schema, sourceId, targetId) {
+  const ordered = [...schema.types].sort((a, b) => a.order - b.order);
+  const sourceIndex = ordered.findIndex((type) => type.id === sourceId);
+  const targetIndex = ordered.findIndex((type) => type.id === targetId);
+  if (sourceIndex < 0 || targetIndex < 0) return false;
+  const [moved] = ordered.splice(sourceIndex, 1);
+  ordered.splice(targetIndex, 0, moved);
+  ordered.forEach((type, index) => {
+    type.order = index;
+  });
+  schema.types = ordered;
+  return true;
+}
+
+export function createSchemaType({ id, label, order }) {
+  return {
+    id,
+    label: label.trim().endsWith("s") ? label.trim() : `${label.trim()}s`,
+    singular: label.trim(),
+    folder: `${id}s`,
+    color: "#7dd3fc",
+    size: 12,
+    order,
+    showLabel: true,
+    fields: [{ key: "titre", label: "Titre", kind: "text", required: true }]
+  };
+}
+
+export function removeSchemaType(schema, typeId) {
+  schema.types = schema.types.filter((type) => type.id !== typeId);
+}
+
+export function createSchemaField({ key, label }) {
+  return { key, label: label.trim(), kind: "text", required: false };
+}
+
+export function addSchemaField(schema, selectedTypeId, field) {
+  const type = getSelectedSchemaType(schema, selectedTypeId);
+  if (!type) return null;
+  type.fields.push(field);
+  return field;
+}
+
+export function removeSchemaField(schema, selectedTypeId, fieldKey) {
+  const type = getSelectedSchemaType(schema, selectedTypeId);
+  if (!type || fieldKey === "titre") return null;
+  type.fields = type.fields.filter((field) => field.key !== fieldKey);
+  return type.fields[0]?.key || "";
+}
+
+export function fieldKindLabel(kind) {
+  return {
+    text: "Texte court",
+    textarea: "Texte long",
+    number: "Nombre",
+    boolean: "Oui / non",
+    select: "Liste de valeurs",
+    reference: "Référence"
+  }[kind] || kind;
+}
+
+export function safeSchemaId(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9_]+/g, "_")
+    .replace(/^_+|_+$/g, "");
+}
+
+export function bumpPatchVersion(version) {
+  const parts = String(version || MODEL_SCHEMA_VERSION).split(".").map((part) => Number(part) || 0);
+  return `${parts[0] || 1}.${parts[1] || 0}.${(parts[2] || 0) + 1}`;
+}
+
+export function mergeModelSchemas(baseSchema, incomingSchema) {
+  const base = normalizeModelSchema(baseSchema);
+  const incoming = normalizeModelSchema(incomingSchema);
+  const types = base.types.map((type) => ({ ...type, fields: [...(type.fields || [])] }));
+  const typeMap = new Map(types.map((type) => [type.id, type]));
+  for (const incomingType of incoming.types) {
+    const existing = typeMap.get(incomingType.id);
+    if (!existing) {
+      const copy = { ...incomingType, fields: [...(incomingType.fields || [])] };
+      typeMap.set(copy.id, copy);
+      types.push(copy);
+      continue;
+    }
+    const existingFieldKeys = new Set((existing.fields || []).map((field) => field.key));
+    for (const field of incomingType.fields || []) {
+      if (!existingFieldKeys.has(field.key)) existing.fields.push(field);
+    }
+  }
+  return {
+    version: base.version || incoming.version || MODEL_SCHEMA_VERSION,
+    updatedAt: new Date().toISOString(),
+    relations: {
+      ...(base.relations || {}),
+      ...(incoming.relations || {})
+    },
+    types
+  };
+}

@@ -36,6 +36,40 @@ export function getNextEditorState({ mode, current, toHtml, toMarkdown } = {}) {
   return { mode: targetMode, body: nextBody, format: nextFormat };
 }
 
+export function getEditorModeViewState(mode, format) {
+  const normalizedMode = normalizeEditorMode(mode);
+  const normalizedFormat = normalizeEditorFormat(format);
+  return {
+    mode: normalizedMode,
+    format: normalizedFormat,
+    modeClass: `is-${normalizedMode}-mode`,
+    formatBadge: normalizedFormat === "html" ? "HTML" : "Markdown"
+  };
+}
+
+export function destroyEditorState(editor) {
+  editor?.destroy?.();
+  return {
+    contentEditor: null,
+    contentEditorAssetMap: new Map()
+  };
+}
+
+export function markEditorSurfaceDirty(surface, { body = false } = {}) {
+  if (!surface) return;
+  surface.dataset.editDirty = "true";
+  if (body) surface.dataset.bodyDirty = "true";
+}
+
+export function isEditorBodyDirty(surface) {
+  return surface?.dataset.bodyDirty === "true";
+}
+
+export function scheduleEditorAutosave(currentTimer, callback, delay = 700) {
+  clearTimeout(currentTimer);
+  return setTimeout(callback, delay);
+}
+
 export function getEntityEditSignature(entity = {}) {
   return [
     entity.label,

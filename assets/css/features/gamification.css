@@ -1,0 +1,416 @@
+/* Gamification feature extracted from app.css. */
+.gamification-card {
+  position: relative;
+  overflow: visible;
+  min-height: 56vh !important;
+  padding: 16px;
+  border: 1px solid color-mix(in srgb, #fb7185 34%, var(--line));
+  border-radius: 18px;
+  background:
+    radial-gradient(circle at 20% 18%, rgba(255, 86, 154, 0.32), transparent 32%),
+    radial-gradient(circle at 86% 18%, rgba(103, 232, 249, 0.2), transparent 30%),
+    linear-gradient(135deg, color-mix(in srgb, var(--card) 88%, #351827), color-mix(in srgb, var(--panel) 90%, #082a35));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 10%, transparent), 0 18px 46px rgba(0, 0, 0, 0.2);
+  background-size: 160% 160%, 180% 180%, 100% 100%;
+  animation: heart-card-drift 14s ease-in-out infinite alternate;
+}
+
+.gamification-card::after {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(90deg, transparent 0 16%, rgba(255, 255, 255, 0.05) 16.5%, transparent 17%),
+    repeating-linear-gradient(0deg, transparent 0 10px, rgba(255, 255, 255, 0.025) 11px 12px);
+  opacity: 0.55;
+  pointer-events: none;
+  content: "";
+}
+
+.heart-hero {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: 138px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+}
+
+.heart-reactor {
+  --beat: 0;
+  --drift: 0.5;
+  --intensity: 0.8;
+  --progress: 0;
+  position: relative;
+  display: grid;
+  width: 136px;
+  height: 136px;
+  place-items: center;
+  isolation: isolate;
+}
+
+.heart-aura,
+.heart-orbit,
+.heart-signal {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  pointer-events: none;
+}
+
+.heart-aura {
+  background:
+    radial-gradient(circle, rgba(255, 112, 176, calc(0.18 + var(--beat) * 0.2)) 0 18%, transparent 44%),
+    radial-gradient(circle, rgba(103, 232, 249, 0.18), transparent 66%);
+  filter: blur(4px);
+  opacity: calc(0.72 + var(--beat) * 0.2);
+  transform: scale(calc(0.92 + var(--beat) * 0.08));
+}
+
+.heart-orbit {
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  box-shadow: inset 0 0 18px rgba(103, 232, 249, 0.08), 0 0 24px rgba(251, 113, 133, 0.12);
+}
+
+.heart-orbit.orbit-a {
+  transform: rotate(calc(var(--drift) * 32deg)) scaleX(0.92);
+}
+
+.heart-orbit.orbit-b {
+  inset: 12px;
+  border-color: rgba(251, 113, 133, 0.34);
+  transform: rotate(calc(var(--drift) * -42deg)) scaleY(0.84);
+}
+
+.heart-core {
+  position: relative;
+  z-index: 2;
+  width: 94px;
+  height: 94px;
+  overflow: visible;
+  filter: drop-shadow(0 0 calc(13px + var(--beat) * 10px) rgba(255, 64, 135, 0.58));
+  transform: translateY(-2px) scale(calc(0.9 + var(--beat) * 0.08));
+  transition: transform 140ms linear;
+}
+
+.heart-core-path {
+  transform-origin: 80px 76px;
+}
+
+.heart-sheen {
+  opacity: calc(0.34 + var(--beat) * 0.28);
+}
+
+.heart-signal {
+  z-index: 1;
+  inset: 22px;
+  border: 1px solid rgba(255, 130, 185, 0.22);
+  opacity: calc(0.25 + var(--beat) * 0.26);
+  transform: scale(calc(0.92 + var(--beat) * 0.36));
+}
+
+.heart-signal.signal-b {
+  inset: 34px;
+  border-color: rgba(103, 232, 249, 0.24);
+  transform: scale(calc(1.12 - var(--beat) * 0.22));
+}
+
+.heart-progress {
+  position: absolute;
+  z-index: 3;
+  inset: 5px;
+  overflow: visible;
+  transform: rotate(-90deg);
+}
+
+.heart-progress circle {
+  fill: none;
+  stroke-width: 5;
+}
+
+.heart-progress circle:first-child {
+  stroke: color-mix(in srgb, var(--line) 78%, transparent);
+}
+
+.heart-progress circle:last-child {
+  stroke: color-mix(in srgb, #fb7185 74%, #67e8f9);
+  stroke-linecap: round;
+  stroke-dasharray: 326.7;
+  stroke-dashoffset: calc(326.7 * (1 - var(--progress)));
+  filter: drop-shadow(0 0 9px rgba(251, 113, 133, 0.62));
+  transition: stroke-dashoffset 260ms ease;
+}
+
+.heart-cycle {
+  position: absolute;
+  z-index: 4;
+  bottom: 8px;
+  left: 50%;
+  padding: 4px 9px;
+  border: 1px solid color-mix(in srgb, #fb7185 40%, var(--line));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--panel) 86%, #101827);
+  color: var(--text);
+  font-size: 11px;
+  font-weight: 900;
+  transform: translateX(-50%);
+}
+
+.heart-copy {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  gap: 6px;
+  padding-right: 42px;
+}
+
+.heart-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 3;
+}
+
+.heart-menu-toggle {
+  appearance: none;
+  display: inline-grid;
+  width: 34px;
+  height: 34px;
+  min-width: 0;
+  min-height: 0;
+  place-items: center;
+  padding: 0;
+  border: 1px solid color-mix(in srgb, #fb7185 35%, var(--line));
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--panel) 48%, transparent);
+  color: color-mix(in srgb, #fb7185 74%, var(--text));
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 8%, transparent);
+  opacity: 0;
+  transition: opacity 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.gamification-card:hover .heart-menu-toggle,
+.gamification-card:focus-within .heart-menu-toggle {
+  opacity: 1;
+}
+
+.heart-menu-toggle:hover {
+  border-color: color-mix(in srgb, #fb7185 70%, var(--line));
+  background: color-mix(in srgb, #fb7185 13%, var(--panel));
+  color: var(--text);
+}
+
+.heart-menu-popover[hidden] {
+  display: none !important;
+}
+
+.heart-menu-popover {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 7px);
+  right: 0;
+  display: grid;
+  min-width: 178px;
+  padding: 6px;
+  border: 1px solid color-mix(in srgb, #fb7185 35%, var(--line));
+  border-radius: 8px;
+  background: var(--glass-panel-strong);
+  box-shadow: 0 18px 46px rgba(0, 0, 0, 0.34);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.16);
+}
+
+.heart-menu-popover button {
+  appearance: none;
+  display: grid;
+  width: 100%;
+  min-height: 34px;
+  grid-template-columns: 20px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 820;
+  text-align: left;
+}
+
+.heart-menu-popover button:hover {
+  border-color: color-mix(in srgb, #fb7185 36%, var(--line));
+  background: color-mix(in srgb, #fb7185 12%, transparent);
+}
+
+.heart-copy h3 {
+  margin: 0;
+  color: var(--text);
+  font-size: 34px;
+  line-height: 1;
+  text-shadow: 0 0 24px rgba(251, 113, 133, 0.28);
+}
+
+.heart-copy > span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.heart-score-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.heart-score-grid span {
+  position: relative;
+  display: grid;
+  min-width: 0;
+  min-height: 76px;
+  padding: 12px 13px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, #fb7185 38%, var(--line));
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 88% 18%, rgba(251, 113, 133, 0.2), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--soft) 74%, #351827), color-mix(in srgb, var(--panel) 80%, #082a35));
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08), 0 10px 28px rgba(0, 0, 0, 0.14);
+  transition: transform 180ms ease, border-color 180ms ease, box-shadow 180ms ease;
+}
+
+.heart-score-grid span::after {
+  position: absolute;
+  inset: -40% -20%;
+  background: linear-gradient(115deg, transparent 20%, rgba(255, 255, 255, 0.12) 48%, transparent 76%);
+  opacity: 0.24;
+  pointer-events: none;
+  content: "";
+  transform: translateX(-36%) rotate(8deg);
+  animation: heart-score-sheen 5.5s ease-in-out infinite;
+}
+
+.heart-score-grid span:hover {
+  border-color: color-mix(in srgb, #fb7185 62%, #67e8f9);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1), 0 0 28px rgba(251, 113, 133, 0.18);
+  transform: translateY(-1px);
+}
+
+.heart-breakdown span {
+  display: grid;
+  min-width: 0;
+  padding: 9px;
+  border: 1px solid color-mix(in srgb, var(--line) 86%, #fb7185);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--soft) 64%, transparent);
+  backdrop-filter: blur(12px);
+}
+
+.heart-score-grid small,
+.heart-breakdown small {
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.heart-score-grid strong {
+  align-self: end;
+  color: var(--text);
+  font-size: clamp(23px, 4vw, 34px);
+  line-height: 0.95;
+  letter-spacing: 0;
+  text-shadow: 0 0 18px rgba(251, 113, 133, 0.26), 0 0 28px rgba(103, 232, 249, 0.12);
+}
+
+.heart-breakdown {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 12px;
+}
+
+.heart-breakdown span {
+  align-items: center;
+  justify-items: center;
+  gap: 2px;
+  min-height: 58px;
+}
+
+.heart-breakdown i {
+  margin: 0;
+  color: color-mix(in srgb, #fb7185 64%, var(--accent));
+  font-size: 17px;
+}
+
+.heart-breakdown strong {
+  color: var(--text);
+  font-size: 14px;
+}
+
+@keyframes heart-card-drift {
+  0% {
+    background-position: 0% 18%, 100% 12%, center;
+  }
+  50% {
+    background-position: 58% 42%, 32% 70%, center;
+  }
+  100% {
+    background-position: 100% 78%, 0% 38%, center;
+  }
+}
+
+@keyframes heart-score-sheen {
+  0%,
+  46% {
+    transform: translateX(-58%) rotate(8deg);
+  }
+
+  72%,
+  100% {
+    transform: translateX(58%) rotate(8deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gamification-card {
+    animation: none;
+  }
+}
+
+.heart-idle {
+  display: grid;
+  grid-template-columns: 46px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.heart-idle > i {
+  display: grid;
+  width: 46px;
+  height: 46px;
+  place-items: center;
+  border-radius: 14px;
+  background: color-mix(in srgb, #fb7185 18%, var(--soft));
+  color: #fb7185;
+  font-size: 24px;
+}
+
+.heart-idle div {
+  display: grid;
+  gap: 3px;
+}
+
+.heart-idle strong {
+  color: var(--text);
+  line-height: 1.25;
+}
+
+.heart-idle span {
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.35;
+}

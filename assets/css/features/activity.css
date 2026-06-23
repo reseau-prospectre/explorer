@@ -1,0 +1,178 @@
+/* Activity feature extracted from app.css. */
+.activity-panel {
+  z-index: 25;
+  width: min(460px, 100vw);
+}
+
+.activity-tabs {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.activity-tabs.admin-mode {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.activity-list,
+.trash-list {
+  display: grid;
+  gap: 10px;
+}
+
+.activity-list {
+  position: relative;
+  padding-left: 20px;
+}
+
+.activity-list::before {
+  position: absolute;
+  top: 12px;
+  bottom: 12px;
+  left: 7px;
+  width: 2px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 42%, var(--line));
+  content: "";
+}
+
+.activity-item {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: 10px;
+  width: 100%;
+  height: auto !important;
+  min-height: 0 !important;
+  max-height: none !important;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+  color: var(--text);
+  text-align: left;
+  overflow: hidden;
+  white-space: normal;
+}
+
+.activity-item::before,
+.activity-item::after {
+  display: none !important;
+  content: none !important;
+}
+
+.activity-timeline-dot {
+  position: absolute;
+  top: 21px;
+  left: -19px;
+  width: 11px;
+  height: 11px;
+  border: 3px solid var(--panel);
+  border-radius: 50%;
+  background: var(--accent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 55%, var(--line));
+}
+
+.activity-item:hover {
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--line));
+}
+
+.activity-copy {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+  overflow: hidden;
+}
+
+.activity-title {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.activity-title strong {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.activity-copy .activity-entity,
+.activity-item time,
+.trash-item small {
+  color: var(--muted);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.activity-message {
+  display: flex;
+  align-items: center;
+  width: fit-content;
+  max-width: 100%;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
+
+.activity-reactions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.activity-reactions > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  min-height: 26px;
+  padding: 2px 7px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--text);
+  font-size: 11px;
+}
+
+.activity-item time {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  align-self: start;
+}
+
+.social-time {
+  display: inline-flex;
+  min-height: 22px;
+  padding: 2px 7px;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.trash-item {
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--card);
+}
+
+.trash-item > div:first-child {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.trash-item > div:first-child span {
+  color: var(--muted);
+  font-size: 12px;
+  text-align: right;
+}
