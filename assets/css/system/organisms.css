@@ -76,3 +76,93 @@
   font-weight: 800;
   text-transform: uppercase;
 }
+
+.ps-data-table-wrap {
+  min-width: 0;
+  overflow: auto;
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-lg);
+  background: var(--ps-glass-soft);
+}
+
+.ps-data-table tbody tr {
+  transition: background var(--ps-duration-fast) var(--ps-ease-standard);
+}
+
+.ps-data-table tbody tr:hover {
+  background: color-mix(in srgb, var(--ps-color-accent) 9%, transparent);
+}
+
+.ps-breadcrumb {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-xs);
+  min-width: 0;
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-xs);
+  font-weight: 700;
+}
+
+.ps-breadcrumb__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-xs);
+  min-width: 0;
+}
+
+.ps-breadcrumb__item + .ps-breadcrumb__item::before {
+  content: "/";
+  color: var(--ps-color-text-subtle);
+}
+
+.ps-breadcrumb__current {
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ps-color-text);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ps-stepper {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--ps-space-sm);
+  min-width: 0;
+}
+
+.ps-step {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--ps-space-xs);
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-xs);
+  font-weight: 800;
+}
+
+.ps-step__node {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-full);
+  background: var(--ps-glass-soft);
+}
+
+.ps-step.is-active {
+  color: var(--ps-color-text);
+}
+
+.ps-step.is-active .ps-step__node {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 60%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 20%, var(--ps-glass-soft));
+  box-shadow: var(--ps-glass-shadow-glow);
+}
+
+.ps-step.is-complete .ps-step__node {
+  border-color: color-mix(in srgb, var(--ps-color-success) 54%, transparent);
+  background: color-mix(in srgb, var(--ps-color-success) 18%, var(--ps-glass-soft));
+  color: var(--ps-color-success);
+}

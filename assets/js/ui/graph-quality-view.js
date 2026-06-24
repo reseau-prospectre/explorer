@@ -16,7 +16,7 @@ export function renderGraphQualityCard({
   formatGraphNumber = defaultGraphNumber
 }) {
   return `
-    <article class="project-meta-card graph-quality-card">
+    <article class="project-meta-card graph-quality-card ps-card ps-surface">
       <div class="graph-quality-header">
         <div>
           <p class="kicker">Diagnostic graphe</p>

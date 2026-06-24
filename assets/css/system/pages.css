@@ -1,0 +1,64 @@
+/*
+  Pages: concrete PROSPECTRE compositions used to verify that atomic pieces
+  survive real content, dense panels, and responsive states.
+*/
+
+.ps-page {
+  min-width: 0;
+  min-height: 0;
+  color: var(--ps-color-text);
+}
+
+.ps-page__header {
+  display: grid;
+  gap: var(--ps-space-sm);
+  min-width: 0;
+  margin-bottom: var(--ps-space-lg);
+}
+
+.ps-page__title {
+  min-width: 0;
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-2xl);
+  font-weight: 850;
+  line-height: var(--ps-line-tight);
+}
+
+.ps-page__subtitle {
+  max-width: 72ch;
+  color: var(--ps-color-text-muted);
+  font-size: var(--ps-font-size-sm);
+  line-height: var(--ps-line-normal);
+}
+
+.ps-page-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr));
+  gap: var(--ps-space-lg);
+  min-width: 0;
+}
+
+.ps-page-grid--dense {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr));
+  gap: var(--ps-space-md);
+}
+
+.ps-page-stack {
+  display: grid;
+  align-content: start;
+  gap: var(--ps-space-md);
+  min-width: 0;
+}
+
+.ps-page-split {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(280px, 380px);
+  gap: var(--ps-space-lg);
+  min-width: 0;
+}
+
+@media (max-width: 900px) {
+  .ps-page-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

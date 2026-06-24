@@ -436,6 +436,135 @@
   backdrop-filter: blur(var(--ps-glass-blur-xs));
 }
 
+/* Existing switch markup consumes the Liquid Glass switch language. */
+.switch {
+  display: inline-grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--ps-space-sm);
+  color: var(--ps-color-text);
+  font-size: var(--ps-font-size-sm);
+  font-weight: 700;
+}
+
+.switch input {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  opacity: 0;
+}
+
+.switch > span {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-full);
+  background: var(--ps-glass-soft);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  transition:
+    background var(--ps-duration-mid) var(--ps-ease-standard),
+    border-color var(--ps-duration-mid) var(--ps-ease-standard);
+}
+
+.switch > span::after {
+  content: "";
+  position: absolute;
+  top: 3px;
+  left: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--ps-radius-full);
+  background: var(--ps-color-text-muted);
+  transition:
+    transform var(--ps-duration-mid) var(--ps-ease-spring),
+    background var(--ps-duration-mid) var(--ps-ease-standard);
+}
+
+.switch input:checked + span {
+  border-color: color-mix(in srgb, var(--ps-color-accent) 58%, transparent);
+  background: color-mix(in srgb, var(--ps-color-accent) 20%, var(--ps-glass-soft));
+}
+
+.switch input:checked + span::after {
+  transform: translateX(18px);
+  background: var(--ps-color-accent);
+}
+
+.switch input:focus-visible + span {
+  outline: 2px solid color-mix(in srgb, var(--ps-color-accent) 76%, transparent);
+  outline-offset: 2px;
+}
+
+/* Insights dashboard is the first page-level proof of the atomic system. */
+.adaptive-panel__insights.ps-page {
+  color: var(--ps-color-text);
+}
+
+.adaptive-panel__insights .drawer-body.ps-page-grid {
+  gap: var(--ps-space-md);
+}
+
+.adaptive-panel--bottom .adaptive-panel__insights .drawer-body.ps-page-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.adaptive-panel--float .adaptive-panel__insights .drawer-body.ps-page-grid {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.adaptive-panel--right .adaptive-panel__insights .drawer-body.ps-page-grid,
+.adaptive-panel--left .adaptive-panel__insights .drawer-body.ps-page-grid,
+.adaptive-panel--sheet .adaptive-panel__insights .drawer-body.ps-page-grid {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.adaptive-panel--right .adaptive-panel__insights .drawer-body.ps-page-grid > *,
+.adaptive-panel--left .adaptive-panel__insights .drawer-body.ps-page-grid > *,
+.adaptive-panel--sheet .adaptive-panel__insights .drawer-body.ps-page-grid > *,
+.adaptive-panel--float .adaptive-panel__insights .drawer-body.ps-page-grid > * {
+  grid-column: auto;
+}
+
+.context-card.ps-card,
+.project-meta-card.ps-card,
+.presence-summary-card.ps-card,
+.chart-card.ps-card {
+  border-color: var(--ps-glass-border);
+  border-radius: var(--ps-radius-md);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface) 84%, transparent);
+}
+
+.context-card.ps-surface,
+.project-meta-card.ps-surface,
+.presence-summary-card.ps-surface,
+.chart-card.ps-surface {
+  box-shadow: var(--ps-glass-shadow);
+  backdrop-filter: blur(var(--ps-glass-blur-xs));
+}
+
+.entity-table:has(.ps-data-table) {
+  border: 1px solid var(--ps-color-border);
+  border-radius: var(--ps-radius-lg);
+  background: var(--ps-glass-soft);
+  overflow: auto;
+}
+
+.entity-table .ps-data-table {
+  min-width: 100%;
+}
+
+.insight-breadcrumb.ps-breadcrumb button {
+  color: var(--ps-color-text-muted);
+  font: inherit;
+}
+
+.insight-breadcrumb.ps-breadcrumb button:last-child {
+  color: var(--ps-color-text);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .icon-button,
   .tool-button,
