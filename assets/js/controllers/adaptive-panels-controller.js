@@ -1,4 +1,4 @@
-import { PanelManager } from "../panels/panel-manager.js?v=20260624-panel-mini-tabs-7";
+import { PanelManager } from "../panels/panel-manager.js?v=20260625-panel-rails-3";
 
 export function createAdaptivePanelsController({
   els,
@@ -45,7 +45,7 @@ export function createAdaptivePanelsController({
     state.panelManager.register({
       id: "context",
       title: "Aucun élément sélectionné",
-      icon: "panel",
+      icon: "details",
       defaultPrefs: { mode: "dock", edge: "right", size: 430, width: 430, x: 96, y: 92, height: 620 },
       render: renderContextPanelBody,
       canExternalize: true,

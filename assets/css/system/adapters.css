@@ -664,12 +664,12 @@
   min-width: 100%;
 }
 
-.insight-breadcrumb.ps-breadcrumb button {
+.insight-breadcrumb.ps-breadcrumb .ps-breadcrumb__button {
   color: var(--ps-color-text-muted);
   font: inherit;
 }
 
-.insight-breadcrumb.ps-breadcrumb button:last-child {
+.insight-breadcrumb.ps-breadcrumb .ps-breadcrumb__current {
   color: var(--ps-color-text);
 }
 

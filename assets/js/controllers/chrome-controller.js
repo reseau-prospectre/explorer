@@ -284,7 +284,10 @@ export function createChromeController({
   function positionToolbarPopover(popover, anchor) {
     if (!popover || popover.classList.contains("hidden")) return;
     const toolbar = els.graphToolbar || document.querySelector(".graph-toolbar");
-    const anchorRect = anchor?.getBoundingClientRect() || toolbar?.getBoundingClientRect();
+    const overflowAnchor = toolbar?.querySelector("[data-toolbar-overflow-toggle]:not([hidden])");
+    const anchorRect = anchor && !anchor.hidden && anchor.offsetParent !== null
+      ? anchor.getBoundingClientRect()
+      : overflowAnchor?.getBoundingClientRect() || toolbar?.getBoundingClientRect();
     if (!anchorRect) return;
     const toolbarEdge = toolbar?.dataset.edge || "left";
     const popoverRect = popover.getBoundingClientRect();

@@ -53,7 +53,7 @@ import {
 import {
   getVisibleEntitySummary
 } from "./ui/entity-view.js";
-import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260624-panel-mini-tabs-7";
+import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260625-toolbar-liquid-3";
 import {
   emojiToId,
   reactionEmojiMarkup,
@@ -73,15 +73,15 @@ import {
 } from "./ui/profile-view.js";
 import { renderToast } from "./ui/toast-view.js?v=20260624-atomic-feedback-2";
 import { bootstrapProspectre } from "./app/bootstrap.js";
-import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260624-panel-mini-tabs-7";
+import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260625-panel-rails-3";
 import { createActivityController } from "./controllers/activity-controller.js";
-import { createChromeController } from "./controllers/chrome-controller.js";
+import { createChromeController } from "./controllers/chrome-controller.js?v=20260625-toolbar-liquid-4";
 import { createGraphOptionsController } from "./controllers/graph-options-controller.js";
 import {
   createGraphToolbarController,
   GRAPH_TOOLBAR_PREFS_KEY,
   normalizeGraphToolbarPrefs
-} from "./ui/graph-toolbar.js";
+} from "./ui/graph-toolbar.js?v=20260625-toolbar-liquid-4";
 import {
   createDiscussionRenderer,
   QUICK_REACTIONS
@@ -401,9 +401,9 @@ state.analysisRenderer = createAnalysisRenderer({
   openOverviewDiscussion,
   selectNode,
   selectContributionNode,
+  selectOverview,
   renderRightPanel,
   updateDeepLink,
-  resetView,
   followUser
 });
 state.schemaAdminController = createSchemaAdminController({
@@ -1250,6 +1250,18 @@ function selectNode(id, moveCamera = false) {
   state.selectionController.selectNode(id, moveCamera);
 }
 
+function selectOverview() {
+  resetGraphInteractionState();
+  state.provider?.updatePresence({ selectedNodeId: null });
+  renderRightPanel();
+  renderAnalysis();
+  updateVisibleGraph();
+  scheduleGraphResize();
+  updateDeepLink();
+  state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: null, selectedLinkKey: null, activeTab: state.activeTab } } });
+  if (!state.bridgeApplying) state.windowBridge?.publish("selection:set", { id: null, moveCamera: false, activeTab: state.activeTab });
+}
+
 function selectContributionNode(node, moveCamera = false) {
   state.selectionController.selectContributionNode(node, moveCamera);
 }
@@ -1690,6 +1702,7 @@ async function clearLocalData() {
   for (const key of Object.keys(sessionStorage)) {
     if (key.startsWith("prospectre.")) sessionStorage.removeItem(key);
   }
+  resetView({ resetPanels: true });
   const cleanUrl = `${window.location.origin}${window.location.pathname}`;
   window.history.replaceState(null, "", cleanUrl);
   window.location.replace(cleanUrl);

@@ -11,11 +11,11 @@ import {
   getEntityMetadataEntries
 } from "./insight-model.js";
 import { renderEntityReactionBlock } from "./reactions-view.js";
-import { iconMarkup } from "./icons.js";
 import {
   getTypePresentation,
   renderTypeDistributionChart as renderTypeDistributionChartView
 } from "./type-distribution-chart.js";
+import { iconMarkup } from "./icons.js?v=20260625-panel-rails-3";
 
 export function createAnalysisRenderer({
   els,
@@ -35,9 +35,9 @@ export function createAnalysisRenderer({
   openOverviewDiscussion,
   selectNode,
   selectContributionNode,
+  selectOverview,
   renderRightPanel,
   updateDeepLink,
-  resetView,
   followUser,
   windowRef = window,
   documentRef = document
@@ -285,27 +285,34 @@ export function createAnalysisRenderer({
       links: state.graph.links,
       typeConfig
     });
-    const collapsedEntities = entities.slice(0, -1);
+    const ancestorEntities = entities.slice(0, -1);
     const currentEntity = entities.at(-1);
+    container.classList.toggle("is-overview", !currentEntity);
+    container.classList.toggle("has-overflow", ancestorEntities.length > 1);
     container.innerHTML = `
       <span class="ps-breadcrumb__item">
-        <button type="button" class="ps-breadcrumb__button" data-breadcrumb-root>${iconMarkup("home")}<span>Vue d’ensemble</span></button>
+        <button type="button" class="ps-breadcrumb__button" data-breadcrumb-root title="Vue d’ensemble">${iconMarkup("graph")}<span>Vue d’ensemble</span></button>
       </span>
-      ${collapsedEntities.length ? `
+      ${ancestorEntities.map((entity) => `
+        <span class="ps-breadcrumb__item ps-breadcrumb__item--ancestor">
+          <button type="button" class="ps-breadcrumb__button" data-node="${escapeHtml(entity.id)}" title="${escapeHtml(entity.label)}">${escapeHtml(entity.label)}</button>
+        </span>
+      `).join("")}
+      ${ancestorEntities.length > 1 ? `
         <span class="ps-breadcrumb__item ps-breadcrumb__item--overflow">
           <button type="button" class="ps-breadcrumb__button ps-breadcrumb__overflow" data-breadcrumb-overflow aria-expanded="false" aria-label="Afficher les niveaux précédents">...</button>
           <span class="ps-breadcrumb__menu" data-breadcrumb-menu hidden>
-            ${collapsedEntities.map((entity) => `<button type="button" data-node="${escapeHtml(entity.id)}">${escapeHtml(entity.label)}</button>`).join("")}
+            ${ancestorEntities.map((entity) => `<button type="button" data-node="${escapeHtml(entity.id)}" title="${escapeHtml(entity.label)}">${escapeHtml(entity.label)}</button>`).join("")}
           </span>
         </span>
       ` : ""}
       ${currentEntity ? `
         <span class="ps-breadcrumb__item ps-breadcrumb__item--current">
-          <button type="button" class="ps-breadcrumb__button ps-breadcrumb__current" data-node="${escapeHtml(currentEntity.id)}">${escapeHtml(currentEntity.label)}</button>
+          <button type="button" class="ps-breadcrumb__button ps-breadcrumb__current" data-node="${escapeHtml(currentEntity.id)}" title="${escapeHtml(currentEntity.label)}">${escapeHtml(currentEntity.label)}</button>
         </span>
       ` : ""}
     `;
-    container.querySelector("[data-breadcrumb-root]")?.addEventListener("click", resetView);
+    container.querySelector("[data-breadcrumb-root]")?.addEventListener("click", selectOverview);
     container.querySelector("[data-breadcrumb-overflow]")?.addEventListener("click", (event) => {
       event.stopPropagation();
       const menu = container.querySelector("[data-breadcrumb-menu]");
