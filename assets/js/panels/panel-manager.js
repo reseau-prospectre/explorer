@@ -1,4 +1,4 @@
-import { icon, iconMarkup, panelEdgeIcon } from "../ui/icons.js";
+import { icon, iconMarkup } from "../ui/icons.js";
 
 const EDGES = ["left", "right", "top", "bottom"];
 const DOCK_ZONES = [...EDGES, "center"];
@@ -14,10 +14,13 @@ export class PanelManager {
     this.registry = new Map();
     this.active = new Map();
     this.session = null;
+    this.suppressNextPanelClick = "";
+    this.zIndex = 0;
     this.mobileQuery = window.matchMedia(MOBILE_QUERY);
     this.host?.classList.add("adaptive-panel-host", "adaptive-panel-host--v3");
     this.onKeyDown = (event) => {
       if (event.key === "Escape" && this.cancelInteraction()) event.preventDefault();
+      if (!event.defaultPrevented) this.handleMenuShortcut(event);
     };
     this.onViewportChange = () => this.renderAll();
     document.addEventListener("keydown", this.onKeyDown, true);
@@ -36,6 +39,7 @@ export class PanelManager {
     record.context = context;
     this.active.set(id, record);
     this.render(id);
+    this.focusPanel(id);
     this.emitLayoutChange(id);
   }
 
@@ -89,14 +93,16 @@ export class PanelManager {
     const verticalMargin = window.innerHeight < 720 ? 14 : 24;
     const availableWidth = Math.max(320, window.innerWidth - sideMargin * 2);
     const availableHeight = Math.max(280, window.innerHeight - topbar - verticalMargin * 2);
+    const minFloatWidth = id === "insights" ? 620 : 360;
+    const minFloatHeight = id === "insights" ? 380 : 320;
     const targetWidth = clamp(
       Math.round(Math.max(prefs.width || prefs.size || 520, window.innerWidth * 0.42)),
-      Math.min(360, availableWidth),
+      Math.min(minFloatWidth, availableWidth),
       Math.min(availableWidth, 760)
     );
     const targetHeight = clamp(
       Math.round(Math.max(prefs.height || 520, window.innerHeight * 0.56)),
-      Math.min(320, availableHeight),
+      Math.min(minFloatHeight, availableHeight),
       Math.min(availableHeight, 680)
     );
     return {
@@ -132,7 +138,19 @@ export class PanelManager {
     const prefs = this.getPreferences(id);
     this.savePreferences(id, { collapsed: !prefs.collapsed });
     if (this.active.has(id)) this.render(id);
+    this.focusPanel(id);
     this.emitLayoutChange(id);
+  }
+
+  focusPanel(id) {
+    const record = this.active.get(id);
+    if (!record?.element) return;
+    record.z = ++this.zIndex;
+    record.element.style.setProperty("--adaptive-panel-z", String(90 + record.z));
+    this.host.querySelectorAll(".adaptive-panel.is-focused").forEach((panel) => {
+      if (panel !== record.element) panel.classList.remove("is-focused");
+    });
+    record.element.classList.add("is-focused");
   }
 
   getPreferences(id) {
@@ -192,7 +210,8 @@ export class PanelManager {
     const mobile = this.isMobile();
     const mode = mobile ? "sheet" : prefs.mode === "external" ? "float" : prefs.mode || "dock";
     const edge = mobile ? "bottom" : prefs.edge || "right";
-    const collapsed = Boolean(prefs.collapsed && mode === "dock");
+    const collapsed = Boolean(prefs.collapsed && mode !== "sheet");
+    const stackIndex = collapsed ? this.getCollapsedStackIndex(id, edge) : 0;
     const previous = record.element;
     const panel = document.createElement("section");
     panel.className = [
@@ -207,11 +226,15 @@ export class PanelManager {
       config.className || ""
     ].filter(Boolean).join(" ");
     panel.dataset.panelId = id;
+    panel.style.setProperty("--adaptive-panel-collapsed-index", String(stackIndex));
+    panel.style.setProperty("--adaptive-panel-collapsed-offset", `${stackIndex * 42}px`);
+    panel.style.setProperty("--adaptive-panel-collapsed-inline-offset", `${stackIndex * 374}px`);
     panel.style.setProperty("--adaptive-panel-size", `${prefs.size}px`);
     panel.style.setProperty("--adaptive-panel-width", `${prefs.width}px`);
     panel.style.setProperty("--adaptive-panel-height", `${prefs.height}px`);
     panel.style.setProperty("--adaptive-panel-x", `${prefs.x}px`);
     panel.style.setProperty("--adaptive-panel-y", `${prefs.y}px`);
+    if (record.z) panel.style.setProperty("--adaptive-panel-z", String(90 + record.z));
     panel.setAttribute("role", mobile ? "dialog" : "region");
     panel.setAttribute("aria-label", config.title || id);
     panel.innerHTML = this.renderShell(config, id, mode, edge, collapsed);
@@ -226,16 +249,26 @@ export class PanelManager {
     this.ensureDockZones();
   }
 
+  getCollapsedStackIndex(id, edge) {
+    let index = 0;
+    for (const [otherId] of this.active) {
+      if (otherId === id) return index;
+      const prefs = this.getPreferences(otherId);
+      const mode = this.isMobile() ? "sheet" : prefs.mode === "external" ? "float" : prefs.mode || "dock";
+      if (prefs.collapsed && mode !== "sheet" && (prefs.edge || "right") === edge) index += 1;
+    }
+    return index;
+  }
+
   renderShell(config, id, mode, edge, collapsed) {
-    const canCollapse = Boolean(config.collapsible);
     const canExternalize = Boolean(config.canExternalize);
     const edgeMenuId = `${id}-edge-options`;
     const overflowId = `${id}-panel-actions`;
     const primary = mode === "float"
       ? toolButton("dock", "Ancrer", "data-panel-edge-menu", `aria-controls="${edgeMenuId}" aria-expanded="false"`)
-      : canCollapse
-        ? toolButton(collapsed ? "restore" : "collapse", collapsed ? "Déplier" : "Replier", `data-panel-collapse="${id}"`)
-        : toolButton("detach", "Détacher", `data-panel-mode="${id}"`);
+      : toolButton("detach", "Détacher", `data-panel-mode="${id}"`);
+    const titleIcon = iconMarkup(config.icon || "panel", `class="adaptive-panel__title-icon"`);
+    const dragHandle = `<button type="button" class="adaptive-panel__drag-handle" data-panel-drag-handle aria-label="Déplacer le panneau">${iconMarkup("drag")}<span class="tooltip left">Déplacer</span></button>`;
     const title = config.headerSlot === "insights"
       ? `<div class="adaptive-panel__title adaptive-panel__title--slot ps-panel__title" data-panel-title-slot="insights"></div>`
       : `<div class="adaptive-panel__title ps-panel__title">
@@ -243,24 +276,25 @@ export class PanelManager {
           <h2>${escapeHtml(config.title || id)}</h2>
         </div>`;
     return `
-      <header class="adaptive-panel__header ps-panel__header" data-panel-grab>
+      <header class="adaptive-panel__header ps-panel__header ${collapsed ? "ps-mini-tab" : ""}" data-panel-collapse-toggle="${id}" aria-label="Basculer le panneau ${escapeHtml(config.title || id)}">
+        ${dragHandle}
+        <span class="adaptive-panel__identity" aria-hidden="true">${titleIcon}</span>
         ${title}
         <div class="adaptive-panel__tools ps-action-row">
           <div class="adaptive-panel__edge-menu">
             ${primary}
-            <div id="${edgeMenuId}" class="adaptive-panel__edge-options" hidden>
-              ${EDGES.map((item) => `<button type="button" data-panel-edge="${item}" aria-label="${edgeTooltip(item)}" class="${item === edge && mode !== "float" ? "is-active" : ""}"><i aria-hidden="true">${panelEdgeIcon(item)}</i><span>${edgeShortLabel(item)}</span><span class="tooltip left">${edgeTooltip(item)}</span></button>`).join("")}
+            <div id="${edgeMenuId}" class="adaptive-panel__edge-options" data-panel-menu-owner="${id}" hidden>
+              ${EDGES.map((item) => edgeButton(item, edge, mode)).join("")}
             </div>
           </div>
           <div class="adaptive-panel__overflow">
             ${toolButton("more_vert", "Actions", "data-panel-overflow", `aria-controls="${overflowId}" aria-expanded="false"`)}
-            <div id="${overflowId}" class="adaptive-panel__overflow-menu" hidden>
+            <div id="${overflowId}" class="adaptive-panel__overflow-menu" data-panel-menu-owner="${id}" hidden>
               ${mode !== "float" ? menuButton("detach", "Détacher", `data-panel-mode="${id}"`) : ""}
               ${canExternalize ? menuButton("externalWindow", "Ouvrir en popup", `data-panel-externalize="${id}"`) : ""}
-              ${canCollapse && mode === "float" ? menuButton(collapsed ? "restore" : "collapse", collapsed ? "Déplier" : "Replier", `data-panel-collapse="${id}"`) : ""}
               <p>Ancrage</p>
               <div class="adaptive-panel__overflow-edges">
-                ${EDGES.map((item) => `<button type="button" data-panel-edge="${item}" aria-label="${edgeTooltip(item)}" class="${item === edge && mode !== "float" ? "is-active" : ""}"><i aria-hidden="true">${panelEdgeIcon(item)}</i><span>${edgeShortLabel(item)}</span></button>`).join("")}
+                ${EDGES.map((item) => edgeButton(item, edge, mode)).join("")}
               </div>
             </div>
           </div>
@@ -276,12 +310,19 @@ export class PanelManager {
   }
 
   bindPanel(panel, id) {
+    panel.addEventListener("pointerdown", () => this.focusPanel(id), { capture: true });
     panel.querySelector("[data-panel-close]")?.addEventListener("click", () => this.close(id));
-    panel.querySelector("[data-panel-mode]")?.addEventListener("click", () => this.toggleMode(id));
-    panel.querySelector("[data-panel-collapse]")?.addEventListener("click", () => this.toggleCollapsed(id));
-    panel.querySelector("[data-panel-externalize]")?.addEventListener("click", () => this.externalize(id));
+    panel.querySelector("[data-panel-mode]")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.toggleMode(id);
+    });
+    panel.querySelector("[data-panel-externalize]")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      this.externalize(id);
+    });
     panel.querySelector("[data-panel-overflow]")?.addEventListener("click", (event) => {
       event.stopPropagation();
+      this.focusPanel(id);
       const menu = event.currentTarget.nextElementSibling;
       const open = Boolean(menu?.hidden);
       this.closeMenus(panel);
@@ -290,6 +331,7 @@ export class PanelManager {
     });
     panel.querySelector("[data-panel-edge-menu]")?.addEventListener("click", (event) => {
       event.stopPropagation();
+      this.focusPanel(id);
       const options = event.currentTarget.nextElementSibling;
       const open = Boolean(options?.hidden);
       this.closeMenus(panel);
@@ -301,12 +343,25 @@ export class PanelManager {
       this.closeMenus(panel);
       this.dock(id, button.dataset.panelEdge);
     }));
+    panel.querySelector("[data-panel-collapse-toggle]")?.addEventListener("click", (event) => {
+      if (this.suppressNextPanelClick === id) {
+        this.suppressNextPanelClick = "";
+        event.preventDefault();
+        return;
+      }
+      if (event.target.closest("button, a, input, textarea, select, [role='button'], .adaptive-panel__tools")) return;
+      event.preventDefault();
+      this.toggleCollapsed(id);
+    });
     panel.addEventListener("pointerdown", (event) => {
       if (!event.target.closest(".adaptive-panel__edge-menu, .adaptive-panel__overflow")) this.closeMenus(panel);
     });
-    panel.querySelector("[data-panel-grab]")?.addEventListener("pointerdown", (event) => {
-      if (!panel.classList.contains("adaptive-panel--float")) return;
-      if (event.target.closest("button, a, input, textarea, select, [role='button'], .adaptive-panel__tools")) return;
+    panel.querySelector("[data-panel-drag-handle]")?.addEventListener("click", (event) => {
+      event.preventDefault();
+      event.stopPropagation();
+    });
+    panel.querySelector("[data-panel-drag-handle]")?.addEventListener("pointerdown", (event) => {
+      if (!panel.classList.contains("adaptive-panel--float") && !panel.classList.contains("is-collapsed")) return;
       this.beginInteraction(event, panel, id, "move");
     });
     panel.querySelectorAll("[data-panel-resize]").forEach((handle) => {
@@ -325,6 +380,22 @@ export class PanelManager {
     });
   }
 
+  handleMenuShortcut(event) {
+    const menu = this.host?.querySelector?.(".adaptive-panel__edge-options:not([hidden]), .adaptive-panel__overflow-menu:not([hidden])");
+    if (!menu) return;
+    if (event.key === "Escape") {
+      this.closeMenus(this.host);
+      event.preventDefault();
+      return;
+    }
+    const edge = shortcutEdge(event.key);
+    const id = menu.dataset.panelMenuOwner;
+    if (!edge || !id) return;
+    event.preventDefault();
+    this.closeMenus(this.host);
+    this.dock(id, edge);
+  }
+
   beginInteraction(event, panel, id, operation, direction = "") {
     if (event.button !== 0 || this.session) return;
     event.preventDefault();
@@ -338,11 +409,14 @@ export class PanelManager {
       operation,
       direction,
       previewEdge: null,
+      moved: false,
+      mini: panel.classList.contains("is-collapsed"),
+      fromHandle: target.closest?.("[data-panel-drag-handle]") != null,
       initial: { x: event.clientX, y: event.clientY, left: rect.left, top: rect.top, width: rect.width, height: rect.height }
     };
     target.setPointerCapture?.(event.pointerId);
     panel.classList.add(`is-${operation}`);
-    if (operation === "move") this.host.querySelector(".adaptive-panel-dock-zones")?.classList.add("is-visible");
+    if (operation === "move" && !this.session.mini) this.host.querySelector(".adaptive-panel-dock-zones")?.classList.add("is-visible");
     this.session.move = (next) => this.updateInteraction(next);
     this.session.end = (next) => this.commitInteraction(next);
     this.session.cancel = () => this.cancelInteraction();
@@ -356,13 +430,14 @@ export class PanelManager {
     const session = this.session;
     if (!session || event.pointerId !== session.pointerId) return;
     const { panel, initial, operation } = session;
+    if (Math.abs(event.clientX - initial.x) > 4 || Math.abs(event.clientY - initial.y) > 4) session.moved = true;
     if (operation === "move") {
       const x = clamp(initial.left + event.clientX - initial.x, 8, window.innerWidth - initial.width - 8);
       const y = clamp(initial.top + event.clientY - initial.y, 8, window.innerHeight - 80);
       panel.style.setProperty("--adaptive-panel-x", `${Math.round(x)}px`);
       panel.style.setProperty("--adaptive-panel-y", `${Math.round(y)}px`);
-      session.previewEdge = dropZoneAt(event.clientX, event.clientY);
-      this.host.querySelectorAll("[data-dock-zone]").forEach((zone) => zone.classList.toggle("is-target", zone.dataset.dockZone === session.previewEdge));
+      session.previewEdge = session.mini ? miniDropEdgeAt(event.clientX, event.clientY) : dropZoneAt(event.clientX, event.clientY);
+      if (!session.mini) this.host.querySelectorAll("[data-dock-zone]").forEach((zone) => zone.classList.toggle("is-target", zone.dataset.dockZone === session.previewEdge));
       return;
     }
     const prefs = this.getPreferences(session.id);
@@ -404,10 +479,18 @@ export class PanelManager {
   commitInteraction(event) {
     const session = this.session;
     if (!session || (event.pointerId !== undefined && event.pointerId !== session.pointerId)) return;
+    if (session.operation === "move" && !session.moved) {
+      const id = session.id;
+      this.finishInteraction();
+      if (session.fromHandle) return;
+      this.suppressNextPanelClick = id;
+      this.toggleCollapsed(id);
+      return;
+    }
     const rect = session.panel.getBoundingClientRect();
     const prefs = this.getPreferences(session.id);
     const edge = prefs.edge || "right";
-    const centerZone = session.previewEdge === "center"
+    const centerZone = !session.mini && session.previewEdge === "center"
       ? this.host.querySelector('[data-dock-zone="center"]')?.getBoundingClientRect()
       : null;
     const values = session.operation === "move" && session.previewEdge && session.previewEdge !== "center"
@@ -512,12 +595,23 @@ function dropZoneAt(x, y) {
   if (x > window.innerWidth - threshold) return "right";
   if (y < threshold) return "top";
   if (y > window.innerHeight - threshold) return "bottom";
-  const centerMarginX = Math.max(threshold, window.innerWidth * 0.18);
-  const centerMarginY = Math.max(threshold, window.innerHeight * 0.18);
-  if (x > centerMarginX && x < window.innerWidth - centerMarginX && y > centerMarginY && y < window.innerHeight - centerMarginY) {
+  const centerWidth = Math.min(560, window.innerWidth * 0.38);
+  const centerHeight = Math.min(340, window.innerHeight * 0.34);
+  const centerLeft = (window.innerWidth - centerWidth) / 2;
+  const centerTop = (window.innerHeight + (Number.parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--topbar-height")) || 0) - centerHeight) / 2;
+  if (x > centerLeft && x < centerLeft + centerWidth && y > centerTop && y < centerTop + centerHeight) {
     return "center";
   }
   return null;
+}
+
+function miniDropEdgeAt(x, y) {
+  const threshold = Math.min(118, Math.max(72, Math.min(window.innerWidth, window.innerHeight) * 0.12));
+  if (y < threshold) return "top";
+  if (y > window.innerHeight - threshold) return "bottom";
+  if (x < threshold) return "left";
+  if (x > window.innerWidth - threshold) return "right";
+  return "";
 }
 
 function clamp(value, min, max) {
@@ -529,11 +623,38 @@ function edgeLabel(edge) {
 }
 
 function edgeTooltip(edge) {
-  return { left: "Ancrer à gauche", right: "Ancrer à droite", top: "Ancrer en haut", bottom: "Ancrer en bas" }[edge] || "Rattacher";
+  return {
+    left: "Ancrer à gauche · ← / Q",
+    right: "Ancrer à droite · → / D",
+    top: "Ancrer en haut · ↑ / Z",
+    bottom: "Ancrer en bas · ↓ / S"
+  }[edge] || "Rattacher";
 }
 
-function edgeShortLabel(edge) {
-  return { left: "G", right: "D", top: "H", bottom: "B" }[edge] || "";
+function edgeButton(edge, activeEdge, mode) {
+  const active = edge === activeEdge && mode !== "float" ? "is-active" : "";
+  return `<button type="button" data-panel-edge="${edge}" aria-label="${edgeTooltip(edge)}" class="${active}">${edgeIconMarkup(edge)}<span class="tooltip left">${edgeTooltip(edge)}</span></button>`;
+}
+
+function edgeIconMarkup(edge) {
+  return `<i class="panel-edge-glyph panel-edge-glyph--${edge}" aria-hidden="true"></i>`;
+}
+
+function shortcutEdge(key = "") {
+  return {
+    ArrowLeft: "left",
+    q: "left",
+    Q: "left",
+    ArrowRight: "right",
+    d: "right",
+    D: "right",
+    ArrowUp: "top",
+    z: "top",
+    Z: "top",
+    ArrowDown: "bottom",
+    s: "bottom",
+    S: "bottom"
+  }[key] || "";
 }
 
 function escapeHtml(value = "") {

@@ -1,4 +1,4 @@
-import { PanelManager } from "../panels/panel-manager.js";
+import { PanelManager } from "../panels/panel-manager.js?v=20260624-panel-mini-tabs-7";
 
 export function createAdaptivePanelsController({
   els,
@@ -105,7 +105,8 @@ export function createAdaptivePanelsController({
   }
 
   function renderInsightsPanelBody(_context, { panel } = {}) {
-    const breadcrumb = document.querySelector("#insight-breadcrumb");
+    if (!state.insightBreadcrumb) state.insightBreadcrumb = document.querySelector("#insight-breadcrumb");
+    const breadcrumb = state.insightBreadcrumb;
     const titleSlot = panel?.querySelector("[data-panel-title-slot='insights']");
     if (breadcrumb && titleSlot && breadcrumb.parentElement !== titleSlot) {
       titleSlot.append(breadcrumb);

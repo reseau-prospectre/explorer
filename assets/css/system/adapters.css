@@ -118,8 +118,61 @@
   color: var(--ps-color-accent);
 }
 
+.adaptive-panel.ps-panel .panel-edge-glyph {
+  position: relative;
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 1.5px solid currentColor;
+  border-radius: 2px;
+  opacity: 0.92;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph::after {
+  content: "";
+  position: absolute;
+  background: currentColor;
+  opacity: 0.95;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--left::after,
+.adaptive-panel.ps-panel .panel-edge-glyph--right::after {
+  top: 2px;
+  bottom: 2px;
+  width: 4px;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--left::after {
+  left: 2px;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--right::after {
+  right: 2px;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--top::after,
+.adaptive-panel.ps-panel .panel-edge-glyph--bottom::after {
+  right: 2px;
+  left: 2px;
+  height: 4px;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--top::after {
+  top: 2px;
+}
+
+.adaptive-panel.ps-panel .panel-edge-glyph--bottom::after {
+  bottom: 2px;
+}
+
 .adaptive-panel.ps-panel .ps-panel__body {
   padding: 0;
+}
+
+.adaptive-panel.ps-panel.is-collapsed .adaptive-panel__resize,
+.adaptive-panel.ps-panel.is-collapsed .adaptive-panel__resize-rail,
+.adaptive-panel.ps-panel.is-collapsed .adaptive-panel__handle-visual {
+  display: none !important;
 }
 
 /* Legacy action controls mapped to PROSPECTRE atoms. */
@@ -494,6 +547,61 @@
 .switch input:focus-visible + span {
   outline: 2px solid color-mix(in srgb, var(--ps-color-accent) 76%, transparent);
   outline-offset: 2px;
+}
+
+.switch.ps-switch {
+  grid-template-columns: auto;
+  cursor: pointer;
+}
+
+.switch.ps-switch > .ps-switch__track::after {
+  content: none;
+}
+
+.switch.ps-switch input:checked + .ps-switch__track .ps-switch__thumb {
+  transform: translateX(18px);
+  background: var(--ps-color-accent);
+}
+
+.toast.ps-toast {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface-raised) 86%, transparent) !important;
+  box-shadow: var(--ps-glass-shadow-float);
+  backdrop-filter: blur(var(--ps-glass-blur-md));
+}
+
+.toast.ps-toast .toast-content {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+}
+
+.toast.ps-toast .toast-content > i {
+  background: color-mix(in srgb, var(--ps-color-accent) 18%, var(--ps-glass-soft));
+  color: var(--ps-color-accent);
+}
+
+.toast.ps-toast .toast-content span {
+  color: var(--ps-color-text);
+}
+
+.toast.ps-toast .toast-progress {
+  background: linear-gradient(90deg, var(--ps-color-accent), var(--ps-color-danger));
+  animation-name: ps-toast-progress;
+}
+
+.prospectre-loader.ps-progress {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    var(--ps-glass-card);
+  color: var(--ps-color-text-muted);
+}
+
+.prospectre-loader.ps-progress > .ps-progress__spinner {
+  width: 12px;
+  height: 12px;
 }
 
 /* Insights dashboard is the first page-level proof of the atomic system. */

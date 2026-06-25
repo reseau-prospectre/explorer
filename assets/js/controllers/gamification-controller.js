@@ -18,8 +18,8 @@ export function createGamificationController({
   documentRef = document,
   windowRef = window,
   performanceRef = performance,
-  requestAnimationFrameRef = requestAnimationFrame,
-  cancelAnimationFrameRef = cancelAnimationFrame
+  requestAnimationFrameRef = (callback) => windowRef.requestAnimationFrame(callback),
+  cancelAnimationFrameRef = (frame) => windowRef.cancelAnimationFrame(frame)
 }) {
   function mount() {
     const markActivity = () => {

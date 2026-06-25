@@ -53,7 +53,7 @@ import {
 import {
   getVisibleEntitySummary
 } from "./ui/entity-view.js";
-import { createAnalysisRenderer } from "./ui/analysis-view.js";
+import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260624-panel-mini-tabs-7";
 import {
   emojiToId,
   reactionEmojiMarkup,
@@ -71,9 +71,9 @@ import {
   avatarMarkup as avatarMarkupView,
   resolveAvatarAssetURL
 } from "./ui/profile-view.js";
-import { renderToast } from "./ui/toast-view.js";
+import { renderToast } from "./ui/toast-view.js?v=20260624-atomic-feedback-2";
 import { bootstrapProspectre } from "./app/bootstrap.js";
-import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js";
+import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260624-panel-mini-tabs-7";
 import { createActivityController } from "./controllers/activity-controller.js";
 import { createChromeController } from "./controllers/chrome-controller.js";
 import { createGraphOptionsController } from "./controllers/graph-options-controller.js";
@@ -106,7 +106,7 @@ import { createSelectionController } from "./controllers/selection-controller.js
 import { createSchemaAdminController } from "./controllers/schema-admin-controller.js";
 import { createSessionController } from "./controllers/session-controller.js";
 import { createSmartLinkController } from "./controllers/smart-link-controller.js";
-import { createUiRuntimeController } from "./controllers/ui-runtime-controller.js";
+import { createUiRuntimeController } from "./controllers/ui-runtime-controller.js?v=20260624-atomic-feedback-2";
 import { overlays } from "./ui/overlay-manager.js";
 import { confirmAction, requestChoice } from "./ui/confirm-dialog.js";
 import { ensureMoodleHtmlSupport, isMoodleHtmlEntity } from "./ui/moodle-bootstrap.js";
@@ -813,22 +813,27 @@ async function init() {
     showToast("Chargement incomplet. Vérifiez la connexion.");
     return;
   }
+  reportLoading("noyau applicatif");
   bootstrapV3Runtime();
   applyTheme(loadJson(THEME_KEY, "system"));
   window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
     if (loadJson(THEME_KEY, "system") === "system") applyTheme("system");
   });
+  reportLoading("contrôleurs interface");
   setupControls();
   setupGamification();
   setupGlobalTooltips();
   setupRelativeTimes();
+  reportLoading("panneaux et graphe");
   setupPanelManager();
   setupGraphController();
   setupGraph();
+  reportLoading("projet et contenus");
   const projectDiscovery = discoverAvailableProjectManifests();
   await loadDefaultProject();
   await projectDiscovery;
   applyInitialDeepLink();
+  reportLoading("coprésence");
   await setupPresence();
   const adminView = new URLSearchParams(window.location.search).get("admin");
   if (["modele", "champs", "transfert"].includes(adminView)) {
@@ -872,6 +877,11 @@ function setupGlobalTooltips() {
 
 function hideGlobalTooltip() {
   state.uiRuntimeController.hideGlobalTooltip();
+}
+
+function reportLoading(scope, detail = "") {
+  const suffix = detail ? ` · ${detail}` : "";
+  showToast(`Initialisation · ${scope}${suffix}`, { tone: "loading", icon: "progress_activity" });
 }
 
 function setupControls() {
@@ -1589,8 +1599,8 @@ async function deactivateRealtime() {
   await state.realtimeController.deactivate();
 }
 
-async function toggleRealtimeMode(enabled) {
-  await state.realtimeController.toggleMode(enabled);
+async function toggleRealtimeMode(enabled, control = null) {
+  await state.realtimeController.toggleMode(enabled, control);
 }
 
 async function toggleGoogleAccount() {
@@ -2043,8 +2053,8 @@ function formatRelativeTime(timestamp) {
   return state.uiRuntimeController.formatRelativeTime(timestamp);
 }
 
-function showToast(message) {
-  state.uiRuntimeController.showToast(message);
+function showToast(message, options = {}) {
+  state.uiRuntimeController.showToast(message, options);
 }
 
 function hideToast() {

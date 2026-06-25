@@ -1,8 +1,8 @@
 export function createInlineLoader(message = "Chargement…") {
   const loader = document.createElement("div");
-  loader.className = "prospectre-loader";
+  loader.className = "prospectre-loader ps-progress";
   loader.setAttribute("role", "status");
-  loader.innerHTML = `<span aria-hidden="true"></span><strong>${escapeHtml(message)}</strong>`;
+  loader.innerHTML = `<span class="ps-progress__spinner" aria-hidden="true"></span><strong>${escapeHtml(message)}</strong>`;
   return loader;
 }
 

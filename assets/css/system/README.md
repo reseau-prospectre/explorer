@@ -68,11 +68,17 @@ Molecules:
 - `ps-field`, `ps-field__hint`
 - `ps-action-row`
 - `ps-tab-list`, `ps-tab`
+- `ps-mini-tab`
 - `ps-meta-list`, `ps-meta-item`
 - `ps-card`, `ps-card__header`, `ps-card__title`, `ps-card__body`
 - `ps-badge`, `ps-badge--success`, `ps-badge--warning`, `ps-badge--danger`
 - `ps-switch`, `ps-switch__track`, `ps-switch__thumb`
-- `ps-skeleton`
+- `ps-skeleton`, `ps-skeleton--text`, `ps-skeleton--heading`,
+  `ps-skeleton--circle`, `ps-skeleton-layout`, `ps-skeleton-row`
+- `ps-progress`, `ps-progress__spinner`, `ps-progress__track`,
+  `ps-progress__bar`
+- `ps-dropdown`, `ps-dropdown__menu`, `ps-dropdown__item`
+- `ps-avatar-group`, `ps-avatar`
 
 Organisms:
 
@@ -81,6 +87,13 @@ Organisms:
 - `ps-data-table`, `ps-data-table-wrap`
 - `ps-breadcrumb`, `ps-breadcrumb__item`, `ps-breadcrumb__current`
 - `ps-stepper`, `ps-step`, `ps-step__node`
+- `ps-accordion`, `ps-accordion__item`, `ps-accordion__trigger`,
+  `ps-accordion__body`
+- `ps-modal`, `ps-modal__header`, `ps-modal__body`, `ps-modal__footer`
+- `ps-toast`, `ps-toast__content`, `ps-toast__icon`,
+  `ps-toast__message`, `ps-toast__progress`
+- `ps-notification`, `ps-notification__content`,
+  `ps-notification__icon`, `ps-notification__body`
 
 Templates and pages:
 
@@ -89,6 +102,37 @@ Templates and pages:
 - `ps-stack-template`
 - `ps-page`, `ps-page__header`, `ps-page__title`, `ps-page__subtitle`
 - `ps-page-grid`, `ps-page-grid--dense`, `ps-page-stack`, `ps-page-split`
+
+## Liquid Glass source coverage
+
+The source kit exposes these sections: Glass Cards, Buttons, Navigation & Tabs,
+Dropdown, Form Controls, Accordion, Stepper, Data Table, Toast/Snackbar, Badges
+& Tags, Notifications, Modal, Skeleton Loader, Chips, Avatar Group,
+Breadcrumb and 12 Liquid Animations.
+
+Already absorbed into `ps-*` foundations:
+
+- cards/surfaces, buttons, icon buttons, inputs, badges/chips, switches, tabs,
+  breadcrumbs, steppers, data tables, skeleton shimmer and page layouts;
+- glass tokens, focus rings, reduced-motion guards and adapter bridges.
+
+Still to finish as deeper component integrations:
+
+- `ps-select-menu` behaviour and keyboard contracts for custom selects;
+- direct migration of project/menu popovers to `ps-dropdown`;
+- use `ps-mini-tab` for collapsed adaptive panels: each mini-tab must expose a
+  dedicated drag handle, an identity icon, compact actions and edge-aware
+  stacking instead of behaving like a compressed panel header;
+- finish the breadcrumb overflow menu interactions for compact headers and
+  mini-tabs, using `ps-breadcrumb` structure rather than legacy breadcrumb
+  buttons;
+- direct migration of bespoke dialogs to `ps-modal`;
+- direct migration of presence strips/profile clusters to `ps-avatar-group`;
+- direct migration of pack loading, import/export and async controller work to
+  `ps-progress`;
+- complete Liquid Animation utilities with safe reduced-motion defaults;
+- richer `ps-skeleton` layouts applied to async panels, tables and profile
+  surfaces before content arrives.
 
 ## Migration checklist
 

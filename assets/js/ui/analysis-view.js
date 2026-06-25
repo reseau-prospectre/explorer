@@ -11,6 +11,7 @@ import {
   getEntityMetadataEntries
 } from "./insight-model.js";
 import { renderEntityReactionBlock } from "./reactions-view.js";
+import { iconMarkup } from "./icons.js";
 import {
   getTypePresentation,
   renderTypeDistributionChart as renderTypeDistributionChartView
@@ -284,14 +285,35 @@ export function createAnalysisRenderer({
       links: state.graph.links,
       typeConfig
     });
+    const collapsedEntities = entities.slice(0, -1);
+    const currentEntity = entities.at(-1);
     container.innerHTML = `
-      <button type="button" data-breadcrumb-root>Vue d’ensemble</button>
-      ${entities.map((entity) => `
-        <i>chevron_right</i>
-        <button type="button" data-node="${escapeHtml(entity.id)}">${escapeHtml(entity.label)}</button>
-      `).join("")}
+      <span class="ps-breadcrumb__item">
+        <button type="button" class="ps-breadcrumb__button" data-breadcrumb-root>${iconMarkup("home")}<span>Vue d’ensemble</span></button>
+      </span>
+      ${collapsedEntities.length ? `
+        <span class="ps-breadcrumb__item ps-breadcrumb__item--overflow">
+          <button type="button" class="ps-breadcrumb__button ps-breadcrumb__overflow" data-breadcrumb-overflow aria-expanded="false" aria-label="Afficher les niveaux précédents">...</button>
+          <span class="ps-breadcrumb__menu" data-breadcrumb-menu hidden>
+            ${collapsedEntities.map((entity) => `<button type="button" data-node="${escapeHtml(entity.id)}">${escapeHtml(entity.label)}</button>`).join("")}
+          </span>
+        </span>
+      ` : ""}
+      ${currentEntity ? `
+        <span class="ps-breadcrumb__item ps-breadcrumb__item--current">
+          <button type="button" class="ps-breadcrumb__button ps-breadcrumb__current" data-node="${escapeHtml(currentEntity.id)}">${escapeHtml(currentEntity.label)}</button>
+        </span>
+      ` : ""}
     `;
     container.querySelector("[data-breadcrumb-root]")?.addEventListener("click", resetView);
+    container.querySelector("[data-breadcrumb-overflow]")?.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const menu = container.querySelector("[data-breadcrumb-menu]");
+      if (!menu) return;
+      const open = menu.hidden;
+      menu.hidden = !open;
+      event.currentTarget.setAttribute("aria-expanded", String(open));
+    });
     container.querySelectorAll("[data-node]").forEach((button) => {
       button.addEventListener("click", () => selectNode(button.dataset.node, true));
     });

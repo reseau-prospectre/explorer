@@ -117,26 +117,31 @@ export function createRealtimeController({
     return firebaseReady ? new FirebaseRealtimeProvider(config) : new LocalRealtimeProvider();
   }
 
-  async function activate(button = documentRef.querySelector("#toggle-avatars")) {
+  async function activate(control = documentRef.querySelector("#toggle-avatars")) {
     if (!hasFirebaseConfig()) {
       showToast("Coprésence indisponible");
       renderConnectionStatus();
       return;
     }
-    if (button) button.disabled = true;
-    showToast("Activation de la présence…");
-    state.providerVersion += 1;
-    state.provider = createProvider(true);
-    bindProvider(state.provider);
-    await state.provider.connect({ userProfile: state.profile });
-    storage.setItem(realtimeKey, JSON.stringify(state.realtimeStatus === "firebase"));
-    resetGamificationCycle();
-    if (button) {
-      button.disabled = false;
-      button.classList.toggle("active", state.realtimeStatus === "firebase");
+    const toolbarButton = documentRef.querySelector("#toggle-avatars");
+    const controls = [control, toolbarButton, els.realtimeSwitch].filter(Boolean);
+    controls.forEach((item) => { item.disabled = true; });
+    try {
+      showToast("Activation de la présence…");
+      state.providerVersion += 1;
+      state.provider = createProvider(true);
+      bindProvider(state.provider);
+      await state.provider.connect({ userProfile: state.profile });
+      storage.setItem(realtimeKey, JSON.stringify(state.realtimeStatus === "firebase"));
+      resetGamificationCycle();
+      rebuildGraph();
+    } catch {
+      showToast("Activation de la coprésence indisponible");
+    } finally {
+      controls.forEach((item) => { item.disabled = false; });
+      toolbarButton?.classList.toggle("active", state.realtimeStatus === "firebase");
+      renderConnectionStatus();
     }
-    renderConnectionStatus();
-    rebuildGraph();
   }
 
   async function deactivate() {
@@ -164,9 +169,9 @@ export function createRealtimeController({
     renderRightPanel();
   }
 
-  async function toggleMode(enabled) {
+  async function toggleMode(enabled, control = documentRef.querySelector("#toggle-avatars")) {
     if (enabled) {
-      await activate(documentRef.querySelector("#toggle-avatars"));
+      await activate(control);
     } else {
       await deactivate();
       showToast("Mode local actif");

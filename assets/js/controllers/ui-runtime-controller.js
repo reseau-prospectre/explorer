@@ -76,18 +76,34 @@ export function createUiRuntimeController({
     return formatRelativeTimeView(timestamp, { dayjs: dayjsRef() });
   }
 
-  function showToast(message) {
+  function showToast(message, options = {}) {
     if (!els.toast) return;
-    els.toast.innerHTML = renderToast(message);
+    const tone = options.tone || inferToastTone(message);
+    els.toast.className = `toast ps-toast ps-toast--${tone}`;
+    els.toast.innerHTML = renderToast(message, { ...options, tone });
     els.toast.classList.remove("hidden");
     els.toast.querySelector(".toast-close")?.addEventListener("click", hideToast, { once: true });
     els.toast.querySelector(".toast-progress")?.addEventListener("animationend", hideToast, { once: true });
     clearTimeout(state.toastTimer);
+    state.toastTimer = windowRef.setTimeout(hideToast, options.duration || 4200);
   }
 
   function hideToast() {
     clearTimeout(state.toastTimer);
     els.toast?.classList.add("hidden");
+  }
+
+  function reportLoading(scope, detail = "") {
+    const suffix = detail ? ` · ${detail}` : "";
+    showToast(`Initialisation · ${scope}${suffix}`, { tone: "loading", icon: "progress_activity" });
+  }
+
+  function inferToastTone(message = "") {
+    return /erreur|impossible|indisponible|incomplet|annul/i.test(message)
+      ? "danger"
+      : /chargement|initialisation|activation|import|export/i.test(message)
+        ? "loading"
+        : "info";
   }
 
   return {
@@ -99,6 +115,7 @@ export function createUiRuntimeController({
     relativeTimeMarkup,
     formatRelativeTime,
     showToast,
+    reportLoading,
     hideToast
   };
 }

@@ -5,7 +5,7 @@
 
 @import url("./tokens.css");
 @import url("./atoms.css");
-@import url("./molecules.css");
-@import url("./organisms.css");
+@import url("./molecules.css?v=20260624-panel-mini-tabs-7");
+@import url("./organisms.css?v=20260624-panel-mini-tabs-7");
 @import url("./templates.css");
 @import url("./pages.css");

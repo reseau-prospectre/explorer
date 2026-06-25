@@ -84,7 +84,7 @@ export function createChromeController({
     document.addEventListener("click", (event) => state.gamificationController?.handleWidgetAction?.(event));
     document.querySelector("#clear-local")?.addEventListener("click", clearLocalData);
     els.googleLogin?.addEventListener("click", toggleGoogleAccount);
-    els.realtimeSwitch?.addEventListener("change", (event) => toggleRealtimeMode?.(event.target.checked));
+    els.realtimeSwitch?.addEventListener("change", (event) => toggleRealtimeMode?.(event.target.checked, event.target));
     document.querySelector("#close-emoji-picker")?.addEventListener("click", closeEmojiPicker);
     setupNativeEmojiPicker?.();
     document.querySelectorAll("[data-theme-choice]").forEach((button) => {

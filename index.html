@@ -11,8 +11,8 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
-  <link rel="stylesheet" href="./assets/css/system/index.css?v=20260622-atomic-system-1">
-  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260623-chrome-shell-feature-1">
+  <link rel="stylesheet" href="./assets/css/system/index.css?v=20260624-panel-mini-tabs-7">
+  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260624-panel-mini-tabs-7">
   <link rel="stylesheet" href="./assets/css/features/insights-dashboard.css?v=20260623-insights-dashboard-feature-1">
   <link rel="stylesheet" href="./assets/css/features/overlays.css?v=20260623-overlays-feature-1">
   <link rel="stylesheet" href="./assets/css/features/identity-presence.css?v=20260623-identity-presence-feature-1">
@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="./assets/css/features/content-rendering.css?v=20260623-content-rendering-feature-1">
   <link rel="stylesheet" href="./assets/css/features/entity-editor.css?v=20260623-entity-editor-feature-1">
   <link rel="stylesheet" href="./assets/css/features/responsive.css?v=20260623-responsive-feature-1">
-  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260622-atomic-bridge-1">
+  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260624-panel-collapse-layout">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -300,9 +300,9 @@
               <section class="profile-section connection-section" aria-label="Connexion">
                 <div class="switch-row">
                   <span><span id="realtime-dot" class="status-dot offline"></span>Coprésence</span>
-                  <label class="switch">
+                  <label class="switch ps-switch" aria-label="Activer la coprésence">
                     <input id="realtime-switch" type="checkbox">
-                    <span></span>
+                    <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
                   </label>
                 </div>
                 <button id="google-login" class="secondary-button auth-button" type="button">
@@ -424,6 +424,6 @@
       }
     </script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260622-editor-render-4" type="module"></script>
+  <script src="./assets/js/main.js?v=20260624-panel-mini-tabs-7" type="module"></script>
   </body>
 </html>
