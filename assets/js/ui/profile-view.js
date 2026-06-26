@@ -15,12 +15,13 @@ export function avatarMarkup(profile, extraStyle = "") {
   const image = photoURL
     ? `<span class="avatar-fallback">${fallback}</span><img src="${escapeHtml(photoURL)}" alt="" loading="lazy" decoding="async" draggable="false" referrerpolicy="no-referrer" onerror="this.remove()">`
     : fallback;
-  return `<span class="avatar-chip${photoURL ? " has-photo" : ""}" style="background-color:${color};${extraStyle}">${image}</span>`;
+  return `<span class="avatar-chip ps-avatar${photoURL ? " has-photo" : ""}" style="background-color:${color};${extraStyle}">${image}</span>`;
 }
 
 export function applyAvatarElement(element, profile) {
   if (!element) return;
   const photoURL = resolveAvatarAssetURL(profile?.photoURL);
+  element.classList.add("ps-avatar");
   element.classList.toggle("has-photo", Boolean(photoURL));
   element.style.background = profile?.color || "#a7f3d0";
   element.replaceChildren();

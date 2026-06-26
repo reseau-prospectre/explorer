@@ -14,20 +14,20 @@ export function requestChoice({
     const scrim = document.createElement("div");
     scrim.className = "confirm-scrim";
     const dialog = document.createElement("section");
-    dialog.className = `confirm-dialog confirm-dialog--${tone}`;
+    dialog.className = `confirm-dialog confirm-dialog--${tone} ps-modal ps-surface`;
     dialog.setAttribute("role", "dialog");
     dialog.setAttribute("aria-modal", "true");
     dialog.setAttribute("aria-label", title || "Confirmation");
     dialog.innerHTML = `
-      <div class="confirm-dialog__head">
+      <div class="confirm-dialog__head ps-modal__header">
         <i>${tone === "danger" ? "warning" : "help"}</i>
         <div>
           <h2>${escapeHtml(title || "Confirmer")}</h2>
           ${message ? `<p>${escapeHtml(message)}</p>` : ""}
         </div>
       </div>
-      ${details ? `<div class="confirm-dialog__details">${escapeHtml(details)}</div>` : ""}
-      <div class="confirm-dialog__actions">
+      ${details ? `<div class="confirm-dialog__details ps-modal__body">${escapeHtml(details)}</div>` : ""}
+      <div class="confirm-dialog__actions ps-modal__footer">
         ${choices.map((choice, index) => `
           <button type="button" class="${choice.kind === "primary" ? "primary-button" : choice.kind === "danger" ? "danger-button" : "secondary-button"}" data-choice-index="${index}">
             ${choice.icon ? `<i>${escapeHtml(choice.icon)}</i>` : ""}

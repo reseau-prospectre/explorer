@@ -119,20 +119,19 @@ Already absorbed into `ps-*` foundations:
 Still to finish as deeper component integrations:
 
 - `ps-select-menu` behaviour and keyboard contracts for custom selects;
-- direct migration of project/menu popovers to `ps-dropdown`;
+- finish keyboard roving/focus refinements for project/menu popovers now marked
+  up with `ps-dropdown`;
 - use `ps-mini-tab` for collapsed adaptive panels: each mini-tab must expose a
   dedicated drag handle, an identity icon, compact actions and edge-aware
   stacking instead of behaving like a compressed panel header;
 - finish the breadcrumb overflow menu interactions for compact headers and
   mini-tabs, using `ps-breadcrumb` structure rather than legacy breadcrumb
   buttons;
-- direct migration of bespoke dialogs to `ps-modal`;
-- direct migration of presence strips/profile clusters to `ps-avatar-group`;
-- direct migration of pack loading, import/export and async controller work to
-  `ps-progress`;
-- complete Liquid Animation utilities with safe reduced-motion defaults;
-- richer `ps-skeleton` layouts applied to async panels, tables and profile
-  surfaces before content arrives.
+- complete migration of the remaining bespoke dialogs to `ps-modal`;
+- extend `ps-avatar-group` beyond presence strips to denser profile clusters;
+- extend `ps-progress` beyond inline loaders/toasts to richer import/export
+  progress controls where duration is measurable;
+- complete Liquid Animation utilities with safe reduced-motion defaults.
 
 ## Migration checklist
 

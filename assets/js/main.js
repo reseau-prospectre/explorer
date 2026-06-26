@@ -70,7 +70,7 @@ import {
 import {
   avatarMarkup as avatarMarkupView,
   resolveAvatarAssetURL
-} from "./ui/profile-view.js";
+} from "./ui/profile-view.js?v=20260626-liquid-consolidation-1";
 import { renderToast } from "./ui/toast-view.js?v=20260624-atomic-feedback-2";
 import { bootstrapProspectre } from "./app/bootstrap.js";
 import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260625-panel-rails-3";
@@ -96,10 +96,10 @@ import {
   createEmptyHeartCycle,
   createGamificationController
 } from "./controllers/gamification-controller.js";
-import { createPresenceController } from "./controllers/presence-controller.js";
+import { createPresenceController } from "./controllers/presence-controller.js?v=20260626-liquid-consolidation-1";
 import { createProfileController } from "./controllers/profile-controller.js";
-import { createProjectController } from "./controllers/project-controller.js";
-import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js";
+import { createProjectController } from "./controllers/project-controller.js?v=20260626-liquid-consolidation-1";
+import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js?v=20260626-liquid-consolidation-1";
 import { createRealtimeController } from "./controllers/realtime-controller.js";
 import { createSearchController } from "./controllers/search-controller.js";
 import { createSelectionController } from "./controllers/selection-controller.js";
@@ -108,7 +108,7 @@ import { createSessionController } from "./controllers/session-controller.js";
 import { createSmartLinkController } from "./controllers/smart-link-controller.js";
 import { createUiRuntimeController } from "./controllers/ui-runtime-controller.js?v=20260624-atomic-feedback-2";
 import { overlays } from "./ui/overlay-manager.js";
-import { confirmAction, requestChoice } from "./ui/confirm-dialog.js";
+import { confirmAction, requestChoice } from "./ui/confirm-dialog.js?v=20260626-liquid-consolidation-1";
 import { ensureMoodleHtmlSupport, isMoodleHtmlEntity } from "./ui/moodle-bootstrap.js";
 import {
   convertMoodleCompetencyCsv,
@@ -345,9 +345,9 @@ state.selectionController = createSelectionController({
   renderAnalysis,
   openContextPanel,
   updateVisibleGraph,
-  scheduleGraphResize,
-  fitFocusedSelection,
-  focusSelectedLinkPath,
+  scheduleGraphResize: () => state.graphController.scheduleResize(),
+  fitFocusedSelection: (fallbackId) => state.graphController.fitFocusedSelection(fallbackId),
+  focusSelectedLinkPath: (sourceId, targetId) => state.graphController.focusSelectedLinkPath(sourceId, targetId),
   getLinkKey,
   showToast
 });
@@ -373,7 +373,7 @@ state.commentInteractionsController = createCommentInteractionsController({
   overlays,
   escapeHtml,
   recordHeartEvent,
-  persistEntityReactions,
+  persistEntityReactions: () => state.sessionController.persistEntityReactions(),
   renderAnalysis,
   renderDiscussion,
   renderRightPanel,
@@ -413,7 +413,7 @@ state.schemaAdminController = createSchemaAdminController({
   hiddenNodeTypes: HIDDEN_NODE_TYPES,
   parseMarkdownFile: (...args) => parseMarkdownFile(...args),
   applyModelSchema: (...args) => applyModelSchema(...args),
-  saveSession,
+  saveSession: () => state.sessionController.saveSession(),
   rebuildGraph,
   renderTypeFilters,
   downloadBlob,
@@ -458,9 +458,9 @@ state.searchController = createSearchController({
   typeConfig: TYPE_CONFIG,
   resultLimit: SEARCH_RESULT_LIMIT,
   closeFilterMenu,
-  closeGraphHelp,
+  closeGraphHelp: () => state.chromeController.closeGraphHelp(),
   closeProjectMenu,
-  positionToolbarPopover,
+  positionToolbarPopover: (popover, anchor) => state.chromeController.positionToolbarPopover(popover, anchor),
   syncToolbarActiveStates,
   updateVisibleGraph,
   renderRightPanel,
@@ -502,7 +502,7 @@ state.graphOptionsController = createGraphOptionsController({
   resetView,
   confirmAction
 });
-state.projectSwitcherController = createProjectSwitcherController({
+  state.projectSwitcherController = createProjectSwitcherController({
   els,
   state,
   defaultProjectManifestUrl: DEFAULT_PROJECT_MANIFEST_URL,
@@ -513,8 +513,8 @@ state.projectSwitcherController = createProjectSwitcherController({
   loadProject,
   reconnectRealtimeForDataset,
   closeFilterMenu,
-  closeGraphSearch,
-  closeGraphHelp,
+  closeGraphSearch: () => state.chromeController.closeGraphSearch(),
+  closeGraphHelp: () => state.chromeController.closeGraphHelp(),
   showToast
 });
 
@@ -550,7 +550,7 @@ state.realtimeController = createRealtimeController({
   getOverviewDiscussionEntity,
   isComposerActive,
   resetGamificationCycle,
-  persistComments,
+  persistComments: () => state.sessionController.persistComments(),
   persistActivityRead,
   rebuildGraph,
   renderPresence,
@@ -566,8 +566,8 @@ state.realtimeController = createRealtimeController({
   renderCurrentPresenceSummary: renderPresenceSummary,
   renderProfileButton,
   renderProfileControls,
-  canAdministerSchema,
-  closeSchemaAdmin,
+  canAdministerSchema: () => state.schemaAdminController.canAdminister(),
+  closeSchemaAdmin: () => state.schemaAdminController.closeAdmin(),
   showToast
 });
 
@@ -611,11 +611,11 @@ state.entityPanelController = createEntityPanelController({
   isMoodleHtmlEntity,
   ensureMoodleHtmlSupport,
   updateManifestFile,
-  saveSession,
+  saveSession: () => state.sessionController.saveSession(),
   renderProjectSwitcher,
   renderAnalysis,
   showToast,
-  scheduleGraphResize,
+  scheduleGraphResize: () => state.graphController.scheduleResize(),
   updateDeepLink,
   renderContentWithEntityLinks,
   copyDeepLink,
@@ -680,14 +680,14 @@ state.projectController = createProjectController({
   updateProjectUrl,
   registerRecentProject,
   closeProjectMenu,
-  closeGraphSearch,
+  closeGraphSearch: () => state.chromeController.closeGraphSearch(),
   closeFilterMenu,
   hideRightPanel,
   destroyContentEditor,
-  resetGraphInteractionState,
-  clearSearchState,
-  updateSearchControl,
-  renderSearchResults,
+  resetGraphInteractionState: () => state.sessionController.resetGraphInteractionState(),
+  clearSearchState: () => state.searchController.clearState(),
+  updateSearchControl: () => state.searchController.updateControl(),
+  renderSearchResults: () => state.searchController.renderResults(),
   renderProjectSwitcher,
   renderTypeFilters,
   renderAnalysis,
@@ -704,7 +704,7 @@ state.exportController = createExportController({
   dumpYaml: jsyaml.dump.bind(jsyaml),
   zipCtor: JSZip,
   showToast,
-  saveSession
+  saveSession: () => state.sessionController.saveSession()
 });
 
 state.chromeController = createChromeController({
@@ -717,18 +717,18 @@ state.chromeController = createChromeController({
   syncToolbarActiveStates,
   setupNativeEmojiPicker,
   toggleInsightsPanel,
-  fitVisibleGraph,
-  zoomCamera,
+  fitVisibleGraph: (duration, padding) => state.graphController.fit(duration, padding),
+  zoomCamera: (factor) => state.graphController.zoom(factor),
   openGraphExternalWindow,
   toggleGraphFullscreen,
   hideRightPanel,
   showDropOverlay,
   exportAll,
   exportSelected,
-  openSchemaAdmin,
-  closeSchemaAdmin,
-  saveSchemaDraft,
-  resetSchemaDraft,
+  openSchemaAdmin: (view) => state.schemaAdminController.openAdmin(view),
+  closeSchemaAdmin: () => state.schemaAdminController.closeAdmin(),
+  saveSchemaDraft: () => state.schemaAdminController.saveDraft(),
+  resetSchemaDraft: (event) => state.schemaAdminController.resetDraft(event),
   toggleAvatars,
   toggleDrawer,
   openActivityPanel,
@@ -737,17 +737,17 @@ state.chromeController = createChromeController({
   toggleGoogleAccount,
   toggleRealtimeMode,
   closeEmojiPicker,
-  closeLinkPreview,
-  closeLinkEmbed,
+  closeLinkPreview: () => state.smartLinkController.closePreview(),
+  closeLinkEmbed: () => state.smartLinkController.closeEmbed(),
   applyTheme,
   renderThemeChoice,
   importUserFiles,
-  runGraphSearch,
-  handleGraphSearchKeydown,
-  clearSearch,
-  handleSmartLinkClick,
-  handleSmartLinkHover,
-  handleSmartLinkFocus,
+  runGraphSearch: (value) => state.searchController.run(value),
+  handleGraphSearchKeydown: (event) => state.searchController.handleKeydown(event),
+  clearSearch: () => state.searchController.clear(),
+  handleSmartLinkClick: (event) => state.smartLinkController.handleClick(event),
+  handleSmartLinkHover: (event) => state.smartLinkController.handleHover(event),
+  handleSmartLinkFocus: (event) => state.smartLinkController.handleFocus(event),
   renderOverviewMetaDetails,
   renderDiscussion,
   getOverviewDiscussionEntity,
@@ -764,14 +764,14 @@ state.adaptivePanelsController = createAdaptivePanelsController({
   els,
   state,
   syncToolbarActiveStates,
-  positionOpenToolbarPopover,
+  positionOpenToolbarPopover: () => state.chromeController.positionOpenToolbarPopover(),
   renderProfileControls,
   renderActivityPanel,
   renderGamificationCard,
   renderAnalysis,
   updateVisibleGraph,
   updateDeepLink,
-  scheduleGraphResize
+  scheduleGraphResize: () => state.graphController.scheduleResize()
 });
 
 state.graphSceneController = createGraphSceneController({
@@ -787,14 +787,14 @@ state.graphSceneController = createGraphSceneController({
   selectContributionNode,
   selectLink,
   exitGraphFocus,
-  applyNodePosition,
-  persistNodePosition,
-  releaseNodeFreeformPosition,
+  applyNodePosition: (node) => state.sessionController.applyNodePosition(node),
+  persistNodePosition: (node) => state.sessionController.persistNodePosition(node),
+  releaseNodeFreeformPosition: (node) => state.sessionController.releaseNodeFreeformPosition(node),
   updateFocusDepthLabel,
   renderPresence,
   renderPresenceStrip,
   renderAnalysis,
-  resizeGraph
+  resizeGraph: () => state.graphController.resize()
 });
 
 state.uiRuntimeController = createUiRuntimeController({
@@ -837,7 +837,7 @@ async function init() {
   await setupPresence();
   const adminView = new URLSearchParams(window.location.search).get("admin");
   if (["modele", "champs", "transfert"].includes(adminView)) {
-    openSchemaAdmin(adminView === "champs" ? "fields" : adminView === "transfert" ? "transfer" : "types");
+    state.schemaAdminController.openAdmin(adminView === "champs" ? "fields" : adminView === "transfert" ? "transfer" : "types");
   }
 }
 
@@ -864,7 +864,7 @@ function handleBridgeMessage(message) {
     applyTheme(payload.theme, { broadcast: false });
   }
   if (type === "graph:fit") {
-    fitVisibleGraph();
+    state.graphController.fit();
   }
   if (type === "state:request") {
     state.windowBridge?.publish("state:hydrate", state.windowBridge.getState());
@@ -979,7 +979,7 @@ function setupGraphToolbar() {
   state.graphToolbarController = createGraphToolbarController({
     toolbar,
     storageKey: GRAPH_TOOLBAR_PREFS_KEY,
-    onChange: positionOpenToolbarPopover
+    onChange: () => state.chromeController.positionOpenToolbarPopover()
   });
   state.graphToolbarController.mount();
 }
@@ -993,7 +993,7 @@ function setupGraphController() {
     requestFullscreen: toggleGraphFullscreen,
     panelManager: state.panelManager,
     renderPresence,
-    positionOpenToolbarPopover,
+    positionOpenToolbarPopover: () => state.chromeController.positionOpenToolbarPopover(),
     fitPadding: FIT_PADDING,
     resetFitPadding: RESET_FIT_PADDING,
     focusFitPadding: FOCUS_FIT_PADDING,
@@ -1018,7 +1018,7 @@ async function toggleGraphFullscreen() {
       return;
     }
     await (els.graphStage || document.documentElement).requestFullscreen();
-    setTimeout(() => fitVisibleGraph(), 120);
+    setTimeout(() => state.graphController.fit(), 120);
   } catch {
     showToast("Plein écran indisponible");
   }
@@ -1162,15 +1162,15 @@ function loadFiles(files, message, options = {}) {
   state.gamification.scores = { ...state.gamification.scores, project: null };
   resetGamificationCycle();
   state.graph = buildGraph(state.entities);
-  restoreGraphLayout();
+  state.sessionController.restoreGraphLayout();
   if (state.selectedId && !state.entities.has(state.selectedId)) hideRightPanel();
-  buildSearchIndex();
-  saveSession();
+  state.searchController.buildIndex();
+  state.sessionController.saveSession();
   updateVisibleGraph();
   renderProjectSwitcher();
   renderAnalysis();
   if (state.selectedId) renderRightPanel();
-  scheduleInitialFit();
+  state.graphController.scheduleInitialFit();
   showToast(`${message} · ${state.graph.nodes.length} éléments`);
 }
 
@@ -1251,12 +1251,12 @@ function selectNode(id, moveCamera = false) {
 }
 
 function selectOverview() {
-  resetGraphInteractionState();
+  state.sessionController.resetGraphInteractionState();
   state.provider?.updatePresence({ selectedNodeId: null });
   renderRightPanel();
   renderAnalysis();
   updateVisibleGraph();
-  scheduleGraphResize();
+  state.graphController.scheduleResize();
   updateDeepLink();
   state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: null, selectedLinkKey: null, activeTab: state.activeTab } } });
   if (!state.bridgeApplying) state.windowBridge?.publish("selection:set", { id: null, moveCamera: false, activeTab: state.activeTab });
@@ -1519,78 +1519,6 @@ function canAdministerSchema() {
   return state.schemaAdminController.canAdminister();
 }
 
-function openSchemaAdmin(view = "types") {
-  state.schemaAdminController.openAdmin(view);
-}
-
-function closeSchemaAdmin() {
-  state.schemaAdminController.closeAdmin();
-}
-
-function renderSchemaAdmin() {
-  state.schemaAdminController.renderAdmin();
-}
-
-function renderSchemaTypes() {
-  state.schemaAdminController.renderTypes();
-}
-
-function renderSchemaFields() {
-  state.schemaAdminController.renderFields();
-}
-
-function renderSchemaTransfer() {
-  state.schemaAdminController.renderTransfer();
-}
-
-function reorderSchemaTypes(sourceId, targetId) {
-  return state.schemaAdminController.reorderTypes(sourceId, targetId);
-}
-
-function addSchemaType() {
-  state.schemaAdminController.addType();
-}
-
-async function deleteSchemaType(typeId, anchor = null) {
-  await state.schemaAdminController.deleteType(typeId, anchor);
-}
-
-function addSchemaField() {
-  state.schemaAdminController.addField();
-}
-
-async function deleteSchemaField(fieldKey, anchor = null) {
-  await state.schemaAdminController.deleteField(fieldKey, anchor);
-}
-
-function getSelectedSchemaField() {
-  return state.schemaAdminController.getSelectedField();
-}
-
-function saveSchemaDraft() {
-  state.schemaAdminController.saveDraft();
-}
-
-async function resetSchemaDraft(event) {
-  await state.schemaAdminController.resetDraft(event);
-}
-
-function getSchemaCompatibilityReport(schema) {
-  return state.schemaAdminController.getCompatibilityReport(schema);
-}
-
-function getSchemaEntityCount(schema) {
-  return state.schemaAdminController.getEntityCount(schema);
-}
-
-function exportSchemaDraft() {
-  state.schemaAdminController.exportDraft();
-}
-
-async function importSchemaFile(event) {
-  await state.schemaAdminController.importFile(event);
-}
-
 function hideRightPanel() {
   state.adaptivePanelsController.hideRightPanel();
 }
@@ -1742,8 +1670,8 @@ function renderConnectionStatus() {
 
 function rebuildGraph() {
   state.graph = buildGraph(state.entities);
-  restoreGraphLayout();
-  buildSearchIndex();
+  state.sessionController.restoreGraphLayout();
+  state.searchController.buildIndex();
   updateVisibleGraph();
   renderAnalysis();
 }
@@ -1751,138 +1679,25 @@ function rebuildGraph() {
 function resetView(options = {}) {
   hideRightPanel();
   closeFilterMenu();
-  closeGraphSearch();
-  closeGraphHelp();
+  state.chromeController.closeGraphSearch();
+  state.chromeController.closeGraphHelp();
   if (options.resetPanels !== false) state.panelManager?.resetLayout?.();
   applyGraphToolbarPrefs(normalizeGraphToolbarPrefs({ mode: "dock", edge: "left", x: 10, y: 92 }));
-  resetGraphInteractionState();
+  state.sessionController.resetGraphInteractionState();
   state.activeTypes = new Set(Object.keys(TYPE_CONFIG));
   if (state.realtimeStatus === "firebase") state.activeTypes.add("contribution");
-  clearSearchState();
-  clearPersistedLayout();
-  releaseGraphLayout();
+  state.searchController.clearState();
+  state.sessionController.clearPersistedLayout();
+  state.sessionController.releaseGraphLayout();
   state.graph = buildGraph(state.entities);
   state.visibleGraph = { nodes: [], links: [] };
-  updateSearchControl();
-  renderSearchResults();
+  state.searchController.updateControl();
+  state.searchController.renderResults();
   renderTypeFilters();
   updateVisibleGraph({ skipPositionSync: true });
   renderAnalysis();
   state.graphView.d3ReheatSimulation?.();
-  fitVisibleGraph(800, RESET_FIT_PADDING);
-}
-
-function toggleGraphHelp() {
-  state.chromeController.toggleGraphHelp();
-}
-
-function closeGraphHelp() {
-  state.chromeController.closeGraphHelp();
-}
-
-function clearSelection() {
-  if (!state.selectedId && !state.panelManager?.getLayout?.().context?.open) return;
-  hideRightPanel();
-}
-
-function clearSearch() {
-  state.searchController.clear();
-}
-
-function toggleGraphSearch() {
-  state.chromeController.toggleGraphSearch();
-}
-
-function openGraphSearch() {
-  state.chromeController.openGraphSearch();
-}
-
-function closeGraphSearch() {
-  state.chromeController.closeGraphSearch();
-}
-
-function positionOpenToolbarPopover() {
-  state.chromeController.positionOpenToolbarPopover();
-}
-
-function positionToolbarPopover(popover, anchor) {
-  state.chromeController.positionToolbarPopover(popover, anchor);
-}
-
-function buildSearchIndex() {
-  state.searchController.buildIndex();
-}
-
-function runGraphSearch(value) {
-  state.searchController.run(value);
-}
-
-function fallbackSearch(value) {
-  return state.searchController.fallback(value);
-}
-
-function renderSearchResults() {
-  state.searchController.renderResults();
-}
-
-function navigateToSearchResult(index, options = {}) {
-  state.searchController.navigateToResult(index, options);
-}
-
-function handleGraphSearchKeydown(event) {
-  state.searchController.handleKeydown(event);
-}
-
-function clearSearchState() {
-  state.searchController.clearState();
-}
-
-function updateSearchControl() {
-  state.searchController.updateControl();
-}
-
-function fitVisibleGraph(duration = 700, padding = FIT_PADDING) {
-  state.graphController.fit(duration, padding);
-}
-
-function focusSelectedLinkPath(sourceId, targetId) {
-  state.graphController.focusSelectedLinkPath(sourceId, targetId);
-}
-
-function scheduleInitialFit() {
-  state.graphController.scheduleInitialFit();
-}
-
-function zoomCamera(factor) {
-  state.graphController.zoom(factor);
-}
-
-function focusNode(id, distance = 180) {
-  state.graphController.focusNode(id, distance);
-}
-
-function fitFocusedSelection(fallbackId = state.selectedId) {
-  state.graphController.fitFocusedSelection(fallbackId);
-}
-
-function fitNodeSet(ids, options = {}) {
-  state.graphController.fitNodeSet(ids, options);
-}
-
-function tightenCameraOnNodes(nodes, options = {}) {
-  state.graphController.tightenCameraOnNodes(nodes, options);
-}
-
-function getGraphAspectRatio() {
-  return state.graphController.getAspectRatio();
-}
-
-function resizeGraph() {
-  state.graphController.resize();
-}
-
-function scheduleGraphResize() {
-  state.graphController.scheduleResize();
+  state.graphController.fit(800, RESET_FIT_PADDING);
 }
 
 function getImageExtensionFromBlob(blob) {
@@ -1907,42 +1722,6 @@ function getLinkKey(link) {
 function isTextInputActive() {
   const element = document.activeElement;
   return ["INPUT", "TEXTAREA", "SELECT"].includes(element?.tagName) || element?.isContentEditable;
-}
-
-function handleSmartLinkHover(event) {
-  state.smartLinkController.handleHover(event);
-}
-
-function handleSmartLinkFocus(event) {
-  state.smartLinkController.handleFocus(event);
-}
-
-function handleSmartLinkClick(event) {
-  state.smartLinkController.handleClick(event);
-}
-
-function openLinkPreview(link, options = {}) {
-  state.smartLinkController.openPreview(link, options);
-}
-
-function positionLinkPreview(anchor) {
-  state.smartLinkController.positionPreview(anchor);
-}
-
-async function runSmartLinkAction(action) {
-  await state.smartLinkController.runAction(action);
-}
-
-function closeLinkPreview() {
-  state.smartLinkController.closePreview();
-}
-
-function openLinkEmbed(url, title = "Lien") {
-  state.smartLinkController.openEmbed(url, title);
-}
-
-function closeLinkEmbed() {
-  state.smartLinkController.closeEmbed();
 }
 
 function minimalPresence(profile) {
@@ -1972,54 +1751,6 @@ function resolveAvatarProfile(profile) {
 
 function getProjectSessionKey(manifest = state.projectManifest) {
   return state.sessionController.getProjectSessionKey(manifest);
-}
-
-function getStoredLayouts() {
-  return state.sessionController.getStoredLayouts();
-}
-
-function restoreGraphLayout() {
-  state.sessionController.restoreGraphLayout();
-}
-
-function persistNodePosition(node) {
-  state.sessionController.persistNodePosition(node);
-}
-
-function clearPersistedNodeLayout(nodeId) {
-  state.sessionController.clearPersistedNodeLayout(nodeId);
-}
-
-function applyNodePosition(node) {
-  state.sessionController.applyNodePosition(node);
-}
-
-function releaseNodeFreeformPosition(node) {
-  state.sessionController.releaseNodeFreeformPosition(node);
-}
-
-function clearPersistedLayout() {
-  state.sessionController.clearPersistedLayout();
-}
-
-function releaseGraphLayout() {
-  state.sessionController.releaseGraphLayout();
-}
-
-function resetGraphInteractionState() {
-  state.sessionController.resetGraphInteractionState();
-}
-
-function saveSession() {
-  state.sessionController.saveSession();
-}
-
-function persistComments() {
-  state.sessionController.persistComments();
-}
-
-function persistEntityReactions() {
-  state.sessionController.persistEntityReactions();
 }
 
 function getAllComments() {

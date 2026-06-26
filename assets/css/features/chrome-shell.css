@@ -7,6 +7,166 @@
   --graph-bottom: 0px;
 }
 
+/* Final v3 authority: resize hit targets and adaptive insight cards. */
+.adaptive-panel > .adaptive-panel__resize,
+.adaptive-panel--float > .adaptive-panel__resize {
+  position: absolute !important;
+  z-index: 80 !important;
+  pointer-events: auto !important;
+}
+
+.adaptive-panel > .adaptive-panel__handle-visual,
+.adaptive-panel--float > .adaptive-panel__handle-visual {
+  position: absolute !important;
+  z-index: 62 !important;
+  pointer-events: none !important;
+}
+
+.adaptive-panel__resize--n {
+  top: -18px !important;
+  height: 18px !important;
+}
+
+.adaptive-panel__resize--s {
+  bottom: -18px !important;
+  height: 18px !important;
+}
+
+.adaptive-panel__resize--e {
+  right: -18px !important;
+  width: 18px !important;
+}
+
+.adaptive-panel__resize--w {
+  left: -18px !important;
+  width: 18px !important;
+}
+
+.adaptive-panel__resize--ne {
+  top: -22px !important;
+  right: -22px !important;
+}
+
+.adaptive-panel__resize--se {
+  right: -22px !important;
+  bottom: -22px !important;
+}
+
+.adaptive-panel__resize--sw {
+  bottom: -22px !important;
+  left: -22px !important;
+}
+
+.adaptive-panel__resize--nw {
+  top: -22px !important;
+  left: -22px !important;
+}
+
+.adaptive-panel__handle-visual--n {
+  top: -3px !important;
+}
+
+.adaptive-panel__handle-visual--s {
+  bottom: -3px !important;
+}
+
+.adaptive-panel__handle-visual--e {
+  right: -3px !important;
+}
+
+.adaptive-panel__handle-visual--w {
+  left: -3px !important;
+}
+
+.adaptive-panel__handle-visual--ne {
+  top: -5px !important;
+  right: -5px !important;
+}
+
+.adaptive-panel__handle-visual--se {
+  right: -5px !important;
+  bottom: -5px !important;
+}
+
+.adaptive-panel__handle-visual--sw {
+  bottom: -5px !important;
+  left: -5px !important;
+}
+
+.adaptive-panel__handle-visual--nw {
+  top: -5px !important;
+  left: -5px !important;
+}
+
+.adaptive-panel__insights {
+  display: flex;
+  min-height: 0;
+  height: 100%;
+  flex: 1 1 auto;
+  overflow: hidden;
+}
+
+.adaptive-panel__insights .drawer-body {
+  display: grid;
+  width: 100%;
+  height: auto;
+  min-height: 0;
+  flex: 1 1 auto;
+  align-content: start;
+  align-items: stretch;
+  grid-auto-flow: dense;
+  grid-auto-rows: minmax(150px, auto);
+  gap: 12px;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.adaptive-panel__insights .timeline-panel,
+.adaptive-panel__insights .kpi-grid,
+.adaptive-panel__insights .entity-table,
+.adaptive-panel__insights .presence-summary {
+  min-width: 0;
+  min-height: 150px;
+  height: auto;
+  max-height: none;
+  overflow: auto;
+}
+
+.adaptive-panel--bottom .adaptive-panel__insights .drawer-body {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 300px), 1fr));
+}
+
+.adaptive-panel--bottom .adaptive-panel__insights .entity-table {
+  grid-column: span 2;
+}
+
+.adaptive-panel--float .adaptive-panel__insights .drawer-body {
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+}
+
+.adaptive-panel--right .adaptive-panel__insights .drawer-body,
+.adaptive-panel--left .adaptive-panel__insights .drawer-body,
+.adaptive-panel--sheet .adaptive-panel__insights .drawer-body {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+.adaptive-panel--right .adaptive-panel__insights .drawer-body > *,
+.adaptive-panel--left .adaptive-panel__insights .drawer-body > *,
+.adaptive-panel--sheet .adaptive-panel__insights .drawer-body > *,
+.adaptive-panel--float .adaptive-panel__insights .drawer-body > * {
+  grid-column: auto;
+}
+
+@container (max-width: 760px) {
+  .adaptive-panel__insights .drawer-body {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .adaptive-panel__insights .drawer-body > * {
+    grid-column: auto !important;
+  }
+}
+
 .graph-stage {
   position: fixed;
   top: calc(var(--topbar-height) + var(--graph-top-offset));
@@ -681,7 +841,8 @@
 }
 
 .project-menu button:hover,
-.project-menu button.active {
+.project-menu button.active,
+.project-menu button.is-active {
   border-color: color-mix(in srgb, var(--accent) 46%, var(--line)) !important;
   background: color-mix(in srgb, var(--accent) 10%, var(--soft)) !important;
   color: var(--text) !important;
@@ -843,6 +1004,12 @@
   overflow: hidden;
   transform: translateX(8px);
   transition: width 180ms ease, opacity 150ms ease, transform 180ms ease;
+}
+
+.presence-avatar-stack {
+  display: flex;
+  align-items: center;
+  min-width: 0;
 }
 
 .presence-strip.is-visible {

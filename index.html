@@ -12,11 +12,11 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
   <link rel="stylesheet" href="./assets/css/system/index.css?v=20260625-panel-rails-3">
-  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260625-toolbar-liquid-4">
+  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260626-liquid-consolidation-1">
   <link rel="stylesheet" href="./assets/css/features/insights-dashboard.css?v=20260623-insights-dashboard-feature-1">
-  <link rel="stylesheet" href="./assets/css/features/overlays.css?v=20260623-overlays-feature-1">
+  <link rel="stylesheet" href="./assets/css/features/overlays.css?v=20260626-liquid-consolidation-1">
   <link rel="stylesheet" href="./assets/css/features/identity-presence.css?v=20260623-identity-presence-feature-1">
-  <link rel="stylesheet" href="./assets/css/app.css?v=20260622-editor-render-4">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20260626-liquid-consolidation-1">
   <link rel="stylesheet" href="./assets/css/features/schema-admin.css?v=20260623-schema-feature-1">
   <link rel="stylesheet" href="./assets/css/features/gamification.css?v=20260623-gamification-feature-1">
   <link rel="stylesheet" href="./assets/css/features/profile.css?v=20260623-profile-feature-1">
@@ -27,7 +27,7 @@
   <link rel="stylesheet" href="./assets/css/features/content-rendering.css?v=20260625-panel-rails-3">
   <link rel="stylesheet" href="./assets/css/features/entity-editor.css?v=20260623-entity-editor-feature-1">
   <link rel="stylesheet" href="./assets/css/features/responsive.css?v=20260623-responsive-feature-1">
-  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260625-panel-rails-3">
+  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260626-liquid-consolidation-1">
   </head>
   <body>
     <div id="app" class="app-shell">
@@ -46,13 +46,13 @@
               <em id="active-project-version"></em>
               <i>expand_more</i>
             </button>
-            <div id="project-switcher-menu" class="project-menu hidden" role="menu" aria-label="Changer de projet"></div>
+            <div id="project-switcher-menu" class="project-menu ps-dropdown ps-dropdown__menu ps-surface hidden" role="menu" aria-label="Changer de projet"></div>
           </div>
           <div id="quick-type-filters" class="quick-type-filters" aria-label="Filtres rapides"></div>
         </div>
         <div id="mobile-menu" class="mobile-menu">
           <div class="topbar-actions">
-            <div id="presence-strip" class="presence-strip" aria-label="Présences en ligne"></div>
+            <div id="presence-strip" class="presence-strip ps-avatar-group" aria-label="Présences en ligne"></div>
             <button id="toggle-avatars" class="presence-toggle icon-button" type="button" aria-label="Activer la coprésence">
               <span class="presence-state-dot"></span>
               <i>radar</i>
@@ -384,10 +384,10 @@
         </div>
       </div>
 
-      <div id="toast" class="toast hidden"></div>
+      <div id="toast" class="toast ps-toast hidden"></div>
       <div id="link-preview-popover" class="link-preview-popover hidden" role="dialog" aria-label="Aperçu du lien"></div>
-      <section id="link-embed-modal" class="link-embed-modal hidden" aria-label="Intégration du lien">
-        <div class="link-embed-head">
+      <section id="link-embed-modal" class="link-embed-modal ps-modal hidden" aria-label="Intégration du lien">
+        <div class="link-embed-head ps-modal__header">
           <div>
             <p class="kicker">Intégration</p>
             <h2 id="link-embed-title">Lien</h2>
@@ -424,6 +424,6 @@
       }
     </script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260625-toolbar-liquid-4" type="module"></script>
+  <script src="./assets/js/main.js?v=20260626-liquid-consolidation-1" type="module"></script>
   </body>
 </html>

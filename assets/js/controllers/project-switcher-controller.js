@@ -51,8 +51,9 @@ export function createProjectSwitcherController({
       groups[group].push(item);
       return groups;
     }, {});
+    els.projectSwitcherMenu.classList.add("ps-dropdown", "ps-dropdown__menu", "ps-surface");
     els.projectSwitcherMenu.innerHTML = Object.entries(grouped).map(([group, entries]) => `
-      <section class="project-menu-group">
+      <section class="project-menu-group" role="group" aria-label="${escapeHtml(group)}">
         <p>${escapeHtml(group)}</p>
         ${entries.map((entry) => renderProjectItem(entry)).join("")}
       </section>
@@ -79,7 +80,7 @@ export function createProjectSwitcherController({
     const active = entry.url && sameProjectUrl(entry.url, state.projectManifestUrl);
     const unavailable = !entry.url;
     return `
-      <button type="button" role="menuitem" data-project-url="${escapeHtml(entry.url || "")}" ${unavailable ? "disabled" : ""} class="${active ? "active" : ""}">
+      <button type="button" role="menuitem" data-project-url="${escapeHtml(entry.url || "")}" ${unavailable ? "disabled" : ""} class="ps-dropdown__item${active ? " active is-active" : ""}">
         <span>
           <strong>${escapeHtml(entry.title || entry.titre || entry.id || "Projet")}</strong>
           <small>${escapeHtml([entry.version ? `v${entry.version}` : "", entry.id || ""].filter(Boolean).join(" · "))}</small>

@@ -17,5 +17,5 @@ export function renderPresenceChips(users, {
       <span class="tooltip bottom">${escapeHtml(tip)}</span>
     </button>`;
   }).join("");
-  return `${chips}${users.length > limit ? `<button class="presence-more ps-chip" data-expand-presence type="button" aria-label="Afficher les ${users.length - limit} autres coprésences">+${users.length - limit}</button>` : ""}`;
+  return `<span class="presence-avatar-stack ps-avatar-group">${chips}</span>${users.length > limit ? `<button class="presence-more ps-chip" data-expand-presence type="button" aria-label="Afficher les ${users.length - limit} autres coprésences">+${users.length - limit}</button>` : ""}`;
 }

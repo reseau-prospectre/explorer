@@ -3,6 +3,110 @@
   Loaded after app.css so legacy selectors can progressively consume ps-* tokens.
 */
 
+/* Native UI authority after BeerCSS removal. */
+.action-menu,
+.project-menu,
+.toolbar-popover,
+.emoji-picker-popover,
+.link-preview-popover,
+.heart-menu-popover,
+.adaptive-panel__edge-options,
+.adaptive-panel__overflow-menu,
+.prospectre-overlay {
+  z-index: var(--z-overlays) !important;
+}
+
+.prospectre-overlay {
+  position: fixed;
+  max-width: min(420px, calc(100vw - 16px));
+  max-height: calc(100vh - 16px);
+  margin: 0;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--glass-panel-strong);
+  box-shadow: 0 18px 56px rgba(0, 0, 0, 0.34);
+  color: var(--text);
+  overflow: auto;
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.16);
+}
+
+.topbar button,
+.graph-toolbar button,
+.adaptive-panel button,
+.toolbar-popover button,
+.action-menu button,
+.project-menu button,
+.emoji-picker-popover button,
+.heart-menu-popover button {
+  margin: 0;
+  margin-block: 0;
+}
+
+/* Native control polish: keep flat/material controls inside translucent PROSPECTRE surfaces. */
+.readable-card,
+.sync-card,
+.context-card,
+.project-meta-card,
+.graph-quality-card,
+.chart-card,
+.presence-summary-card,
+.node-reaction-summary,
+.activity-card,
+.comment-card,
+.kpi-card,
+.metric-card,
+.meta-item,
+.trash-item {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 4%, transparent), transparent 72px),
+    var(--glass-card) !important;
+  border-color: color-mix(in srgb, var(--line) 76%, transparent) !important;
+  box-shadow: inset 0 1px 0 color-mix(in srgb, white 6%, transparent);
+}
+
+:root[data-theme="light"] .readable-card,
+:root[data-theme="light"] .sync-card,
+:root[data-theme="light"] .context-card,
+:root[data-theme="light"] .project-meta-card,
+:root[data-theme="light"] .graph-quality-card,
+:root[data-theme="light"] .chart-card,
+:root[data-theme="light"] .presence-summary-card,
+:root[data-theme="light"] .node-reaction-summary,
+:root[data-theme="light"] .activity-card,
+:root[data-theme="light"] .comment-card,
+:root[data-theme="light"] .kpi-card,
+:root[data-theme="light"] .metric-card,
+:root[data-theme="light"] .meta-item,
+:root[data-theme="light"] .trash-item {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 18%, transparent), transparent 78px),
+    color-mix(in srgb, var(--glass-card) 88%, transparent) !important;
+}
+
+select.text-field {
+  appearance: none;
+  padding-right: 34px;
+  background-image:
+    linear-gradient(45deg, transparent 50%, var(--muted) 50%),
+    linear-gradient(135deg, var(--muted) 50%, transparent 50%),
+    linear-gradient(180deg, color-mix(in srgb, white 3%, transparent), transparent);
+  background-position:
+    calc(100% - 18px) 50%,
+    calc(100% - 12px) 50%,
+    0 0;
+  background-size: 6px 6px, 6px 6px, 100% 100%;
+  background-repeat: no-repeat;
+}
+
+.toast {
+  background:
+    linear-gradient(180deg, color-mix(in srgb, white 5%, transparent), transparent),
+    var(--glass-panel-strong) !important;
+  border: 1px solid var(--line-strong);
+  box-shadow: 0 18px 52px rgba(0, 0, 0, 0.24), inset 0 1px 0 color-mix(in srgb, white 9%, transparent);
+  backdrop-filter: blur(var(--glass-blur)) saturate(1.18);
+}
+
 /* Entity editor migrated first; legacy selectors remain behavior anchors. */
 .edit-editor-card.ps-editor-shell {
   border-color: var(--ps-glass-border);
@@ -262,6 +366,7 @@
 .action-menu button:hover,
 .project-menu button:hover,
 .project-menu button.active,
+.project-menu button.is-active,
 .profile-menu button:hover,
 .toolbar-popover button:hover,
 .graph-popover button:hover,
@@ -368,6 +473,19 @@
   padding: 0;
   border-radius: var(--ps-radius-full);
   background: transparent;
+}
+
+.presence-avatar-stack.ps-avatar-group {
+  gap: 0;
+}
+
+.presence-avatar-stack.ps-avatar-group .presence-top-chip + .presence-top-chip {
+  margin-left: -8px;
+}
+
+.presence-avatar-stack.ps-avatar-group .presence-top-chip:hover,
+.presence-avatar-stack.ps-avatar-group .presence-top-chip:focus-visible {
+  z-index: 1;
 }
 
 .presence-top-chip.ps-chip:hover {
@@ -602,6 +720,24 @@
 .prospectre-loader.ps-progress > .ps-progress__spinner {
   width: 12px;
   height: 12px;
+}
+
+.ps-skeleton-layout[aria-busy="true"] {
+  min-width: 0;
+}
+
+.chart-card.ps-skeleton-layout {
+  align-items: center;
+}
+
+.confirm-dialog.ps-modal,
+.link-embed-modal.ps-modal {
+  border-color: var(--ps-glass-border);
+  background:
+    var(--ps-glass-reflection),
+    color-mix(in srgb, var(--ps-color-surface-raised) 90%, transparent);
+  box-shadow: var(--ps-glass-shadow-float);
+  backdrop-filter: blur(var(--ps-glass-blur-md));
 }
 
 /* Insights dashboard is the first page-level proof of the atomic system. */

@@ -265,6 +265,44 @@ export function createProjectController({
     state.graphView?.graphData({ nodes: [], links: [] });
     renderPresence();
     renderPresenceStrip();
+    renderAnalysisLoadingSkeleton();
+  }
+
+  function renderAnalysisLoadingSkeleton() {
+    if (!els.timeline || !els.kpiGrid || !els.entityTable || !els.presenceSummary) return;
+    els.timeline.innerHTML = `
+      <div class="context-card project-context-card ps-card ps-surface ps-skeleton-layout" aria-busy="true">
+        <span class="ps-skeleton ps-skeleton--heading"></span>
+        <span class="ps-skeleton ps-skeleton--text"></span>
+        <span class="ps-skeleton ps-skeleton--text" style="width:72%"></span>
+      </div>
+    `;
+    els.kpiGrid.classList.add("project-metadata");
+    els.kpiGrid.innerHTML = Array.from({ length: 2 }, () => `
+      <article class="project-meta-card ps-card ps-surface ps-skeleton-layout" aria-busy="true">
+        <span class="ps-skeleton ps-skeleton--heading"></span>
+        <span class="ps-skeleton ps-skeleton--text"></span>
+        <span class="ps-skeleton ps-skeleton--text" style="width:64%"></span>
+      </article>
+    `).join("");
+    els.entityTable.innerHTML = `
+      <div class="chart-card ps-card ps-surface ps-skeleton-layout" aria-busy="true">
+        <span class="ps-skeleton ps-skeleton--circle"></span>
+        <span class="ps-skeleton ps-skeleton--text"></span>
+        <span class="ps-skeleton ps-skeleton--text" style="width:58%"></span>
+      </div>
+      <div class="ps-skeleton-layout" aria-busy="true">
+        <span class="ps-skeleton ps-skeleton-row"></span>
+        <span class="ps-skeleton ps-skeleton-row"></span>
+        <span class="ps-skeleton ps-skeleton-row"></span>
+      </div>
+    `;
+    els.presenceSummary.innerHTML = `
+      <article class="presence-summary-card ps-card ps-surface ps-skeleton-layout" aria-busy="true">
+        <span class="ps-skeleton ps-skeleton--heading"></span>
+        <span class="ps-skeleton ps-skeleton--text"></span>
+      </article>
+    `;
   }
 
   async function loadManifestFiles(manifest, baseUrl, onProgress = null) {
@@ -440,6 +478,7 @@ export function createProjectController({
     getRemoteFileName,
     beginProjectSwitch,
     loadManifestFiles,
+    renderAnalysisLoadingSkeleton,
     importUserFiles,
     importMoodleCsvFile,
     ensureUniqueMoodleNamespace,
