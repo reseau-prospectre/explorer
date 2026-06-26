@@ -65,6 +65,7 @@ export const STORAGE_KEYS = Object.freeze({
   projectSessions: "prospectre.sessions.v1",
   recentProjects: "prospectre.projects.recent.v1",
   theme: "prospectre.theme",
+  palette: "prospectre.palette",
   realtime: "prospectre.copresence"
 });
 

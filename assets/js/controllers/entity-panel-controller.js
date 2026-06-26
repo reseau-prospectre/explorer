@@ -11,6 +11,7 @@ import {
   renderOverviewDetailsView,
   renderOverviewEditView
 } from "../ui/overview-view.js";
+import { renderPanelSkeleton } from "../ui/panel-skeletons.js?v=20260626-v315-granular-skeletons-1";
 import { bindDiscussionPanel } from "./discussion-panel-controller.js";
 
 export function createEntityPanelController({
@@ -48,7 +49,8 @@ export function createEntityPanelController({
   reactToEntity,
   openEntityEmojiPicker,
   cssEscape,
-  documentRef = document
+  documentRef = document,
+  windowRef = window
 }) {
   function renderRightPanel() {
     const entity = state.entities.get(state.selectedId);
@@ -59,8 +61,7 @@ export function createEntityPanelController({
     els.panelTitle.textContent = entity.label;
     state.panelManager?.update("context", { title: entity.label, badge: { label: kicker, color: badgeColor } });
     openContextPanel();
-    if (state.activeTab === "overview") renderOverview(entity);
-    if (state.activeTab === "discussion") renderDiscussion(entity);
+    schedulePanelRender(entity, state.activeTab);
   }
 
   function getOverviewDiscussionEntity() {
@@ -89,9 +90,31 @@ export function createEntityPanelController({
     els.panelTitle.textContent = entity.label;
     state.panelManager?.update("context", { title: entity.label, badge: { label: "Vue d’ensemble", color: "var(--accent)" } });
     openContextPanel();
-    renderDiscussion(entity);
+    schedulePanelRender(entity, "discussion");
     updateDeepLink();
     scheduleGraphResize();
+  }
+
+  function schedulePanelRender(entity, tab = state.activeTab) {
+    if (!entity) return;
+    const token = `${entity.id}:${tab}:${Date.now()}:${Math.random()}`;
+    state.contextPanelRenderToken = token;
+    renderPanelLoading(tab === "discussion" ? "discussion" : "details");
+    const render = () => {
+      if (state.contextPanelRenderToken !== token) return;
+      if (tab === "discussion") renderDiscussionNow(entity);
+      else renderOverview(entity);
+    };
+    if (typeof windowRef.requestAnimationFrame === "function") {
+      windowRef.requestAnimationFrame(() => windowRef.setTimeout(render, 45));
+      return;
+    }
+    windowRef.setTimeout(render, 45);
+  }
+
+  function renderPanelLoading(kind = "details") {
+    destroyContentEditor();
+    els.panelContent.innerHTML = renderPanelSkeleton(kind);
   }
 
   function renderOverviewMetaDetails() {
@@ -235,6 +258,11 @@ export function createEntityPanelController({
   }
 
   function renderDiscussion(entity = state.entities.get(state.selectedId)) {
+    if (!entity) return;
+    schedulePanelRender(entity, "discussion");
+  }
+
+  function renderDiscussionNow(entity = state.entities.get(state.selectedId)) {
     if (!entity) return;
     state.currentDiscussionEntityId = entity.id;
     els.panelContent.innerHTML = state.discussionRenderer.renderPanel(entity);

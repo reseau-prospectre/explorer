@@ -14,6 +14,7 @@ export function createProjectSwitcherController({
   closeGraphSearch,
   closeGraphHelp,
   showToast,
+  setLoadingPhase,
   consoleRef = console
 }) {
   function toggleMenu() {
@@ -70,6 +71,7 @@ export function createProjectSwitcherController({
           if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
         } catch (error) {
           consoleRef.error(error);
+          setLoadingPhase?.("error", { message: "Projet indisponible", scope: "project" });
           showToast("Projet indisponible");
         }
       });

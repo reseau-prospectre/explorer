@@ -14,7 +14,7 @@ import { renderEntityReactionBlock } from "./reactions-view.js";
 import {
   getTypePresentation,
   renderTypeDistributionChart as renderTypeDistributionChartView
-} from "./type-distribution-chart.js";
+} from "./type-distribution-chart.js?v=20260626-v314-load-sequence-1";
 import { iconMarkup } from "./icons.js?v=20260625-panel-rails-3";
 
 export function createAnalysisRenderer({
@@ -333,7 +333,8 @@ export function createAnalysisRenderer({
       legend: documentRef.querySelector("#type-distribution-legend"),
       chartState: state.charts,
       chartCtor: windowRef.Chart,
-      allNodeCount: state.graph.nodes.length
+      allNodeCount: state.graph.nodes.length,
+      prefersReducedMotion: windowRef.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true
     });
   }
   return {

@@ -367,8 +367,16 @@
   display: block;
   height: 3px;
   transform-origin: left center;
-  background: linear-gradient(90deg, var(--ps-color-accent), var(--ps-color-danger));
+  background: linear-gradient(90deg, var(--ps-color-accent), var(--ps-color-accent-2), var(--ps-color-danger));
+  box-shadow: var(--ps-progress-glow);
   animation: ps-toast-progress 3.4s linear forwards;
+}
+
+.ps-toast__progress.is-determinate {
+  width: calc(var(--ps-progress-value, 0) * 100%);
+  transform: none;
+  animation: none;
+  transition: width var(--ps-duration-slow) var(--ps-ease-liquid);
 }
 
 .ps-toast:hover .ps-toast__progress {

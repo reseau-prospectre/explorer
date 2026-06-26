@@ -50,6 +50,7 @@ export function createProjectController({
   renderPresence,
   renderPresenceStrip,
   showToast,
+  setLoadingPhase,
   zipCtor = window.JSZip,
   fetchRef = fetch,
   windowRef = window,
@@ -68,6 +69,7 @@ export function createProjectController({
       }
       await loadProject(defaultProjectManifestUrl, { updateUrl: false });
     } catch (error) {
+      setLoadingPhase?.("error", { message: "Projet indisponible", scope: "project" });
       if (requested.kind === "default") throw error;
       consoleRef.warn("Ressource demandée indisponible, retour au projet par défaut.", error);
       showToast("Ressource demandée indisponible · retour au projet par défaut");
@@ -108,7 +110,8 @@ export function createProjectController({
 
   async function loadProject(manifestUrl, options = {}) {
     beginProjectSwitch(manifestUrl);
-    showToast("Chargement du manifeste…");
+    setLoadingPhase?.("project-loading", { message: "Chargement du manifeste…", progress: 0, scope: "project" });
+    showToast("Chargement du manifeste…", { tone: "loading", progress: 0, duration: 7200 });
     const manifestResponse = await fetchRef(manifestUrl, { cache: "no-store" });
     if (!manifestResponse.ok) throw new Error(`Manifest indisponible (${manifestResponse.status})`);
     const manifest = await manifestResponse.json();
@@ -119,10 +122,18 @@ export function createProjectController({
     applyModelSchema(manifest.modele || defaultModelSchema, { resetFilters: true });
     renderProjectSwitcher();
     renderTypeFilters();
-    renderAnalysis();
     const canonicalFiles = await loadManifestFiles(manifest, baseUrl, (loaded, total, path) => {
       const pct = total ? Math.round((loaded / total) * 100) : 0;
-      showToast(`Chargement du projet… ${pct}% · ${loaded}/${total} fichiers${path ? ` · ${shortLabel(path, 34)}` : ""}`);
+      setLoadingPhase?.("project-loading", {
+        message: `Chargement du projet… ${pct}%`,
+        progress: pct,
+        scope: "project"
+      });
+      showToast(`Chargement du projet… ${pct}% · ${loaded}/${total} fichiers${path ? ` · ${shortLabel(path, 34)}` : ""}`, {
+        tone: "loading",
+        progress: pct,
+        duration: 7200
+      });
     });
     const sessions = loadJson(projectSessionsKey, {});
     const saved = sessions[getProjectSessionKey(manifest)] || loadJson(sessionKey, null);
@@ -130,6 +141,8 @@ export function createProjectController({
     state.projectManifest = restore.manifest;
     if (options.updateUrl !== false) updateProjectUrl(manifestUrl);
     loadFiles(restore.files, restore.message, { resetFilters: true });
+    setLoadingPhase?.("ready", { message: restore.message, progress: 100, scope: "project" });
+    schedulePostLoadAnalysis();
     state.appStore?.dispatch({
       type: "state:patch",
       scope: "project",
@@ -153,7 +166,8 @@ export function createProjectController({
     const absoluteUrl = new URL(resourceUrl, windowRef.location.href).href;
     const fileName = getRemoteFileName(absoluteUrl);
     const extension = getFileExtension(fileName);
-    showToast(`Chargement distant… ${shortLabel(fileName || absoluteUrl, 42)}`);
+    setLoadingPhase?.("project-loading", { message: "Chargement distant…", progress: null, scope: "project" });
+    showToast(`Chargement distant… ${shortLabel(fileName || absoluteUrl, 42)}`, { tone: "loading", duration: 7200 });
     if (extension === "json" || /manifest\.json(?:$|[?#])/i.test(absoluteUrl)) {
       await loadProject(absoluteUrl, options);
       return;
@@ -200,6 +214,8 @@ export function createProjectController({
     registerRecentProject(state.projectManifest);
     if (options.updateUrl !== false) updateRemoteResourceUrl(options.sourceUrl);
     loadFiles(pack.files, "Référentiel Moodle distant chargé", { resetFilters: true });
+    setLoadingPhase?.("ready", { message: "Référentiel Moodle distant chargé", progress: 100, scope: "project" });
+    schedulePostLoadAnalysis();
     if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
   }
 
@@ -219,6 +235,8 @@ export function createProjectController({
     registerRecentProject(state.projectManifest);
     if (options.updateUrl !== false) updateRemoteResourceUrl(options.sourceUrl);
     loadFiles(files, importedManifest ? "Pack distant chargé" : "Fiche distante chargée", { resetFilters: true });
+    setLoadingPhase?.("ready", { message: importedManifest ? "Pack distant chargé" : "Fiche distante chargée", progress: 100, scope: "project" });
+    schedulePostLoadAnalysis();
     if (state.realtimeStatus === "firebase") await reconnectRealtimeForDataset();
   }
 
@@ -240,6 +258,7 @@ export function createProjectController({
   }
 
   function beginProjectSwitch(manifestUrl) {
+    setLoadingPhase?.("project-loading", { message: "Préparation du shell…", progress: null, scope: "project" });
     closeProjectMenu();
     closeGraphSearch();
     closeFilterMenu();
@@ -261,11 +280,19 @@ export function createProjectController({
     renderSearchResults();
     renderProjectSwitcher();
     renderTypeFilters();
-    renderAnalysis();
     state.graphView?.graphData({ nodes: [], links: [] });
     renderPresence();
     renderPresenceStrip();
     renderAnalysisLoadingSkeleton();
+  }
+
+  function schedulePostLoadAnalysis() {
+    const render = () => renderAnalysis();
+    if (typeof windowRef.requestAnimationFrame === "function") {
+      windowRef.requestAnimationFrame(() => windowRef.setTimeout(render, 140));
+      return;
+    }
+    windowRef.setTimeout(render, 140);
   }
 
   function renderAnalysisLoadingSkeleton() {

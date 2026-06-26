@@ -5,10 +5,13 @@ export function createUiRuntimeController({
   relativeTimeMarkupView,
   formatRelativeTimeView,
   updateVisibleGraph,
+  resolvePalette,
   dayjsRef = () => window.dayjs,
   documentRef = document,
   windowRef = window
 } = {}) {
+  const knownPhases = new Set(["boot", "project-loading", "ready", "transition", "error"]);
+
   function setupGlobalTooltips() {
     const show = (target) => {
       const source = target?.querySelector?.(":scope > .tooltip");
@@ -58,6 +61,24 @@ export function createUiRuntimeController({
     if (state.graphView) updateVisibleGraph?.();
   }
 
+  function applyPalette(preference = { mode: "random" }, options = {}) {
+    const resolved = resolvePalette?.(preference) || { mode: "random", presetId: "random", colors: [] };
+    const root = documentRef.documentElement;
+    root.dataset.palette = resolved.presetId || resolved.mode || "random";
+    root.dataset.paletteMode = resolved.mode || "random";
+    resolved.colors.forEach((color, index) => {
+      root.style.setProperty(`--ps-palette-${index + 1}`, color);
+    });
+    state.palette = {
+      mode: resolved.mode,
+      presetId: resolved.presetId,
+      label: resolved.label,
+      colors: [...resolved.colors]
+    };
+    state.appStore?.dispatch({ type: "state:patch", scope: "theme", patch: { palette: state.palette } });
+    if (options.broadcast !== false) state.windowBridge?.publish("palette:set", state.palette);
+  }
+
   function setupRelativeTimes() {
     windowRef.setInterval(updateRelativeTimes, 30000);
   }
@@ -85,7 +106,8 @@ export function createUiRuntimeController({
     els.toast.querySelector(".toast-close")?.addEventListener("click", hideToast, { once: true });
     els.toast.querySelector(".toast-progress")?.addEventListener("animationend", hideToast, { once: true });
     clearTimeout(state.toastTimer);
-    state.toastTimer = windowRef.setTimeout(hideToast, options.duration || 4200);
+    const duration = options.duration ?? (tone === "loading" ? 6200 : 4200);
+    state.toastTimer = windowRef.setTimeout(hideToast, duration);
   }
 
   function hideToast() {
@@ -96,6 +118,34 @@ export function createUiRuntimeController({
   function reportLoading(scope, detail = "") {
     const suffix = detail ? ` · ${detail}` : "";
     showToast(`Initialisation · ${scope}${suffix}`, { tone: "loading", icon: "progress_activity" });
+  }
+
+  function setLoadingPhase(phase = "ready", options = {}) {
+    const normalized = knownPhases.has(phase) ? phase : "ready";
+    const busy = normalized !== "ready" && normalized !== "error";
+    const root = documentRef.documentElement;
+    const shell = documentRef.querySelector("#app");
+    root.dataset.appPhase = normalized;
+    if (shell) {
+      shell.dataset.appPhase = normalized;
+      shell.setAttribute("aria-busy", String(busy));
+    }
+    state.loadingPhase = {
+      phase: normalized,
+      message: options.message || "",
+      progress: normalizeProgress(options.progress),
+      scope: options.scope || "app"
+    };
+    state.appStore?.dispatch({
+      type: "state:patch",
+      scope: "ui",
+      patch: { loadingPhase: state.loadingPhase }
+    });
+  }
+
+  function normalizeProgress(progress) {
+    if (progress == null || Number.isNaN(Number(progress))) return null;
+    return Math.max(0, Math.min(100, Math.round(Number(progress))));
   }
 
   function inferToastTone(message = "") {
@@ -110,12 +160,14 @@ export function createUiRuntimeController({
     setupGlobalTooltips,
     hideGlobalTooltip,
     applyTheme,
+    applyPalette,
     setupRelativeTimes,
     updateRelativeTimes,
     relativeTimeMarkup,
     formatRelativeTime,
     showToast,
     reportLoading,
+    setLoadingPhase,
     hideToast
   };
 }

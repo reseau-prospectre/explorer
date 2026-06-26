@@ -2,6 +2,7 @@ import {
   getGamificationViewModel,
   renderGamificationCard as renderGamificationCardView
 } from "../ui/gamification-view.js";
+import { renderPanelSkeleton } from "../ui/panel-skeletons.js?v=20260626-v315-granular-skeletons-1";
 
 export function createGamificationController({
   els,
@@ -63,6 +64,11 @@ export function createGamificationController({
     }
     updateCounters({ globalScore, projectScore, cyclePoints: cycle.points });
     syncVisual({ online, active, progress: viewModel.progress, cyclePoints: cycle.points });
+  }
+
+  function renderLoadingShell() {
+    if (!els.gamificationCard) return;
+    els.gamificationCard.innerHTML = renderPanelSkeleton("gamification");
   }
 
   function handleWidgetAction(event) {
@@ -227,6 +233,7 @@ export function createGamificationController({
   return {
     mount,
     renderCard,
+    renderLoadingShell,
     handleWidgetAction,
     pauseVisual,
     isActive,

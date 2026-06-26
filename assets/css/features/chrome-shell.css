@@ -1302,10 +1302,16 @@
 
 .graph-toolbar .tool-button,
 .graph-toolbar .toolbar-grab {
+  position: relative;
+  z-index: 2;
   width: 40px;
   height: 40px;
   min-width: 40px;
   min-height: 40px;
+}
+
+.graph-toolbar .toolbar-overflow-toggle {
+  z-index: 3;
 }
 
 .graph-toolbar .toolbar-grab {
@@ -1461,6 +1467,7 @@
 .toolbar-resize-handles {
   position: absolute;
   inset: -5px;
+  z-index: 1;
   pointer-events: none;
 }
 

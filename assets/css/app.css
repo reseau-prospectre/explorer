@@ -16,7 +16,7 @@
   --text: #edf7f6;
   --muted: #9fb3b8;
   --quiet: #71868d;
-  --accent: #7dd3fc;
+  --accent: var(--ps-color-accent, #7dd3fc);
   --topbar-height: 76px;
   --z-graph: 1;
   --z-chrome: 40;
@@ -26,7 +26,7 @@
   --z-modals: 260;
   --right-panel-width: 430px;
   --bottom-drawer-height: 300px;
-  --md-sys-color-primary: #7dd3fc;
+  --md-sys-color-primary: var(--accent);
   --md-sys-color-on-primary: #071015;
   --md-sys-color-surface: var(--panel);
   --md-sys-color-on-surface: var(--text);
@@ -57,6 +57,41 @@
 
 * {
   box-sizing: border-box;
+  scrollbar-width: thin;
+  scrollbar-color:
+    color-mix(in srgb, var(--ps-color-accent, var(--accent)) 46%, transparent)
+    color-mix(in srgb, var(--ps-glass-fill, var(--glass-panel)) 54%, transparent);
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--ps-color-text, var(--text)) 5%, transparent), transparent),
+    color-mix(in srgb, var(--ps-glass-fill, var(--glass-panel)) 48%, transparent);
+}
+
+*::-webkit-scrollbar-thumb {
+  border: 2px solid transparent;
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, var(--ps-palette-1, var(--accent)), var(--ps-palette-3, var(--accent)), var(--ps-palette-5, var(--accent))) padding-box;
+  box-shadow:
+    inset 0 0 0 1px color-mix(in srgb, var(--ps-color-text, var(--text)) 10%, transparent),
+    0 0 18px color-mix(in srgb, var(--ps-color-accent, var(--accent)) 20%, transparent);
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background:
+    linear-gradient(180deg, var(--ps-palette-2, var(--accent)), var(--ps-palette-1, var(--accent)), var(--ps-palette-5, var(--accent))) padding-box;
+}
+
+*::-webkit-scrollbar-corner {
+  background: transparent;
 }
 
 *:where(section, article, header, footer, nav, aside, main, div, p, h1, h2, h3, h4, h5, h6, ul, ol, li, figure, fieldset, legend, label, button, input, textarea, select) {
@@ -70,7 +105,9 @@ body,
   height: 100%;
   margin: 0;
   overflow: hidden;
-  background: var(--bg);
+  background:
+    var(--ps-palette-background, none),
+    var(--bg);
   color: var(--text);
   font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
@@ -172,8 +209,233 @@ label::after {
   --graph-bottom: 0px;
   --graph-left: 0px;
   --graph-top-offset: 0px;
+  transition:
+    opacity var(--ps-duration-mid, 180ms) var(--ps-ease-standard, ease),
+    filter var(--ps-duration-mid, 180ms) var(--ps-ease-standard, ease);
 }
 
 .app-shell.right-open {
   --graph-right: 0px;
+}
+
+:root[data-app-phase="boot"],
+:root[data-app-phase="project-loading"],
+:root[data-app-phase="transition"] {
+  cursor: progress;
+}
+
+:root[data-app-phase="boot"] .app-shell,
+:root[data-app-phase="project-loading"] .app-shell,
+:root[data-app-phase="transition"] .app-shell {
+  --shell-skeleton-opacity: 1;
+}
+
+:root[data-app-phase="ready"] .app-shell {
+  --shell-skeleton-opacity: 0;
+  animation: ps-shell-ready var(--ps-duration-slow, 320ms) var(--ps-ease-liquid, ease) both;
+}
+
+:root[data-app-phase="boot"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+),
+:root[data-app-phase="project-loading"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+),
+:root[data-app-phase="transition"] .ps-skeletonize {
+  position: relative;
+  overflow: hidden;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+:root[data-app-phase="boot"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+) > *,
+:root[data-app-phase="project-loading"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+) > * {
+  opacity: 0 !important;
+}
+
+:root[data-app-phase="boot"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+)::after,
+:root[data-app-phase="project-loading"] :is(
+  .project-switcher,
+  .quick-type-filter,
+  .topbar-actions > button,
+  .activity-slot,
+  .graph-toolbar .tool-button,
+  .graph-toolbar .toolbar-grab,
+  .bottom-drawer .drawer-head button,
+  .right-panel .panel-head,
+  .right-panel .tabs,
+  .profile-menu .panel-head,
+  .profile-options-tabs,
+  .profile-section,
+  .ps-skeletonize
+)::after {
+  position: absolute;
+  inset: max(5px, 12%);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 18% 0%, var(--ps-skeleton-glow), transparent 60%),
+    var(--ps-skeleton-fill);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--ps-color-text) 5%, transparent),
+    0 0 18px color-mix(in srgb, var(--ps-color-accent) 8%, transparent);
+  content: "";
+  animation: ps-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+:root[data-app-phase="boot"] .quick-type-filters:empty,
+:root[data-app-phase="project-loading"] .quick-type-filters:empty {
+  min-width: min(720px, 52vw);
+  min-height: 44px;
+}
+
+:root[data-app-phase="boot"] .quick-type-filters:empty::before,
+:root[data-app-phase="project-loading"] .quick-type-filters:empty::before {
+  display: block;
+  width: min(720px, 52vw);
+  height: 42px;
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg,
+      var(--ps-skeleton-fill) 0 10%,
+      transparent 10% 12%,
+      var(--ps-skeleton-fill) 12% 24%,
+      transparent 24% 26%,
+      var(--ps-skeleton-fill) 26% 38%,
+      transparent 38% 40%,
+      var(--ps-skeleton-fill) 40% 54%,
+      transparent 54% 56%,
+      var(--ps-skeleton-fill) 56% 68%);
+  content: "";
+  animation: ps-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+:root[data-app-phase="boot"] :is(#timeline, #kpi-grid, #entity-table, #presence-summary):empty::before,
+:root[data-app-phase="project-loading"] :is(#timeline, #kpi-grid, #entity-table, #presence-summary):empty::before {
+  display: block;
+  min-height: 120px;
+  border: 1px solid var(--ps-glass-border, var(--line));
+  border-radius: 12px;
+  background:
+    linear-gradient(90deg, var(--ps-skeleton-fill) 0 44%, transparent 44% 100%) 14px 22px / 82% 13px no-repeat,
+    linear-gradient(90deg, var(--ps-skeleton-fill) 0 64%, transparent 64% 100%) 14px 50px / 86% 12px no-repeat,
+    linear-gradient(90deg, var(--ps-skeleton-fill) 0 36%, transparent 36% 100%) 14px 78px / 80% 12px no-repeat,
+    radial-gradient(circle at 14% 18%, var(--ps-skeleton-glow), transparent 42%),
+    color-mix(in srgb, var(--ps-glass-card, var(--card)) 78%, transparent);
+  content: "";
+  animation: ps-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+:root[data-app-phase="boot"] #entity-table:empty::before,
+:root[data-app-phase="project-loading"] #entity-table:empty::before {
+  min-height: 164px;
+}
+
+:root[data-app-phase="boot"] .graph-stage::after,
+:root[data-app-phase="project-loading"] .graph-stage::after {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: min(34vw, 520px);
+  height: 2px;
+  border-radius: 999px;
+  background:
+    linear-gradient(90deg, transparent, var(--ps-color-accent), var(--ps-color-accent-2), transparent);
+  box-shadow: var(--ps-progress-glow);
+  opacity: 0.66;
+  content: "";
+  transform: translate(-50%, -50%);
+  animation: ps-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@keyframes ps-shell-ready {
+  from {
+    filter: saturate(0.92) blur(0.6px);
+    opacity: 0.94;
+  }
+
+  to {
+    filter: none;
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root[data-app-phase="boot"] :is(.project-switcher, .quick-type-filter, .topbar-actions > button, .activity-slot, .graph-toolbar .tool-button, .graph-toolbar .toolbar-grab, .bottom-drawer .drawer-head button, .right-panel .panel-head, .right-panel .tabs, .profile-menu .panel-head, .profile-options-tabs, .profile-section, .ps-skeletonize)::after,
+  :root[data-app-phase="project-loading"] :is(.project-switcher, .quick-type-filter, .topbar-actions > button, .activity-slot, .graph-toolbar .tool-button, .graph-toolbar .toolbar-grab, .bottom-drawer .drawer-head button, .right-panel .panel-head, .right-panel .tabs, .profile-menu .panel-head, .profile-options-tabs, .profile-section, .ps-skeletonize)::after,
+  :root[data-app-phase="boot"] .quick-type-filters:empty::before,
+  :root[data-app-phase="project-loading"] .quick-type-filters:empty::before,
+  :root[data-app-phase="boot"] :is(#timeline, #kpi-grid, #entity-table, #presence-summary):empty::before,
+  :root[data-app-phase="project-loading"] :is(#timeline, #kpi-grid, #entity-table, #presence-summary):empty::before,
+  :root[data-app-phase="boot"] .graph-stage::after,
+  :root[data-app-phase="project-loading"] .graph-stage::after,
+  :root[data-app-phase="ready"] .app-shell {
+    animation: none;
+  }
 }

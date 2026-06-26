@@ -31,6 +31,7 @@ export function renderTypeDistributionChart({
   chartState,
   chartCtor,
   allNodeCount,
+  prefersReducedMotion = false,
   requestFrame = requestAnimationFrame
 }) {
   if (!canvas) return;
@@ -54,6 +55,7 @@ export function renderTypeDistributionChart({
   }
   chartState.typeDistribution?.destroy();
   chartState.typeDistributionSignature = signature;
+  const shouldAnimate = Boolean(chartState.typeDistributionRenderedOnce && !prefersReducedMotion);
   chartState.typeDistribution = new chartCtor(canvas, {
     type: "doughnut",
     data: {
@@ -71,7 +73,7 @@ export function renderTypeDistributionChart({
       maintainAspectRatio: false,
       resizeDelay: 80,
       cutout: "66%",
-      animation: { duration: 280 },
+      animation: shouldAnimate ? { duration: 180 } : false,
       plugins: {
         legend: { display: false },
         tooltip: {
@@ -100,8 +102,9 @@ export function renderTypeDistributionChart({
       }
     }]
   });
+  chartState.typeDistributionRenderedOnce = true;
   renderLegend(legend, entries);
-  requestFrame(() => chartState.typeDistribution?.resize());
+  requestFrame(() => requestFrame(() => chartState.typeDistribution?.resize()));
 }
 
 function renderLegend(legend, entries) {

@@ -148,13 +148,14 @@
 }
 
 .ps-switch {
-  display: inline-grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: inline-flex;
   align-items: center;
   gap: var(--ps-space-sm);
+  width: fit-content;
   color: var(--ps-color-text);
   font-size: var(--ps-font-size-sm);
   font-weight: 700;
+  line-height: 1;
 }
 
 .ps-switch input {
@@ -166,38 +167,56 @@
 
 .ps-switch__track {
   position: relative;
-  width: 42px;
-  height: 24px;
+  width: 48px;
+  height: 28px;
   border: 1px solid var(--ps-color-border);
   border-radius: var(--ps-radius-full);
-  background: var(--ps-glass-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-text) 7%, transparent), transparent),
+    color-mix(in srgb, var(--ps-color-surface) 44%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -8px 18px color-mix(in srgb, var(--ps-color-text) 5%, transparent);
   transition:
     background var(--ps-duration-mid) var(--ps-ease-standard),
-    border-color var(--ps-duration-mid) var(--ps-ease-standard);
+    border-color var(--ps-duration-mid) var(--ps-ease-standard),
+    box-shadow var(--ps-duration-mid) var(--ps-ease-standard);
 }
 
 .ps-switch__thumb {
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
   border-radius: var(--ps-radius-full);
-  background: var(--ps-color-text-muted);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.08)),
+    color-mix(in srgb, var(--ps-color-text-muted) 72%, var(--ps-color-surface));
+  box-shadow:
+    0 4px 12px color-mix(in srgb, black 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition:
     transform var(--ps-duration-mid) var(--ps-ease-spring),
-    background var(--ps-duration-mid) var(--ps-ease-standard);
+    background var(--ps-duration-mid) var(--ps-ease-standard),
+    box-shadow var(--ps-duration-mid) var(--ps-ease-standard);
 }
 
 .ps-switch input:checked + .ps-switch__track {
   border-color: color-mix(in srgb, var(--ps-color-accent) 58%, transparent);
-  background: color-mix(in srgb, var(--ps-color-accent) 20%, var(--ps-glass-soft));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 42%, transparent), transparent 62%),
+    color-mix(in srgb, var(--ps-color-accent-2) 18%, var(--ps-glass-soft));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 22px color-mix(in srgb, var(--ps-color-accent) 22%, transparent);
 }
 
 .ps-switch input:checked + .ps-switch__track .ps-switch__thumb {
-  transform: translateX(18px);
-  background: var(--ps-color-accent);
+  transform: translateX(20px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.12)),
+    var(--ps-color-accent);
 }
 
 .ps-switch input:focus-visible + .ps-switch__track {
@@ -210,7 +229,10 @@
   overflow: hidden;
   min-height: 1rem;
   border-radius: var(--ps-radius-md);
-  background: color-mix(in srgb, var(--ps-color-text-muted) 12%, transparent);
+  background:
+    radial-gradient(circle at 18% 0%, var(--ps-skeleton-glow), transparent 62%),
+    var(--ps-skeleton-fill);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ps-color-text) 5%, transparent);
 }
 
 .ps-skeleton::after {
@@ -218,8 +240,32 @@
   position: absolute;
   inset: 0;
   transform: translateX(-100%);
-  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.18), transparent);
+  background: var(--ps-skeleton-sheen);
   animation: ps-shimmer 1.4s linear infinite;
+}
+
+.ps-skeletonize {
+  position: relative;
+  overflow: hidden;
+  color: transparent !important;
+  pointer-events: none;
+  user-select: none;
+}
+
+.ps-skeletonize > * {
+  opacity: 0 !important;
+}
+
+.ps-skeletonize::after {
+  position: absolute;
+  inset: max(5px, 12%);
+  border-radius: inherit;
+  background:
+    radial-gradient(circle at 18% 0%, var(--ps-skeleton-glow), transparent 60%),
+    var(--ps-skeleton-fill);
+  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--ps-color-text) 5%, transparent);
+  content: "";
+  animation: ps-skeleton-pulse 1.4s ease-in-out infinite;
 }
 
 .ps-skeleton--text {
@@ -240,6 +286,72 @@
 .ps-skeleton-layout {
   display: grid;
   gap: var(--ps-space-md);
+}
+
+.panel-skeleton {
+  min-height: 100%;
+  padding: var(--ps-space-lg);
+  border-radius: var(--ps-radius-lg);
+  background:
+    radial-gradient(circle at 18% 0%, var(--ps-skeleton-glow), transparent 34%),
+    color-mix(in srgb, var(--ps-glass-soft) 74%, transparent);
+  opacity: 0;
+  transform: translateY(4px);
+  animation: ps-panel-skeleton-in 180ms var(--ps-ease-standard) forwards;
+}
+
+.panel-skeleton__card,
+.panel-skeleton__message {
+  display: grid;
+  gap: var(--ps-space-sm);
+  padding: var(--ps-space-md);
+  border-radius: var(--ps-radius-md);
+}
+
+.panel-skeleton__message {
+  grid-template-columns: auto minmax(0, 1fr);
+}
+
+.panel-skeleton__message .ps-skeleton--circle {
+  grid-row: span 2;
+}
+
+.panel-skeleton__chips,
+.panel-skeleton__grid {
+  display: grid;
+  gap: var(--ps-space-sm);
+}
+
+.panel-skeleton__chips {
+  grid-template-columns: repeat(2, minmax(5rem, 1fr));
+}
+
+.panel-skeleton__chips .ps-skeleton {
+  min-height: 1.8rem;
+  border-radius: var(--ps-radius-full);
+}
+
+.panel-skeleton__grid--two {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.panel-skeleton__grid--three {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.panel-skeleton__reactor {
+  width: 8rem;
+  height: 8rem;
+  justify-self: center;
+}
+
+.panel-skeleton--profile {
+  padding-inline: 0;
+}
+
+.panel-skeleton--gamification {
+  min-height: 22rem;
+  place-content: center;
 }
 
 .ps-skeleton-row {
@@ -273,7 +385,7 @@
   overflow: hidden;
   height: 0.3rem;
   border-radius: var(--ps-radius-full);
-  background: color-mix(in srgb, var(--ps-color-text-muted) 14%, transparent);
+  background: color-mix(in srgb, var(--ps-skeleton-fill) 80%, transparent);
 }
 
 .ps-progress__bar {
@@ -282,6 +394,7 @@
   height: 100%;
   border-radius: inherit;
   background: linear-gradient(90deg, var(--ps-color-accent), var(--ps-color-accent-2));
+  box-shadow: var(--ps-progress-glow);
   transition: width var(--ps-duration-slow) var(--ps-ease-liquid);
 }
 
@@ -354,6 +467,24 @@
   }
 }
 
+@keyframes ps-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 0.72;
+  }
+
+  50% {
+    opacity: 1;
+  }
+}
+
+@keyframes ps-panel-skeleton-in {
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @keyframes ps-spin {
   to {
     transform: rotate(360deg);
@@ -362,7 +493,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .ps-skeleton::after,
-  .ps-progress__spinner {
+  .ps-progress__spinner,
+  .ps-skeletonize::after,
+  .panel-skeleton {
     animation: none;
   }
 }

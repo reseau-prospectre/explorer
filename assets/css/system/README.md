@@ -15,7 +15,8 @@ progressively.
 ## Layers
 
 - `tokens.css`: design tokens, theme values, spacing, radii, motion, z-index and
-  the Liquid Glass surface model.
+  the Liquid Glass surface model, including runtime palette variables
+  `--ps-palette-1..7`.
 - `atoms.css`: indivisible primitives such as surface, button, icon button,
   input, chip and text helpers.
 - `molecules.css`: small reusable groups such as fields, tab lists, cards,
@@ -114,7 +115,8 @@ Already absorbed into `ps-*` foundations:
 
 - cards/surfaces, buttons, icon buttons, inputs, badges/chips, switches, tabs,
   breadcrumbs, steppers, data tables, skeleton shimmer and page layouts;
-- glass tokens, focus rings, reduced-motion guards and adapter bridges.
+- glass tokens, focus rings, reduced-motion guards, adapter bridges and UI-only
+  palette presets/custom colors.
 
 Still to finish as deeper component integrations:
 
@@ -132,6 +134,8 @@ Still to finish as deeper component integrations:
 - extend `ps-progress` beyond inline loaders/toasts to richer import/export
   progress controls where duration is measurable;
 - complete Liquid Animation utilities with safe reduced-motion defaults.
+- extend palette controls outside the profile only when a feature needs a local
+  preview; graph/type semantic colors should stay independent by default.
 
 ## Migration checklist
 

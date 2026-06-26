@@ -11,7 +11,8 @@ export function createAdaptivePanelsController({
   renderAnalysis,
   updateVisibleGraph,
   updateDeepLink,
-  scheduleGraphResize
+  scheduleGraphResize,
+  windowRef = window
 } = {}) {
   function mount() {
     const app = document.querySelector("#app");
@@ -129,8 +130,11 @@ export function createAdaptivePanelsController({
       const content = els.profileMenu?.querySelector(".panel-content");
       if (content) state.profilePanelBody.append(content);
     }
-    renderProfileControls?.();
-    if (els.realtimeSwitch) els.realtimeSwitch.checked = state.realtimeStatus === "firebase";
+    state.profileController?.renderLoadingShell?.();
+    deferPanelHydration(() => {
+      renderProfileControls?.();
+      if (els.realtimeSwitch) els.realtimeSwitch.checked = state.realtimeStatus === "firebase";
+    }, "profile");
     return state.profilePanelBody;
   }
 
@@ -150,8 +154,24 @@ export function createAdaptivePanelsController({
       state.gamificationPanelBody.className = "adaptive-panel__gamification";
       if (els.gamificationCard) state.gamificationPanelBody.append(els.gamificationCard);
     }
-    renderGamificationCard?.();
+    state.gamificationController?.renderLoadingShell?.();
+    deferPanelHydration(() => renderGamificationCard?.(), "gamification");
     return state.gamificationPanelBody;
+  }
+
+  function deferPanelHydration(callback, key) {
+    const tokenKey = `${key}PanelHydrationToken`;
+    const token = Date.now() + Math.random();
+    state[tokenKey] = token;
+    const run = () => {
+      if (state[tokenKey] !== token) return;
+      callback();
+    };
+    if (typeof windowRef.requestAnimationFrame === "function") {
+      windowRef.requestAnimationFrame(() => windowRef.setTimeout(run, 45));
+      return;
+    }
+    windowRef.setTimeout(run, 45);
   }
 
   function syncLayout(layout = state.panelManager?.getLayout?.() || {}) {

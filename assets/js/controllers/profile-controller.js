@@ -2,12 +2,55 @@ import {
   applyAvatarElement,
   renderProfileIdentity as renderProfileIdentityView
 } from "../ui/profile-view.js";
+import { renderPanelSkeleton } from "../ui/panel-skeletons.js?v=20260626-v315-granular-skeletons-1";
+
+const CUSTOM_PALETTE_FIELDS = Object.freeze([
+  {
+    label: "C1",
+    title: "Accent principal",
+    hint: "Actions principales, focus visible, boutons actifs et repères dominants de l'interface."
+  },
+  {
+    label: "C2",
+    title: "Accent secondaire",
+    hint: "Transitions, reflets glass, barres de progression et variantes de l'accent principal."
+  },
+  {
+    label: "C3",
+    title: "Accent tertiaire",
+    hint: "Glows, fonds immersifs, états sélectionnés et nuances de profondeur."
+  },
+  {
+    label: "C4",
+    title: "Succès",
+    hint: "États positifs, validations, indicateurs disponibles et signaux de coprésence actifs."
+  },
+  {
+    label: "C5",
+    title: "Danger",
+    hint: "Alertes, erreurs, réinitialisations et actions destructives qui doivent rester visibles."
+  },
+  {
+    label: "C6",
+    title: "Attention",
+    hint: "États intermédiaires, avertissements, scores moyens et informations à surveiller."
+  },
+  {
+    label: "C7",
+    title: "Accent libre",
+    hint: "Variation complémentaire pour les fonds, skeletons, scrollbars et détails décoratifs."
+  }
+]);
 
 export function createProfileController({
   els,
   state,
   themeKey,
+  paletteKey,
+  palettePresets,
   loadJson,
+  normalizePalettePreference,
+  palettePreviewGradient,
   persistProfile,
   getIdentityState,
   avatarMarkup,
@@ -37,6 +80,9 @@ export function createProfileController({
     documentRef.querySelectorAll("[name='avatar-mode']").forEach((input) => {
       input.addEventListener("change", save);
     });
+    els.paletteOptions?.addEventListener("click", handlePaletteChoice);
+    els.paletteCustom?.addEventListener("input", handleCustomPaletteInput);
+    els.paletteReset?.addEventListener("click", resetPalette);
   }
 
   function open() {
@@ -118,6 +164,10 @@ export function createProfileController({
   }
 
   function renderControls() {
+    renderControlsNow();
+  }
+
+  function renderControlsNow() {
     els.profileName.value = state.profile.displayName;
     els.profileInitial.value = state.profile.avatar;
     if (els.profileColor) els.profileColor.value = state.profile.color;
@@ -132,7 +182,19 @@ export function createProfileController({
     renderGamificationCard();
     renderIdentity();
     renderThemeChoice();
+    renderPaletteChoice();
     if (!documentRef.querySelector("[data-profile-tab].active")) selectTab("settings");
+  }
+
+  function renderLoadingShell() {
+    if (els.gamificationCard) els.gamificationCard.innerHTML = renderPanelSkeleton("gamification");
+    if (els.profileIdentity) els.profileIdentity.innerHTML = renderPanelSkeleton("profile");
+    if (els.paletteOptions) {
+      els.paletteOptions.innerHTML = Array.from({ length: 8 }, () => `
+        <span class="palette-option ps-surface ps-skeletonize" aria-hidden="true"><span></span></span>
+      `).join("");
+    }
+    if (els.paletteCustom) els.paletteCustom.innerHTML = "";
   }
 
   function renderIdentity() {
@@ -163,6 +225,92 @@ export function createProfileController({
     });
   }
 
+  function renderPaletteChoice() {
+    if (!els.paletteOptions) return;
+    const preference = normalizePalettePreference(loadJson(paletteKey, null));
+    state.palettePreference = preference;
+    const activeId = preference.mode === "preset" ? preference.presetId : preference.mode;
+    const options = [
+      { id: "random", label: "Random", colors: state.palette?.colors || palettePresets[0].colors, mode: "random" },
+      ...palettePresets.map((preset) => ({ ...preset, mode: "preset" })),
+      { id: "custom", label: "Custom", colors: preference.mode === "custom" ? preference.colors : state.palette?.colors || palettePresets[0].colors, mode: "custom" }
+    ];
+    els.paletteOptions.innerHTML = options.map((option) => `
+      <button class="palette-option ps-surface${activeId === option.id ? " is-active" : ""}" type="button" data-palette-mode="${option.mode}" data-palette-id="${option.id}" aria-pressed="${activeId === option.id}">
+        <span class="palette-option__swatch" style="background:${palettePreviewGradient(option.colors)}"></span>
+        <span>${option.label}</span>
+      </button>
+    `).join("");
+    renderCustomPalette(preference);
+  }
+
+  function renderCustomPalette(preference = state.palettePreference) {
+    if (!els.paletteCustom) return;
+    const custom = preference.mode === "custom" ? preference.colors : state.palette?.colors || palettePresets[0].colors;
+    const isOpen = preference.mode === "custom";
+    els.paletteCustom.classList.remove("hidden");
+    els.paletteCustom.classList.toggle("is-open", isOpen);
+    els.paletteCustom.setAttribute("aria-hidden", String(!isOpen));
+    els.paletteCustom.innerHTML = custom.map((color, index) => {
+      const inputId = `palette-color-${index + 1}`;
+      const field = CUSTOM_PALETTE_FIELDS[index] || {
+        label: `C${index + 1}`,
+        title: `Couleur ${index + 1}`,
+        hint: "Couleur personnalisée de l'interface."
+      };
+      return `
+      <div class="palette-color ps-field">
+        <span class="palette-color__head">
+          <label class="palette-color__label" for="${inputId}">${field.label}</label>
+          <button class="palette-color__info graph-quality-info" style="--grade-color:${color}" type="button" aria-label="${field.title}">
+            <i>info</i>
+            <span class="tooltip top max">${field.hint}</span>
+          </button>
+        </span>
+        <input id="${inputId}" class="ps-input" type="color" data-palette-color="${index}" value="${color}" aria-label="${field.title}">
+      </div>
+    `;
+    }).join("");
+  }
+
+  function handlePaletteChoice(event) {
+    const button = event.target.closest("[data-palette-mode]");
+    if (!button) return;
+    const mode = button.dataset.paletteMode;
+    const preference = mode === "preset"
+      ? { mode: "preset", presetId: button.dataset.paletteId }
+      : mode === "custom"
+        ? { mode: "custom", colors: state.palette?.colors || palettePresets[0].colors }
+        : { mode: "random" };
+    savePalette(preference);
+  }
+
+  function handleCustomPaletteInput(event) {
+    const input = event.target.closest("[data-palette-color]");
+    if (!input) return;
+    const current = normalizePalettePreference(loadJson(paletteKey, null));
+    const colors = current.mode === "custom" ? [...current.colors] : [...(state.palette?.colors || palettePresets[0].colors)];
+    colors[Number(input.dataset.paletteColor)] = input.value;
+    savePalette({ mode: "custom", colors }, { render: false });
+  }
+
+  function resetPalette() {
+    localStorage.removeItem(paletteKey);
+    savePalette({ mode: "random" }, { persist: false });
+  }
+
+  function savePalette(preference, options = {}) {
+    const normalized = normalizePalettePreference(preference);
+    state.palettePreference = normalized;
+    if (options.persist !== false && normalized.mode !== "random") {
+      localStorage.setItem(paletteKey, JSON.stringify(normalized));
+    } else if (normalized.mode === "random") {
+      localStorage.removeItem(paletteKey);
+    }
+    state.uiRuntimeController.applyPalette(normalized);
+    if (options.render !== false) renderPaletteChoice();
+  }
+
   return {
     bindControls,
     open,
@@ -174,8 +322,11 @@ export function createProfileController({
     handleRichImageError,
     renderButton,
     renderControls,
+    renderControlsNow,
+    renderLoadingShell,
     renderIdentity,
     renderThemeChoice,
+    renderPaletteChoice,
     scheduleSave,
     save
   };

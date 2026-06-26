@@ -120,8 +120,12 @@ export function createGraphSceneController({
     updateFocusDepthLabel();
     renderPresence();
     renderPresenceStrip();
-    renderAnalysis();
+    if (!isProjectLoading()) renderAnalysis();
     setTimeout(renderPresence, 300);
+  }
+
+  function isProjectLoading() {
+    return state.loadingPhase?.phase === "project-loading";
   }
 
   function syncGraphPositionsFromView() {

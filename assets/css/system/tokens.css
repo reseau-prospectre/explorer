@@ -4,6 +4,15 @@
 */
 
 :root {
+  /* Palette roles. Runtime may override these per session/user preference. */
+  --ps-palette-1: #7dd3fc;
+  --ps-palette-2: #5ee7df;
+  --ps-palette-3: #b490f5;
+  --ps-palette-4: #86efac;
+  --ps-palette-5: #fb7185;
+  --ps-palette-6: #fbbf24;
+  --ps-palette-7: #38bdf8;
+
   /* Color roles */
   --ps-color-bg: #071015;
   --ps-color-surface: #0b171d;
@@ -12,12 +21,12 @@
   --ps-color-text: #edf7f6;
   --ps-color-text-muted: #9fb3b8;
   --ps-color-text-subtle: #71868d;
-  --ps-color-accent: #7dd3fc;
-  --ps-color-accent-2: #5ee7df;
-  --ps-color-accent-3: #b490f5;
-  --ps-color-danger: #fb7185;
-  --ps-color-warning: #fbbf24;
-  --ps-color-success: #86efac;
+  --ps-color-accent: var(--ps-palette-1);
+  --ps-color-accent-2: var(--ps-palette-2);
+  --ps-color-accent-3: var(--ps-palette-3);
+  --ps-color-danger: var(--ps-palette-5);
+  --ps-color-warning: var(--ps-palette-6);
+  --ps-color-success: var(--ps-palette-4);
   --ps-color-border: rgba(216, 239, 238, 0.16);
   --ps-color-border-strong: rgba(216, 239, 238, 0.28);
 
@@ -37,6 +46,14 @@
   --ps-glass-shadow-float: 0 24px 70px rgba(0, 0, 0, 0.34), inset 0 1px 0 rgba(255, 255, 255, 0.18);
   --ps-glass-shadow-glow: 0 0 38px color-mix(in srgb, var(--ps-color-accent) 28%, transparent);
   --ps-glass-reflection: linear-gradient(135deg, rgba(255, 255, 255, 0.22), rgba(255, 255, 255, 0) 48%);
+  --ps-skeleton-fill: color-mix(in srgb, var(--ps-palette-1) 12%, var(--ps-color-text-muted) 10%);
+  --ps-skeleton-glow: color-mix(in srgb, var(--ps-palette-2) 18%, transparent);
+  --ps-skeleton-sheen: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ps-palette-7) 22%, rgba(255, 255, 255, 0.14)), transparent);
+  --ps-progress-glow: 0 0 22px color-mix(in srgb, var(--ps-color-accent) 28%, transparent);
+  --ps-palette-background:
+    radial-gradient(820px 520px at 10% 8%, color-mix(in srgb, var(--ps-palette-1) 26%, transparent), transparent 62%),
+    radial-gradient(720px 520px at 88% 16%, color-mix(in srgb, var(--ps-palette-3) 22%, transparent), transparent 64%),
+    radial-gradient(880px 640px at 72% 92%, color-mix(in srgb, var(--ps-palette-5) 18%, transparent), transparent 68%);
 
   /* Type scale */
   --ps-font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;

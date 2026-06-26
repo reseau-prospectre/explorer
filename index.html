@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fr">
+<html lang="fr" data-app-phase="boot">
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -11,15 +11,15 @@
     <link rel="stylesheet" href="https://uicdn.toast.com/editor/latest/theme/toastui-editor-dark.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
-  <link rel="stylesheet" href="./assets/css/system/index.css?v=20260625-panel-rails-3">
-  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260626-liquid-consolidation-1">
+  <link rel="stylesheet" href="./assets/css/system/index.css?v=20260626-v315-granular-skeletons-1">
+  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260626-v315-granular-skeletons-1">
   <link rel="stylesheet" href="./assets/css/features/insights-dashboard.css?v=20260623-insights-dashboard-feature-1">
   <link rel="stylesheet" href="./assets/css/features/overlays.css?v=20260626-liquid-consolidation-1">
   <link rel="stylesheet" href="./assets/css/features/identity-presence.css?v=20260623-identity-presence-feature-1">
-  <link rel="stylesheet" href="./assets/css/app.css?v=20260626-liquid-consolidation-1">
+  <link rel="stylesheet" href="./assets/css/app.css?v=20260626-v313-motion-shell-1">
   <link rel="stylesheet" href="./assets/css/features/schema-admin.css?v=20260623-schema-feature-1">
   <link rel="stylesheet" href="./assets/css/features/gamification.css?v=20260623-gamification-feature-1">
-  <link rel="stylesheet" href="./assets/css/features/profile.css?v=20260623-profile-feature-1">
+  <link rel="stylesheet" href="./assets/css/features/profile.css?v=20260626-v312-palette-polish-1">
   <link rel="stylesheet" href="./assets/css/features/activity.css?v=20260623-activity-feature-1">
   <link rel="stylesheet" href="./assets/css/features/social-thread.css?v=20260623-social-thread-feature-1">
   <link rel="stylesheet" href="./assets/css/features/graph-popovers.css?v=20260623-graph-popovers-feature-1">
@@ -27,10 +27,10 @@
   <link rel="stylesheet" href="./assets/css/features/content-rendering.css?v=20260625-panel-rails-3">
   <link rel="stylesheet" href="./assets/css/features/entity-editor.css?v=20260623-entity-editor-feature-1">
   <link rel="stylesheet" href="./assets/css/features/responsive.css?v=20260623-responsive-feature-1">
-  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260626-liquid-consolidation-1">
+  <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260626-v313-motion-shell-1">
   </head>
   <body>
-    <div id="app" class="app-shell">
+    <div id="app" class="app-shell" data-app-phase="boot" aria-busy="true">
       <section id="graph-stage" class="graph-stage" aria-label="Graphe prospectif"></section>
       <div id="presence-layer" class="presence-layer"></div>
       <div id="panel-host"></div>
@@ -236,11 +236,11 @@
         <div class="panel-content">
           <section id="gamification-card" class="gamification-card ps-surface" aria-label="Cœurs de coprésence"></section>
           <div id="profile-identity" class="profile-identity"></div>
-          <div class="profile-options-tabs" role="tablist" aria-label="Options du profil">
-            <button class="active" type="button" data-profile-tab="settings" aria-controls="profile-settings-panel" aria-selected="true">
+          <div class="profile-options-tabs ps-tab-list" role="tablist" aria-label="Options du profil">
+            <button class="active ps-tab" type="button" data-profile-tab="settings" aria-controls="profile-settings-panel" aria-selected="true">
               <i>tune</i><span>Réglages</span>
             </button>
-            <button type="button" data-profile-tab="portability" aria-controls="profile-portability-panel" aria-selected="false">
+            <button class="ps-tab" type="button" data-profile-tab="portability" aria-controls="profile-portability-panel" aria-selected="false">
               <i>sync_alt</i><span>Portabilité</span>
             </button>
           </div>
@@ -254,19 +254,19 @@
                 <i>sync_alt</i>
               </div>
               <div class="transfer-action-grid">
-                <button id="open-import" class="transfer-action-card" type="button">
+                <button id="open-import" class="transfer-action-card ps-button" type="button">
                   <i>upload_file</i>
                   <span><strong>Importer</strong><small>Zip, Markdown, images, CSV Moodle</small></span>
                 </button>
-                <button id="export-current" class="transfer-action-card" type="button">
+                <button id="export-current" class="transfer-action-card ps-button" type="button">
                   <i>description</i>
                   <span><strong>Fiche</strong><small>Markdown sélectionné</small></span>
                 </button>
-                <button id="export-all" class="transfer-action-card" type="button">
+                <button id="export-all" class="transfer-action-card ps-button" type="button">
                   <i>inventory_2</i>
                   <span><strong>Projet</strong><small>Pack PROSPECTRE complet</small></span>
                 </button>
-                <button id="open-schema-admin" class="transfer-action-card" type="button">
+                <button id="open-schema-admin" class="transfer-action-card ps-button" type="button">
                   <i>database</i>
                   <span><strong>Modèle</strong><small>Types et schéma du pack</small></span>
                 </button>
@@ -280,8 +280,8 @@
                   <i>palette</i>
                 </label>
                 <div class="identity-fields">
-                  <label class="compact-field"><span>Nom</span><input id="profile-name" class="text-field" type="text" maxlength="32"></label>
-                  <label class="compact-field initials-field"><span>Initiales</span><input id="profile-initial" class="text-field" type="text" maxlength="2"></label>
+                  <label class="compact-field ps-field"><span>Nom</span><input id="profile-name" class="text-field ps-input" type="text" maxlength="32"></label>
+                  <label class="compact-field initials-field ps-field"><span>Initiales</span><input id="profile-initial" class="text-field ps-input" type="text" maxlength="2"></label>
                 </div>
               </section>
               <fieldset class="avatar-choice">
@@ -291,12 +291,31 @@
               </fieldset>
               <fieldset class="theme-choice profile-section">
                 <legend>Thème</legend>
-                <div class="segmented-control">
-                  <button type="button" data-theme-choice="system"><i>settings_brightness</i>Système</button>
-                  <button type="button" data-theme-choice="light"><i>light_mode</i>Clair</button>
-                  <button type="button" data-theme-choice="dark"><i>dark_mode</i>Sombre</button>
+                <div class="segmented-control ps-tab-list">
+                  <button class="ps-tab" type="button" data-theme-choice="system"><i>settings_brightness</i>Système</button>
+                  <button class="ps-tab" type="button" data-theme-choice="light"><i>light_mode</i>Clair</button>
+                  <button class="ps-tab" type="button" data-theme-choice="dark"><i>dark_mode</i>Sombre</button>
                 </div>
               </fieldset>
+              <section class="profile-section palette-choice ps-surface" aria-label="Palette d’interface">
+                <div class="palette-choice-head">
+                  <div>
+                    <p class="kicker">Palette</p>
+                    <h3>Couleurs de l’interface</h3>
+                  </div>
+                  <button id="palette-reset" class="ps-button" type="button"><i>shuffle</i>Random</button>
+                </div>
+                <div id="palette-options" class="palette-options" role="radiogroup" aria-label="Palettes"></div>
+                <div id="palette-custom" class="palette-custom hidden" aria-label="Couleurs personnalisées"></div>
+                <div class="palette-preview ps-card ps-surface" aria-label="Aperçu palette">
+                  <div class="palette-preview__surface">
+                    <span class="ps-skeleton ps-skeleton--heading"></span>
+                    <span class="ps-skeleton ps-skeleton--text"></span>
+                    <button class="ps-button ps-button--primary" type="button">Action</button>
+                    <span class="ps-progress__track"><span class="ps-progress__bar" style="width:68%"></span></span>
+                  </div>
+                </div>
+              </section>
               <section class="profile-section connection-section" aria-label="Connexion">
                 <div class="switch-row">
                   <span><span id="realtime-dot" class="status-dot offline"></span>Coprésence</span>
@@ -305,7 +324,7 @@
                     <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
                   </label>
                 </div>
-                <button id="google-login" class="secondary-button auth-button" type="button">
+                <button id="google-login" class="secondary-button auth-button ps-button" type="button">
                   <i>account_circle</i>
                   <span>Connexion Google</span>
                 </button>
@@ -317,7 +336,7 @@
                   <strong><span id="presence-count">1</span> en ligne</strong>
                 </div>
               </section>
-              <button id="clear-local" class="secondary-button clear-local-button" type="button">Réinitialiser l’application et l’identité</button>
+              <button id="clear-local" class="secondary-button clear-local-button ps-button" type="button">Réinitialiser l’application et l’identité</button>
             </div>
           </div>
         </div>
@@ -424,6 +443,6 @@
       }
     </script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260626-liquid-consolidation-1" type="module"></script>
+  <script src="./assets/js/main.js?v=20260626-v315-granular-skeletons-1" type="module"></script>
   </body>
 </html>

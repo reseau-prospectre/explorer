@@ -15,7 +15,6 @@ import {
   cssEscape,
   escapeHtml,
   loadJson,
-  makeDatasetId,
 } from "./core/utils.js";
 import { createProfileStore } from "./core/profile.js";
 import { createProjectModel } from "./model/project.js";
@@ -53,7 +52,7 @@ import {
 import {
   getVisibleEntitySummary
 } from "./ui/entity-view.js";
-import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260625-toolbar-liquid-3";
+import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260626-v315-granular-skeletons-1";
 import {
   emojiToId,
   reactionEmojiMarkup,
@@ -71,11 +70,18 @@ import {
   avatarMarkup as avatarMarkupView,
   resolveAvatarAssetURL
 } from "./ui/profile-view.js?v=20260626-liquid-consolidation-1";
-import { renderToast } from "./ui/toast-view.js?v=20260624-atomic-feedback-2";
+import {
+  PALETTE_PRESETS,
+  normalizePalettePreference,
+  palettePreviewGradient,
+  resolvePalette
+} from "./ui/palette-model.js?v=20260626-v311-palette-1";
+import { renderToast } from "./ui/toast-view.js?v=20260626-v313-motion-shell-1";
 import { bootstrapProspectre } from "./app/bootstrap.js";
-import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260625-panel-rails-3";
+import { createAdaptivePanelsController } from "./controllers/adaptive-panels-controller.js?v=20260626-v315-granular-skeletons-1";
 import { createActivityController } from "./controllers/activity-controller.js";
 import { createChromeController } from "./controllers/chrome-controller.js?v=20260625-toolbar-liquid-4";
+import { createControllerActions } from "./controllers/controller-actions.js";
 import { createGraphOptionsController } from "./controllers/graph-options-controller.js";
 import {
   createGraphToolbarController,
@@ -87,26 +93,27 @@ import {
   QUICK_REACTIONS
 } from "./controllers/comments-controller.js";
 import { createCommentInteractionsController } from "./controllers/comment-interactions-controller.js";
-import { createEntityPanelController } from "./controllers/entity-panel-controller.js";
+import { createEntityPanelController } from "./controllers/entity-panel-controller.js?v=20260626-v315-granular-skeletons-1";
 import { createEditorFormController } from "./controllers/editor-form-controller.js";
 import { createExportController } from "./controllers/export-controller.js";
 import { createGraphController } from "./controllers/graph-controller.js";
-import { createGraphSceneController } from "./controllers/graph-scene-controller.js";
+import { createLifecycleController } from "./controllers/lifecycle-controller.js?v=20260626-v314-load-sequence-1";
+import { createGraphSceneController } from "./controllers/graph-scene-controller.js?v=20260626-v314-load-sequence-1";
 import {
   createEmptyHeartCycle,
   createGamificationController
-} from "./controllers/gamification-controller.js";
+} from "./controllers/gamification-controller.js?v=20260626-v315-granular-skeletons-1";
 import { createPresenceController } from "./controllers/presence-controller.js?v=20260626-liquid-consolidation-1";
-import { createProfileController } from "./controllers/profile-controller.js";
-import { createProjectController } from "./controllers/project-controller.js?v=20260626-liquid-consolidation-1";
-import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js?v=20260626-liquid-consolidation-1";
+import { createProfileController } from "./controllers/profile-controller.js?v=20260626-v315-granular-skeletons-1";
+import { createProjectController } from "./controllers/project-controller.js?v=20260626-v314-load-sequence-1";
+import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js?v=20260626-v313-motion-shell-1";
 import { createRealtimeController } from "./controllers/realtime-controller.js";
 import { createSearchController } from "./controllers/search-controller.js";
 import { createSelectionController } from "./controllers/selection-controller.js";
 import { createSchemaAdminController } from "./controllers/schema-admin-controller.js";
 import { createSessionController } from "./controllers/session-controller.js";
 import { createSmartLinkController } from "./controllers/smart-link-controller.js";
-import { createUiRuntimeController } from "./controllers/ui-runtime-controller.js?v=20260624-atomic-feedback-2";
+import { createUiRuntimeController } from "./controllers/ui-runtime-controller.js?v=20260626-v313-motion-shell-1";
 import { overlays } from "./ui/overlay-manager.js";
 import { confirmAction, requestChoice } from "./ui/confirm-dialog.js?v=20260626-liquid-consolidation-1";
 import { ensureMoodleHtmlSupport, isMoodleHtmlEntity } from "./ui/moodle-bootstrap.js";
@@ -226,6 +233,9 @@ const els = {
   profileInitial: document.querySelector("#profile-initial"),
   profileColor: document.querySelector("#profile-color"),
   profileColorPreview: document.querySelector("#profile-color-preview"),
+  paletteOptions: document.querySelector("#palette-options"),
+  paletteCustom: document.querySelector("#palette-custom"),
+  paletteReset: document.querySelector("#palette-reset"),
   googleLogin: document.querySelector("#google-login"),
   realtimeSwitch: document.querySelector("#realtime-switch"),
   realtimeMode: document.querySelector("#realtime-mode"),
@@ -254,6 +264,9 @@ const state = {
   graphView: null,
   activeTypes: new Set(Object.keys(TYPE_CONFIG)),
   graphPrefs: { ...DEFAULT_GRAPH_PREFS, ...loadJson(GRAPH_PREFS_KEY, {}) },
+  palettePreference: normalizePalettePreference(loadJson(STORAGE_KEYS.palette, null)),
+  palette: null,
+  loadingPhase: { phase: "boot", message: "Initialisation", progress: null, scope: "app" },
   searchQuery: "",
   searchTerm: "",
   searchIndex: null,
@@ -325,6 +338,199 @@ state.editAutosaveTimer = null;
 state.schemaDraggedType = null;
 state.schemaDragArmedType = null;
 state.emojiPickerTarget = null;
+
+const {
+  setupGlobalTooltips,
+  hideGlobalTooltip,
+  reportLoading,
+  setupControls,
+  setupGamification,
+  recordHeartEvent,
+  resetGamificationCycle,
+  toggleMobileMenu,
+  toggleFilterMenu,
+  closeFilterMenu,
+  closeMobileMenu,
+  toggleProjectMenu,
+  closeProjectMenu,
+  renderProjectSwitcher,
+  setupPanelManager,
+  renderContextPanelBody,
+  renderInsightsPanelBody,
+  renderProfilePanelBody,
+  renderActivityPanelBody,
+  renderGamificationPanelBody,
+  toggleInsightsPanel,
+  syncToolbarActiveStates,
+  setupGraphToolbar,
+  setupGraphController,
+  applyGraphToolbarPrefs,
+  openGraphExternalWindow,
+  toggleGraphFullscreen,
+  openContextPanel,
+  sameProjectUrl,
+  updateProjectUrl,
+  registerRecentProject,
+  setupGraph,
+  graphHoverLabel,
+  setupPresence,
+  bindRealtimeProvider,
+  normalizePresenceList,
+  renderCurrentPresenceSummary,
+  createRealtimeProvider,
+  loadDefaultProject,
+  getUrlLaunchRequest,
+  discoverAvailableProjectManifests,
+  loadProject,
+  loadRemoteResource,
+  loadRemoteMoodlePack,
+  loadRemoteImportedFiles,
+  createRemoteSingleFileManifest,
+  updateRemoteResourceUrl,
+  getRemoteFileName,
+  beginProjectSwitch,
+  loadManifestFiles,
+  importUserFiles,
+  importMoodleCsvFile,
+  ensureUniqueMoodleNamespace,
+  mergeProjectManifestWithMoodlePack,
+  reconnectRealtimeForDataset,
+  extractZipEntries,
+  loadFiles,
+  updateVisibleGraph,
+  syncGraphPositionsFromView,
+  getSelectedPathIds,
+  getSelectedNodePath,
+  getSelectedLinkPath,
+  getFocusDepth,
+  isLinkHighlighted,
+  isGraphFocusActive,
+  hasAnimatedSelection,
+  getGraphLinkColor,
+  getGraphLinkWidth,
+  getGraphLinkParticles,
+  refreshGraphLinkStyles,
+  softenGraphMotion,
+  renderTypeFilters,
+  getFocusSummary,
+  updateFocusDepthLabel,
+  persistGraphPrefs,
+  selectNode,
+  selectOverview,
+  selectContributionNode,
+  selectLink,
+  exitGraphFocus,
+  applyInitialDeepLink,
+  buildDeepLink,
+  updateDeepLink,
+  copyDeepLink,
+  renderRightPanel,
+  getOverviewDiscussionEntity,
+  getOverviewContextId,
+  openOverviewDiscussion,
+  renderOverviewMetaDetails,
+  renderOverviewEditForm,
+  renderOverview,
+  isSummaryOptionEnabled,
+  bindInlineEntityClicks,
+  highlightRenderedSearchMatches,
+  renderDiscussion,
+  renderEditForm,
+  markEditDirty,
+  isBodyEditDirty,
+  scheduleEditAutosave,
+  readEditFormValues,
+  persistEditForm,
+  switchEditorMode,
+  setupContentEditor,
+  updateEditorPreview,
+  applySyntaxHighlighting,
+  getEditedBodyAndFormat,
+  getEditorMode,
+  getEditorFormat,
+  setEditorMode,
+  resetEditorScroll,
+  destroyContentEditor,
+  renderAnalysis,
+  renderPresenceSummary,
+  getEntityReactions,
+  renderPresence,
+  renderPresenceStrip,
+  renderPresenceChips,
+  followUser,
+  reactToComment,
+  reactToEntity,
+  toggleLocalEntityReaction,
+  openEmojiPicker,
+  openEntityEmojiPicker,
+  closeEmojiPicker,
+  setupNativeEmojiPicker,
+  selectEmojiReaction,
+  getCommentReactions,
+  addComment,
+  startReply,
+  getThreadRootId,
+  deleteComment,
+  exportSelected,
+  exportAll,
+  updateFileFromEntity,
+  updateManifestFile,
+  downloadBlob,
+  blobToDataUrl,
+  showDropOverlay,
+  isFileDrag,
+  canAdministerSchema,
+  hideRightPanel,
+  toggleDrawer,
+  toggleAvatars,
+  activateRealtime,
+  toggleRealtimeMode,
+  toggleGoogleAccount,
+  connectGoogleAccount,
+  disconnectGoogleAccount,
+  hasFirebaseConfig,
+  closeProfile,
+  openActivityPanel,
+  closeActivityPanel,
+  renderActivityButton,
+  renderActivityPanel,
+  clearLocalData,
+  renderProfileButton,
+  renderProfileControls,
+  renderGamificationCard,
+  pauseGamificationVisual,
+  renderProfileIdentity,
+  renderThemeChoice,
+  applyTheme,
+  renderConnectionStatus,
+  rebuildGraph,
+  resetView,
+  setupRelativeTimes
+} = createControllerActions({
+  state,
+  els,
+  typeConfig: TYPE_CONFIG,
+  defaultProjectManifestUrl: DEFAULT_PROJECT_MANIFEST_URL,
+  recentProjectsKey: RECENT_PROJECTS_KEY,
+  graphPrefsKey: GRAPH_PREFS_KEY,
+  graphToolbarPrefsKey: GRAPH_TOOLBAR_PREFS_KEY,
+  fitPadding: FIT_PADDING,
+  resetFitPadding: RESET_FIT_PADDING,
+  focusFitPadding: FOCUS_FIT_PADDING,
+  initialFitDelay: INITIAL_FIT_DELAY,
+  loadJson,
+  createRecentProjectList,
+  createProjectNavigationHref,
+  sameProjectUrlValue,
+  createGraphToolbarController,
+  normalizeGraphToolbarPrefs,
+  createGraphController,
+  showToast,
+  applyTheme: (theme, options = {}) => state.uiRuntimeController.applyTheme(theme, options),
+  setupRelativeTimes: () => state.uiRuntimeController.setupRelativeTimes(),
+  applyGraphToolbarPrefs: (prefs) => state.graphToolbarController?.apply(prefs)
+});
+
 state.sessionController = createSessionController({
   state,
   storageKeys: STORAGE_KEYS,
@@ -441,7 +647,11 @@ state.profileController = createProfileController({
   els,
   state,
   themeKey: THEME_KEY,
+  paletteKey: STORAGE_KEYS.palette,
+  palettePresets: PALETTE_PRESETS,
   loadJson,
+  normalizePalettePreference,
+  palettePreviewGradient,
   persistProfile,
   getIdentityState,
   avatarMarkup,
@@ -515,6 +725,7 @@ state.graphOptionsController = createGraphOptionsController({
   closeFilterMenu,
   closeGraphSearch: () => state.chromeController.closeGraphSearch(),
   closeGraphHelp: () => state.chromeController.closeGraphHelp(),
+  setLoadingPhase: (phase, options) => state.uiRuntimeController.setLoadingPhase(phase, options),
   showToast
 });
 
@@ -633,7 +844,8 @@ state.entityPanelController = createEntityPanelController({
   openEmojiPicker,
   reactToEntity,
   openEntityEmojiPicker,
-  cssEscape
+  cssEscape,
+  windowRef: window
 });
 
 const { makeNodeObject } = createNodeRenderer({
@@ -653,6 +865,34 @@ const {
   resolveGraphImage,
   resolveAvatarProfile,
   getScoreBoost
+});
+
+state.lifecycleController = createLifecycleController({
+  state,
+  els,
+  storageKeys: STORAGE_KEYS,
+  typeConfig: TYPE_CONFIG,
+  defaultModelSchema: DEFAULT_MODEL_SCHEMA,
+  graphToolbarDefaultPrefs: normalizeGraphToolbarPrefs({ mode: "dock", edge: "left", x: 10, y: 92 }),
+  resetFitPadding: RESET_FIT_PADDING,
+  applyModelSchema,
+  buildGraph,
+  parseEntities,
+  createRealtimeProvider,
+  bindRealtimeProvider,
+  resetGamificationCycle,
+  hideRightPanel,
+  closeFilterMenu,
+  closeGraphSearch: () => state.chromeController.closeGraphSearch(),
+  closeGraphHelp: () => state.chromeController.closeGraphHelp(),
+  applyGraphToolbarPrefs,
+  renderProjectSwitcher,
+  renderAnalysis,
+  renderRightPanel,
+  renderTypeFilters,
+  updateVisibleGraph,
+  showToast,
+  confirmAction
 });
 
 state.projectController = createProjectController({
@@ -694,6 +934,7 @@ state.projectController = createProjectController({
   renderPresence,
   renderPresenceStrip,
   showToast,
+  setLoadingPhase: (phase, options) => state.uiRuntimeController.setLoadingPhase(phase, options),
   zipCtor: JSZip
 });
 
@@ -803,19 +1044,23 @@ state.uiRuntimeController = createUiRuntimeController({
   renderToast,
   relativeTimeMarkupView,
   formatRelativeTimeView,
-  updateVisibleGraph
+  updateVisibleGraph,
+  resolvePalette
 });
 
 init();
 
 async function init() {
   if (!window.ForceGraph3D || !window.JSZip || !window.jsyaml || !window.marked || !window.DOMPurify || !window.Papa) {
+    state.uiRuntimeController.setLoadingPhase("error", { message: "Chargement incomplet", scope: "app" });
     showToast("Chargement incomplet. Vérifiez la connexion.");
     return;
   }
+  state.uiRuntimeController.setLoadingPhase("boot", { message: "Initialisation du shell", scope: "app" });
   reportLoading("noyau applicatif");
   bootstrapV3Runtime();
   applyTheme(loadJson(THEME_KEY, "system"));
+  state.uiRuntimeController.applyPalette(state.palettePreference);
   window.matchMedia("(prefers-color-scheme: light)").addEventListener("change", () => {
     if (loadJson(THEME_KEY, "system") === "system") applyTheme("system");
   });
@@ -829,16 +1074,32 @@ async function init() {
   setupGraphController();
   setupGraph();
   reportLoading("projet et contenus");
+  state.uiRuntimeController.setLoadingPhase("project-loading", { message: "Chargement du projet", progress: 0, scope: "project" });
   const projectDiscovery = discoverAvailableProjectManifests();
   await loadDefaultProject();
   await projectDiscovery;
   applyInitialDeepLink();
-  reportLoading("coprésence");
-  await setupPresence();
+  state.uiRuntimeController.setLoadingPhase("ready", { message: "Interface prête", progress: 100, scope: "app" });
   const adminView = new URLSearchParams(window.location.search).get("admin");
   if (["modele", "champs", "transfert"].includes(adminView)) {
     state.schemaAdminController.openAdmin(adminView === "champs" ? "fields" : adminView === "transfert" ? "transfer" : "types");
   }
+  scheduleDeferredPresenceSetup();
+}
+
+function scheduleDeferredPresenceSetup() {
+  const run = async () => {
+    try {
+      await setupPresence();
+    } catch (error) {
+      console.warn("Initialisation coprésence différée indisponible.", error);
+    }
+  };
+  if (typeof window.requestIdleCallback === "function") {
+    window.requestIdleCallback(run, { timeout: 2200 });
+    return;
+  }
+  window.requestAnimationFrame(() => window.setTimeout(run, 450));
 }
 
 function bootstrapV3Runtime() {
@@ -869,835 +1130,6 @@ function handleBridgeMessage(message) {
   if (type === "state:request") {
     state.windowBridge?.publish("state:hydrate", state.windowBridge.getState());
   }
-}
-
-function setupGlobalTooltips() {
-  state.uiRuntimeController.setupGlobalTooltips();
-}
-
-function hideGlobalTooltip() {
-  state.uiRuntimeController.hideGlobalTooltip();
-}
-
-function reportLoading(scope, detail = "") {
-  const suffix = detail ? ` · ${detail}` : "";
-  showToast(`Initialisation · ${scope}${suffix}`, { tone: "loading", icon: "progress_activity" });
-}
-
-function setupControls() {
-  state.chromeController.mount();
-}
-
-function setupGamification() {
-  state.gamificationController.mount();
-}
-
-function recordHeartEvent(type, points = 0, options = {}) {
-  state.gamificationController.recordHeartEvent(type, points, options);
-}
-
-function resetGamificationCycle() {
-  state.gamificationController.resetCycle();
-}
-
-function toggleMobileMenu() {
-  state.chromeController.toggleMobileMenu();
-}
-
-function toggleFilterMenu() {
-  state.chromeController.toggleFilterMenu();
-}
-
-function closeFilterMenu() {
-  state.chromeController.closeFilterMenu();
-}
-
-function closeMobileMenu() {
-  state.chromeController.closeMobileMenu();
-}
-
-function toggleProjectMenu() {
-  state.chromeController.toggleProjectMenu();
-}
-
-function closeProjectMenu() {
-  state.chromeController.closeProjectMenu();
-}
-
-function renderProjectSwitcher() {
-  state.projectSwitcherController.renderSwitcher();
-}
-
-function setupPanelManager() {
-  state.adaptivePanelsController.mount();
-}
-
-function renderContextPanelBody() {
-  return state.adaptivePanelsController.renderContextPanelBody();
-}
-
-function renderInsightsPanelBody(_context, { panel } = {}) {
-  return state.adaptivePanelsController.renderInsightsPanelBody(_context, { panel });
-}
-
-function renderProfilePanelBody() {
-  return state.adaptivePanelsController.renderProfilePanelBody();
-}
-
-function renderActivityPanelBody() {
-  return state.adaptivePanelsController.renderActivityPanelBody();
-}
-
-function renderGamificationPanelBody() {
-  return state.adaptivePanelsController.renderGamificationPanelBody();
-}
-
-function syncAdaptivePanelLayout(layout = state.panelManager?.getLayout?.() || {}) {
-  state.adaptivePanelsController.syncLayout(layout);
-}
-
-function toggleInsightsPanel() {
-  state.adaptivePanelsController.toggleInsights();
-}
-
-function syncToolbarActiveStates(layout = state.panelManager?.getLayout?.() || {}) {
-  setToolActive(els.insightsToggle, Boolean(layout.insights?.open));
-  setToolActive(els.filterMenuToggle, !els.typeFilters?.classList.contains("hidden"));
-  setToolActive(els.graphSearchToggle, !els.graphSearchPopover?.classList.contains("hidden"));
-  setToolActive(els.graphHelpToggle, !els.graphHelpPopover?.classList.contains("hidden"));
-}
-
-function setToolActive(button, active) {
-  if (!button) return;
-  button.classList.toggle("is-active", Boolean(active));
-  button.setAttribute("aria-pressed", active ? "true" : "false");
-}
-
-function setupGraphToolbar() {
-  const toolbar = els.graphToolbar;
-  if (!toolbar) return;
-  state.graphToolbarController = createGraphToolbarController({
-    toolbar,
-    storageKey: GRAPH_TOOLBAR_PREFS_KEY,
-    onChange: () => state.chromeController.positionOpenToolbarPopover()
-  });
-  state.graphToolbarController.mount();
-}
-
-function setupGraphController() {
-  state.graphController = createGraphController({
-    state,
-    els,
-    resetView,
-    openExternal: openGraphExternalWindow,
-    requestFullscreen: toggleGraphFullscreen,
-    panelManager: state.panelManager,
-    renderPresence,
-    positionOpenToolbarPopover: () => state.chromeController.positionOpenToolbarPopover(),
-    fitPadding: FIT_PADDING,
-    resetFitPadding: RESET_FIT_PADDING,
-    focusFitPadding: FOCUS_FIT_PADDING,
-    initialFitDelay: INITIAL_FIT_DELAY
-  });
-  state.graphController.mount();
-}
-
-function applyGraphToolbarPrefs(prefs) {
-  state.graphToolbarController?.apply(normalizeGraphToolbarPrefs(prefs));
-}
-
-function openGraphExternalWindow() {
-  state.windowBridge?.openExternal({ kind: "graph", title: "PROSPECTRE — Graphe" });
-  showToast("Graphe ouvert en fenêtre externe");
-}
-
-async function toggleGraphFullscreen() {
-  try {
-    if (document.fullscreenElement) {
-      await document.exitFullscreen();
-      return;
-    }
-    await (els.graphStage || document.documentElement).requestFullscreen();
-    setTimeout(() => state.graphController.fit(), 120);
-  } catch {
-    showToast("Plein écran indisponible");
-  }
-}
-
-function openContextPanel() {
-  state.adaptivePanelsController.openContext();
-}
-
-function closeContextPanelState() {
-  state.adaptivePanelsController.closeContextState();
-}
-
-function sameProjectUrl(a, b) {
-  return sameProjectUrlValue(a, b, window.location.href);
-}
-
-function updateProjectUrl(manifestUrl) {
-  window.history.replaceState(null, "", createProjectNavigationHref(window.location.href, manifestUrl, {
-    defaultManifestUrl: DEFAULT_PROJECT_MANIFEST_URL
-  }));
-}
-
-function registerRecentProject(manifest) {
-  const recent = loadJson(RECENT_PROJECTS_KEY, []);
-  localStorage.setItem(RECENT_PROJECTS_KEY, JSON.stringify(createRecentProjectList(recent, manifest)));
-}
-
-function setupGraph() {
-  state.graphSceneController.setup();
-}
-
-function graphHoverLabel(node) {
-  return state.graphSceneController.graphHoverLabel(node);
-}
-
-async function setupPresence() {
-  await state.realtimeController.setupPresence();
-}
-
-function bindRealtimeProvider(provider) {
-  state.realtimeController.bindProvider(provider);
-}
-
-function normalizePresenceList(presence) {
-  return state.realtimeController.normalizePresenceList(presence);
-}
-
-function renderCurrentPresenceSummary() {
-  state.realtimeController.currentPresenceSummary();
-}
-
-function createRealtimeProvider(useFirebase) {
-  return state.realtimeController.createProvider(useFirebase);
-}
-
-async function loadDefaultProject() {
-  await state.projectController.loadDefaultProject();
-}
-
-function getUrlLaunchRequest() {
-  return state.projectController.getUrlLaunchRequest();
-}
-
-async function discoverAvailableProjectManifests() {
-  return state.projectController.discoverAvailableProjectManifests();
-}
-
-async function loadProject(manifestUrl, options = {}) {
-  await state.projectController.loadProject(manifestUrl, options);
-}
-
-async function loadRemoteResource(resourceUrl, options = {}) {
-  await state.projectController.loadRemoteResource(resourceUrl, options);
-}
-
-async function loadRemoteMoodlePack(pack, options = {}) {
-  await state.projectController.loadRemoteMoodlePack(pack, options);
-}
-
-async function loadRemoteImportedFiles(files, options = {}) {
-  await state.projectController.loadRemoteImportedFiles(files, options);
-}
-
-function createRemoteSingleFileManifest(files, options = {}) {
-  return state.projectController.createRemoteSingleFileManifest(files, options);
-}
-
-function updateRemoteResourceUrl(resourceUrl) {
-  state.projectController.updateRemoteResourceUrl(resourceUrl);
-}
-
-function getRemoteFileName(resourceUrl) {
-  return state.projectController.getRemoteFileName(resourceUrl);
-}
-
-function beginProjectSwitch(manifestUrl) {
-  state.projectController.beginProjectSwitch(manifestUrl);
-}
-
-async function loadManifestFiles(manifest, baseUrl, onProgress = null) {
-  return state.projectController.loadManifestFiles(manifest, baseUrl, onProgress);
-}
-
-async function importUserFiles(fileList) {
-  await state.projectController.importUserFiles(fileList);
-}
-
-async function importMoodleCsvFile(file) {
-  return state.projectController.importMoodleCsvFile(file);
-}
-
-function ensureUniqueMoodleNamespace(text, fileName, pack) {
-  return state.projectController.ensureUniqueMoodleNamespace(text, fileName, pack);
-}
-
-function mergeProjectManifestWithMoodlePack(currentManifest, importedManifest, importedFiles) {
-  return state.projectController.mergeProjectManifestWithMoodlePack(currentManifest, importedManifest, importedFiles);
-}
-
-async function reconnectRealtimeForDataset() {
-  await state.provider?.disconnect?.();
-  state.comments = {};
-  state.activity = [];
-  rebuildGraph();
-  state.providerVersion += 1;
-  state.provider = createRealtimeProvider(true);
-  bindRealtimeProvider(state.provider);
-  await state.provider.connect({ userProfile: state.profile });
-}
-
-async function extractZipEntries(zip) {
-  return state.projectController.extractZipEntries(zip);
-}
-
-function loadFiles(files, message, options = {}) {
-  files.forEach((file) => state.files.set(file.path, file));
-  applyModelSchema(state.projectManifest?.modele || DEFAULT_MODEL_SCHEMA, { resetFilters: options.resetFilters === true });
-  state.entities = parseEntities([...state.files.values()]);
-  state.datasetId = makeDatasetId([...state.entities.keys()].join("|"));
-  state.gamification.scores = { ...state.gamification.scores, project: null };
-  resetGamificationCycle();
-  state.graph = buildGraph(state.entities);
-  state.sessionController.restoreGraphLayout();
-  if (state.selectedId && !state.entities.has(state.selectedId)) hideRightPanel();
-  state.searchController.buildIndex();
-  state.sessionController.saveSession();
-  updateVisibleGraph();
-  renderProjectSwitcher();
-  renderAnalysis();
-  if (state.selectedId) renderRightPanel();
-  state.graphController.scheduleInitialFit();
-  showToast(`${message} · ${state.graph.nodes.length} éléments`);
-}
-
-function updateVisibleGraph(options = {}) {
-  state.graphSceneController.updateVisibleGraph(options);
-}
-
-function syncGraphPositionsFromView() {
-  state.graphSceneController.syncGraphPositionsFromView();
-}
-
-function getSelectedPathIds(selectedLinkPaths = getSelectedLinkPath(), selectedNodePaths = getSelectedNodePath()) {
-  return state.graphSceneController.getSelectedPathIds(selectedLinkPaths, selectedNodePaths);
-}
-
-function getSelectedNodePath() {
-  return state.graphSceneController.getSelectedNodePath();
-}
-
-function getSelectedLinkPath() {
-  return state.graphSceneController.getSelectedLinkPath();
-}
-
-function getFocusDepth() {
-  return state.graphSceneController.getFocusDepth();
-}
-
-function isLinkHighlighted(link) {
-  return state.graphSceneController.isLinkHighlighted(link);
-}
-
-function isGraphFocusActive() {
-  return state.graphSceneController.isGraphFocusActive();
-}
-
-function hasAnimatedSelection() {
-  return state.graphSceneController.hasAnimatedSelection();
-}
-
-function getGraphLinkColor(link) {
-  return state.graphSceneController.getGraphLinkColor(link);
-}
-
-function getGraphLinkWidth(link) {
-  return state.graphSceneController.getGraphLinkWidth(link);
-}
-
-function getGraphLinkParticles(link) {
-  return state.graphSceneController.getGraphLinkParticles(link);
-}
-
-function refreshGraphLinkStyles() {
-  state.graphSceneController.refreshGraphLinkStyles();
-}
-
-function softenGraphMotion() {
-  state.graphSceneController.softenGraphMotion();
-}
-
-function renderTypeFilters() {
-  state.graphOptionsController.renderTypeFilters();
-}
-
-function getFocusSummary() {
-  return state.graphOptionsController.getFocusSummary();
-}
-
-function updateFocusDepthLabel() {
-  state.graphOptionsController.updateFocusDepthLabel();
-}
-
-function persistGraphPrefs() {
-  localStorage.setItem(GRAPH_PREFS_KEY, JSON.stringify(state.graphPrefs));
-}
-
-function selectNode(id, moveCamera = false) {
-  state.selectionController.selectNode(id, moveCamera);
-}
-
-function selectOverview() {
-  state.sessionController.resetGraphInteractionState();
-  state.provider?.updatePresence({ selectedNodeId: null });
-  renderRightPanel();
-  renderAnalysis();
-  updateVisibleGraph();
-  state.graphController.scheduleResize();
-  updateDeepLink();
-  state.appStore?.dispatch({ type: "state:patch", scope: "selection", patch: { selection: { selectedId: null, selectedLinkKey: null, activeTab: state.activeTab } } });
-  if (!state.bridgeApplying) state.windowBridge?.publish("selection:set", { id: null, moveCamera: false, activeTab: state.activeTab });
-}
-
-function selectContributionNode(node, moveCamera = false) {
-  state.selectionController.selectContributionNode(node, moveCamera);
-}
-
-function selectLink(link) {
-  state.selectionController.selectLink(link);
-}
-
-function exitGraphFocus() {
-  state.selectionController.exitGraphFocus();
-}
-
-function applyInitialDeepLink() {
-  state.selectionController.applyInitialDeepLink();
-}
-
-function buildDeepLink({ entityId = state.selectedId, tab = state.activeTab, commentId = null } = {}) {
-  return state.selectionController.buildDeepLink({ entityId, tab, commentId });
-}
-
-function updateDeepLink(commentId = state.highlightedCommentId) {
-  state.selectionController.updateDeepLink(commentId);
-}
-
-async function copyDeepLink(options = {}) {
-  await state.selectionController.copyDeepLink(options);
-}
-
-function renderRightPanel() {
-  state.entityPanelController.renderRightPanel();
-}
-
-function getOverviewDiscussionEntity() {
-  return state.entityPanelController.getOverviewDiscussionEntity();
-}
-
-function getOverviewContextId() {
-  return state.entityPanelController.getOverviewContextId();
-}
-
-function openOverviewDiscussion() {
-  state.entityPanelController.openOverviewDiscussion();
-}
-
-function renderOverviewMetaDetails() {
-  state.entityPanelController.renderOverviewMetaDetails();
-}
-
-function renderOverviewEditForm() {
-  state.entityPanelController.renderOverviewEditForm();
-}
-
-function renderOverview(entity) {
-  state.entityPanelController.renderOverview(entity);
-}
-
-function isSummaryOptionEnabled(entity) {
-  return state.entityPanelController.isSummaryOptionEnabled(entity);
-}
-
-function bindInlineEntityClicks() {
-  state.entityPanelController.bindInlineEntityClicks();
-}
-
-function highlightRenderedSearchMatches() {
-  state.entityPanelController.highlightRenderedSearchMatches();
-}
-
-function renderDiscussion(entity = state.entities.get(state.selectedId)) {
-  state.entityPanelController.renderDiscussion(entity);
-}
-
-
-function renderEditForm(entity) {
-  state.editorFormController.renderEditForm(entity);
-}
-
-function markEditDirty(options = {}) {
-  state.editorFormController.markEditDirty(options);
-}
-
-function isBodyEditDirty() {
-  return state.editorFormController.isBodyEditDirty();
-}
-
-function scheduleEditAutosave(entity) {
-  state.editorFormController.scheduleEditAutosave(entity);
-}
-
-function readEditFormValues(entity) {
-  return state.editorFormController.readEditFormValues(entity);
-}
-
-function persistEditForm(entity, options = {}) {
-  return state.editorFormController.persistEditForm(entity, options);
-}
-
-function switchEditorMode(entity, mode) {
-  state.editorFormController.switchEditorMode(entity, mode);
-}
-
-function setupContentEditor(entity) {
-  state.editorFormController.setupContentEditor(entity);
-}
-
-function updateEditorPreview(entity) {
-  state.editorFormController.updateEditorPreview(entity);
-}
-
-function applySyntaxHighlighting(root = els.panelContent) {
-  state.editorFormController.applySyntaxHighlighting(root);
-}
-
-function getEditedBodyAndFormat() {
-  return state.editorFormController.getEditedBodyAndFormat();
-}
-
-function getEditorMode() {
-  return state.editorFormController.getEditorMode();
-}
-
-function getEditorFormat() {
-  return state.editorFormController.getEditorFormat();
-}
-
-function setEditorMode(mode, format) {
-  state.editorFormController.setEditorMode(mode, format);
-}
-
-function resetEditorScroll() {
-  state.editorFormController.resetEditorScroll();
-}
-
-function destroyContentEditor() {
-  state.editorFormController?.destroyContentEditor?.();
-}
-
-function getAnalysisGraphScope() {
-  return state.analysisRenderer.getGraphScope();
-}
-
-function renderAnalysis() {
-  state.analysisRenderer.renderAnalysis();
-}
-
-function renderPresenceSummary(selected, selectedLink) {
-  state.analysisRenderer.renderPresenceSummary(selected, selectedLink);
-}
-
-function getEntityReactions(entityId) {
-  return state.commentInteractionsController.getEntityReactions(entityId);
-}
-
-function renderPresence() {
-  state.presenceController.renderPresence();
-}
-
-function renderPresenceStrip() {
-  state.presenceController.renderPresenceStrip();
-}
-
-function renderPresenceChips(users, limit = 5) {
-  return state.presenceController.renderPresenceChips(users, limit);
-}
-
-function followUser(clientId) {
-  state.presenceController.followUser(clientId);
-}
-
-async function reactToComment(entityId, commentId, reaction) {
-  await state.commentInteractionsController.reactToComment(entityId, commentId, reaction);
-}
-
-async function reactToEntity(entityId, reaction) {
-  await state.commentInteractionsController.reactToEntity(entityId, reaction);
-}
-
-function toggleLocalEntityReaction(entityId, reaction) {
-  state.commentInteractionsController.toggleLocalEntityReaction(entityId, reaction);
-}
-
-function openEmojiPicker(entityId, commentId, anchor) {
-  state.commentInteractionsController.openEmojiPicker(entityId, commentId, anchor);
-}
-
-function openEntityEmojiPicker(entityId, anchor) {
-  state.commentInteractionsController.openEntityEmojiPicker(entityId, anchor);
-}
-
-function closeEmojiPicker() {
-  state.commentInteractionsController.closeEmojiPicker();
-}
-
-function setupNativeEmojiPicker() {
-  state.commentInteractionsController.setupNativeEmojiPicker();
-}
-
-function selectEmojiReaction(reaction) {
-  state.commentInteractionsController.selectEmojiReaction(reaction);
-}
-
-function getCommentReactions(comment) {
-  return state.commentInteractionsController.getCommentReactions(comment);
-}
-
-async function addComment() {
-  await state.commentInteractionsController.addComment();
-}
-
-function startReply(commentId) {
-  state.commentInteractionsController.startReply(commentId);
-}
-
-function getThreadRootId(commentId) {
-  return state.commentInteractionsController.getThreadRootId(commentId);
-}
-
-function deleteComment(entityId, commentId) {
-  state.commentInteractionsController.deleteComment(entityId, commentId);
-}
-
-function exportSelected() {
-  state.exportController.exportSelected();
-}
-
-async function exportAll() {
-  await state.exportController.exportAll();
-}
-
-function updateFileFromEntity(entity) {
-  state.exportController.updateFileFromEntity(entity);
-}
-
-function updateManifestFile() {
-  state.exportController.updateManifestFile();
-}
-
-function downloadBlob(blob, filename) {
-  state.exportController.downloadBlob(blob, filename);
-}
-
-function blobToDataUrl(blob) {
-  return state.exportController.blobToDataUrl(blob);
-}
-
-function showDropOverlay() {
-  els.dropOverlay.classList.remove("hidden");
-}
-
-function isFileDrag(event) {
-  return [...(event.dataTransfer?.types || [])].includes("Files");
-}
-
-function canAdministerSchema() {
-  return state.schemaAdminController.canAdminister();
-}
-
-function hideRightPanel() {
-  state.adaptivePanelsController.hideRightPanel();
-}
-
-function toggleDrawer() {
-  state.adaptivePanelsController.toggleDrawer();
-}
-
-function toggleAvatars(event) {
-  state.realtimeController.toggleAvatars(event);
-}
-
-async function activateRealtime(button) {
-  await state.realtimeController.activate(button);
-}
-
-async function deactivateRealtime() {
-  await state.realtimeController.deactivate();
-}
-
-async function toggleRealtimeMode(enabled, control = null) {
-  await state.realtimeController.toggleMode(enabled, control);
-}
-
-async function toggleGoogleAccount() {
-  await state.realtimeController.toggleGoogleAccount();
-}
-
-async function connectGoogleAccount() {
-  await state.realtimeController.connectGoogleAccount();
-}
-
-async function disconnectGoogleAccount() {
-  await state.realtimeController.disconnectGoogleAccount();
-}
-
-function hasFirebaseConfig() {
-  return state.realtimeController.hasFirebaseConfig();
-}
-
-function openProfile() {
-  state.profileController.open();
-}
-
-function closeProfile() {
-  state.profileController.close();
-}
-
-function closeProfileState() {
-  state.profileController.closeState();
-}
-
-function openActivityPanel() {
-  state.activityController.openPanel();
-}
-
-function closeActivityPanel() {
-  state.activityController.closePanel();
-}
-
-function closeActivityPanelState() {
-  state.activityController.closeState();
-}
-
-function renderActivityButton() {
-  state.activityController.renderButton();
-}
-
-function renderActivityPanel() {
-  state.activityController.renderPanel();
-}
-
-async function clearLocalData() {
-  const confirmed = await confirmAction({
-    title: "Réinitialisation complète",
-    message: "PROSPECTRE va repartir sur une identité locale neuve et le projet par défaut.",
-    details: "Les préférences, sessions locales, commentaires, cache du projet actif, vue du graphe et paramètres de connexion seront effacés de ce navigateur.",
-    anchor: document.querySelector("#clear-local"),
-    confirmLabel: "Tout réinitialiser",
-    confirmIcon: "restart_alt",
-    tone: "danger"
-  });
-  if (!confirmed) return;
-  try {
-    if (state.provider?.authApi && state.provider?.auth) {
-      await state.provider.authApi.signOut(state.provider.auth);
-    }
-  } catch {
-    // Le nettoyage local doit rester possible même si Firebase est indisponible.
-  }
-  await state.provider?.disconnect?.();
-  Object.values(STORAGE_KEYS).forEach((key) => localStorage.removeItem(key));
-  [
-    SESSION_KEY,
-    PROFILE_KEY,
-    ANONYMOUS_PROFILE_KEY,
-    GOOGLE_PROFILE_KEY,
-    COMMENTS_KEY,
-    DRAFTS_KEY,
-    ACTIVITY_READ_KEY,
-    THEME_KEY,
-    REALTIME_KEY,
-    PROJECT_SESSIONS_KEY,
-    GRAPH_LAYOUT_KEY
-  ].forEach((key) => key && localStorage.removeItem(key));
-  for (const key of Object.keys(localStorage)) {
-    if (key.startsWith("prospectre.")) localStorage.removeItem(key);
-  }
-  for (const key of Object.keys(sessionStorage)) {
-    if (key.startsWith("prospectre.")) sessionStorage.removeItem(key);
-  }
-  resetView({ resetPanels: true });
-  const cleanUrl = `${window.location.origin}${window.location.pathname}`;
-  window.history.replaceState(null, "", cleanUrl);
-  window.location.replace(cleanUrl);
-}
-
-function renderProfileButton() {
-  state.profileController.renderButton();
-}
-
-function renderProfileControls() {
-  state.profileController.renderControls();
-}
-
-function renderGamificationCard() {
-  state.gamificationController.renderCard();
-}
-
-function pauseGamificationVisual() {
-  state.gamificationController.pauseVisual();
-}
-
-function renderProfileIdentity() {
-  state.profileController.renderIdentity();
-}
-
-function renderThemeChoice() {
-  state.profileController.renderThemeChoice();
-}
-
-function applyTheme(theme, options = {}) {
-  state.uiRuntimeController.applyTheme(theme, options);
-}
-
-function renderConnectionStatus() {
-  state.realtimeController.renderConnectionStatus();
-}
-
-function rebuildGraph() {
-  state.graph = buildGraph(state.entities);
-  state.sessionController.restoreGraphLayout();
-  state.searchController.buildIndex();
-  updateVisibleGraph();
-  renderAnalysis();
-}
-
-function resetView(options = {}) {
-  hideRightPanel();
-  closeFilterMenu();
-  state.chromeController.closeGraphSearch();
-  state.chromeController.closeGraphHelp();
-  if (options.resetPanels !== false) state.panelManager?.resetLayout?.();
-  applyGraphToolbarPrefs(normalizeGraphToolbarPrefs({ mode: "dock", edge: "left", x: 10, y: 92 }));
-  state.sessionController.resetGraphInteractionState();
-  state.activeTypes = new Set(Object.keys(TYPE_CONFIG));
-  if (state.realtimeStatus === "firebase") state.activeTypes.add("contribution");
-  state.searchController.clearState();
-  state.sessionController.clearPersistedLayout();
-  state.sessionController.releaseGraphLayout();
-  state.graph = buildGraph(state.entities);
-  state.visibleGraph = { nodes: [], links: [] };
-  state.searchController.updateControl();
-  state.searchController.renderResults();
-  renderTypeFilters();
-  updateVisibleGraph({ skipPositionSync: true });
-  renderAnalysis();
-  state.graphView.d3ReheatSimulation?.();
-  state.graphController.fit(800, RESET_FIT_PADDING);
 }
 
 function getImageExtensionFromBlob(blob) {
@@ -1779,10 +1211,6 @@ function clearDraft(entityId, parentId) {
 
 function persistActivityRead() {
   state.sessionController.persistActivityRead();
-}
-
-function setupRelativeTimes() {
-  state.uiRuntimeController.setupRelativeTimes();
 }
 
 function updateRelativeTimes(root = document) {

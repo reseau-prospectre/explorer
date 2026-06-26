@@ -609,13 +609,14 @@ select.text-field {
 
 /* Existing switch markup consumes the Liquid Glass switch language. */
 .switch {
-  display: inline-grid;
-  grid-template-columns: auto minmax(0, 1fr);
+  display: inline-flex;
   align-items: center;
   gap: var(--ps-space-sm);
+  width: fit-content;
   color: var(--ps-color-text);
   font-size: var(--ps-font-size-sm);
   font-weight: 700;
+  line-height: 1;
 }
 
 .switch input {
@@ -627,39 +628,57 @@ select.text-field {
 
 .switch > span {
   position: relative;
-  width: 42px;
-  height: 24px;
+  width: 48px;
+  height: 28px;
   border: 1px solid var(--ps-color-border);
   border-radius: var(--ps-radius-full);
-  background: var(--ps-glass-soft);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-text) 7%, transparent), transparent),
+    color-mix(in srgb, var(--ps-color-surface) 44%, transparent);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.12),
+    inset 0 -8px 18px color-mix(in srgb, var(--ps-color-text) 5%, transparent);
   transition:
     background var(--ps-duration-mid) var(--ps-ease-standard),
-    border-color var(--ps-duration-mid) var(--ps-ease-standard);
+    border-color var(--ps-duration-mid) var(--ps-ease-standard),
+    box-shadow var(--ps-duration-mid) var(--ps-ease-standard);
 }
 
 .switch > span::after {
   content: "";
   position: absolute;
-  top: 3px;
-  left: 3px;
-  width: 18px;
-  height: 18px;
+  top: 2px;
+  left: 2px;
+  width: 22px;
+  height: 22px;
   border-radius: var(--ps-radius-full);
-  background: var(--ps-color-text-muted);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.58), rgba(255, 255, 255, 0.08)),
+    color-mix(in srgb, var(--ps-color-text-muted) 72%, var(--ps-color-surface));
+  box-shadow:
+    0 4px 12px color-mix(in srgb, black 22%, transparent),
+    inset 0 1px 0 rgba(255, 255, 255, 0.28);
   transition:
     transform var(--ps-duration-mid) var(--ps-ease-spring),
-    background var(--ps-duration-mid) var(--ps-ease-standard);
+    background var(--ps-duration-mid) var(--ps-ease-standard),
+    box-shadow var(--ps-duration-mid) var(--ps-ease-standard);
 }
 
 .switch input:checked + span {
   border-color: color-mix(in srgb, var(--ps-color-accent) 58%, transparent);
-  background: color-mix(in srgb, var(--ps-color-accent) 20%, var(--ps-glass-soft));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--ps-color-accent) 42%, transparent), transparent 62%),
+    color-mix(in srgb, var(--ps-color-accent-2) 18%, var(--ps-glass-soft));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.18),
+    0 0 22px color-mix(in srgb, var(--ps-color-accent) 22%, transparent);
 }
 
 .switch input:checked + span::after {
-  transform: translateX(18px);
-  background: var(--ps-color-accent);
+  transform: translateX(20px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.12)),
+    var(--ps-color-accent);
 }
 
 .switch input:focus-visible + span {
@@ -668,7 +687,7 @@ select.text-field {
 }
 
 .switch.ps-switch {
-  grid-template-columns: auto;
+  display: inline-flex;
   cursor: pointer;
 }
 
@@ -677,8 +696,10 @@ select.text-field {
 }
 
 .switch.ps-switch input:checked + .ps-switch__track .ps-switch__thumb {
-  transform: translateX(18px);
-  background: var(--ps-color-accent);
+  transform: translateX(20px);
+  background:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.66), rgba(255, 255, 255, 0.12)),
+    var(--ps-color-accent);
 }
 
 .toast.ps-toast {
@@ -707,6 +728,13 @@ select.text-field {
 .toast.ps-toast .toast-progress {
   background: linear-gradient(90deg, var(--ps-color-accent), var(--ps-color-danger));
   animation-name: ps-toast-progress;
+}
+
+.toast.ps-toast .toast-progress.is-determinate {
+  width: calc(var(--ps-progress-value, 0) * 100%);
+  transform: none;
+  animation: none;
+  transition: width var(--ps-duration-slow) var(--ps-ease-liquid);
 }
 
 .prospectre-loader.ps-progress {
