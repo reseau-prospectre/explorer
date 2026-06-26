@@ -20,7 +20,10 @@ export function renderEntityReadView({
   relatedHtml = ""
 }) {
   return `
-    <article class="readable-card ps-card ps-surface">
+    <article class="readable-card entity-read-card ps-card ps-surface">
+      <button class="card-hover-action ps-icon-button" type="button" data-entity-edit-action aria-label="Modifier cette fiche">
+        <i>edit</i>
+      </button>
       ${summaryHtml}
       <div class="rendered-content ps-card__body">${contentHtml}</div>
     </article>
@@ -31,14 +34,15 @@ export function renderEntityReadView({
         <div class="edit-toggle">
           <i>edit</i>
           <span>Modifier</span>
-          <label class="switch">
+          <label class="ps-switch" aria-label="Modifier cette fiche sur cet appareil">
             <input id="edit-toggle" type="checkbox">
-            <span></span>
+            <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
           </label>
           <span class="tooltip top">Modifier cette fiche sur cet appareil</span>
         </div>
         <button class="comment-permalink fiche-permalink ps-icon-button" data-copy-entity-link="${escapeHtml(entity.id)}" type="button" aria-label="Copier le lien de cette fiche">
           <i>link</i>
+          <span class="tooltip top">Copier le lien</span>
         </button>
       </div>
     </footer>

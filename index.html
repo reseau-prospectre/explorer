@@ -12,7 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/themes/prism-tomorrow.min.css">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/prismjs@1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
   <link rel="stylesheet" href="./assets/css/system/index.css?v=20260626-v315-granular-skeletons-1">
-  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260626-v315-granular-skeletons-1">
+  <link rel="stylesheet" href="./assets/css/features/chrome-shell.css?v=20260626-v328-library-masonry-tabs-1">
   <link rel="stylesheet" href="./assets/css/features/insights-dashboard.css?v=20260623-insights-dashboard-feature-1">
   <link rel="stylesheet" href="./assets/css/features/overlays.css?v=20260626-liquid-consolidation-1">
   <link rel="stylesheet" href="./assets/css/features/identity-presence.css?v=20260623-identity-presence-feature-1">
@@ -23,10 +23,10 @@
   <link rel="stylesheet" href="./assets/css/features/activity.css?v=20260623-activity-feature-1">
   <link rel="stylesheet" href="./assets/css/features/social-thread.css?v=20260623-social-thread-feature-1">
   <link rel="stylesheet" href="./assets/css/features/graph-popovers.css?v=20260623-graph-popovers-feature-1">
-  <link rel="stylesheet" href="./assets/css/features/entity-reading.css?v=20260623-entity-reading-feature-1">
+  <link rel="stylesheet" href="./assets/css/features/entity-reading.css?v=20260626-v325-reperes-manifest-polish-1">
   <link rel="stylesheet" href="./assets/css/features/content-rendering.css?v=20260625-panel-rails-3">
-  <link rel="stylesheet" href="./assets/css/features/entity-editor.css?v=20260623-entity-editor-feature-1">
-  <link rel="stylesheet" href="./assets/css/features/responsive.css?v=20260623-responsive-feature-1">
+  <link rel="stylesheet" href="./assets/css/features/entity-editor.css?v=20260626-v327-library-footer-fix-1">
+  <link rel="stylesheet" href="./assets/css/features/responsive.css?v=20260626-v327-library-footer-fix-1">
   <link rel="stylesheet" href="./assets/css/system/adapters.css?v=20260626-v313-motion-shell-1">
   </head>
   <body>
@@ -119,6 +119,34 @@
       </nav>
 
       <div id="type-filters" class="graph-options-panel toolbar-popover hidden" aria-label="Options d’affichage du graphe"></div>
+
+      <section id="project-library" class="project-library hidden" aria-label="Bibliothèque de projets" aria-modal="true" role="dialog">
+        <div class="project-library__shell ps-surface">
+          <header class="project-library__header">
+            <div>
+              <p class="kicker">Catalogue</p>
+              <h2>Bibliothèque</h2>
+            </div>
+            <label class="project-library__search ps-field">
+              <i>search</i>
+              <input id="project-library-search" class="ps-input" type="search" placeholder="Rechercher un pack, une source, une version…">
+            </label>
+            <button id="project-library-close" class="icon-button" type="button" aria-label="Fermer la bibliothèque">
+              <i>close</i>
+              <span class="tooltip bottom">Fermer</span>
+            </button>
+          </header>
+          <div class="project-library__body">
+            <aside class="project-library__sidebar" aria-label="Sources">
+              <button class="is-active" type="button" data-project-library-tab="library"><i>inventory_2</i><span>Bibliothèque</span></button>
+              <button type="button" data-project-library-tab="device"><i>folder_open</i><span>Cet appareil</span></button>
+              <button type="button" data-project-library-tab="drive" disabled aria-disabled="true"><i>cloud</i><span>Drive</span></button>
+              <button type="button" data-project-library-tab="github" disabled aria-disabled="true"><i>code</i><span>GitHub</span></button>
+            </aside>
+            <main id="project-library-content" class="project-library__content" tabindex="-1"></main>
+          </div>
+        </div>
+      </section>
 
       <section id="graph-search-popover" class="graph-search-popover toolbar-popover ps-surface hidden" aria-label="Recherche dans le graphe">
         <label class="graph-search-field ps-field">
@@ -443,6 +471,6 @@
       }
     </script>
     <script src="./app.config.js"></script>
-  <script src="./assets/js/main.js?v=20260626-v315-granular-skeletons-1" type="module"></script>
+  <script src="./assets/js/main.js?v=20260626-v328-library-masonry-tabs-1" type="module"></script>
   </body>
 </html>

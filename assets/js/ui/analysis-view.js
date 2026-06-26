@@ -10,6 +10,7 @@ import {
   getBreadcrumbEntities,
   getEntityMetadataEntries
 } from "./insight-model.js";
+import { formatRelativeTime } from "./relative-time-view.js";
 import { renderEntityReactionBlock } from "./reactions-view.js";
 import {
   getTypePresentation,
@@ -36,6 +37,8 @@ export function createAnalysisRenderer({
   selectNode,
   selectContributionNode,
   selectOverview,
+  openOverviewEdit,
+  openEntityEdit,
   renderRightPanel,
   updateDeepLink,
   followUser,
@@ -100,7 +103,10 @@ export function createAnalysisRenderer({
         </article>
       `;
       els.timeline.innerHTML = `
-        <div class="context-card ps-card ps-surface">
+        <div class="context-card context-card--editable ps-card ps-surface">
+          <button class="context-card-edit ps-icon-button" type="button" data-edit-selected-context aria-label="Modifier cette fiche">
+            <i>edit</i>
+          </button>
           <p class="kicker">Sélection active</p>
           <strong>${escapeHtml(selected.label)}</strong>
           ${selectedSummary ? `<p>${escapeHtml(selectedSummary)}</p>` : ""}
@@ -110,7 +116,7 @@ export function createAnalysisRenderer({
       const source = state.entities.get(getId(selectedLink.source));
       const target = state.entities.get(getId(selectedLink.target));
       els.timeline.innerHTML = `
-        <div class="context-card project-context-card ps-card ps-surface">
+        <div class="context-card context-card--editable project-context-card ps-card ps-surface">
           <strong>Lien sélectionné</strong>
           <p>${escapeHtml(source?.label || getId(selectedLink.source))} → ${escapeHtml(target?.label || getId(selectedLink.target))}</p>
           <div class="project-tags">
@@ -136,14 +142,24 @@ export function createAnalysisRenderer({
       const manifest = state.projectManifest || {};
       const fileCount = Array.isArray(manifest.fichiers) ? manifest.fichiers.length : state.files.size;
       const generatedAt = formatManifestDate(manifest.date_generation);
+      const relativeGeneratedAt = formatManifestRelativeDate(manifest.date_generation);
+      const overviewContextId = getOverviewContextId();
+      const overviewExchangeCount = countCommentsForContext(overviewContextId);
+      const online = state.realtimeStatus === "firebase";
       els.timeline.innerHTML = `
         <div class="context-card project-context-card ps-card ps-surface">
+          <button class="context-card-edit ps-icon-button" type="button" data-edit-overview-context aria-label="Modifier la vue d’ensemble">
+            <i>edit</i>
+          </button>
           <strong>${escapeHtml(manifest.titre || manifest.id || "Projet sans titre")}</strong>
           ${manifest.description ? `<p>${escapeHtml(manifest.description)}</p>` : ""}
           <div class="project-tags">
             ${manifest.version ? `<span>Version ${escapeHtml(manifest.version)}</span>` : ""}
-            ${generatedAt ? `<span>${escapeHtml(generatedAt)}</span>` : ""}
+            ${relativeGeneratedAt ? `<span title="${escapeHtml(generatedAt)}">${escapeHtml(relativeGeneratedAt)}</span>` : ""}
+            ${fileCount ? `<span>${fileCount} fichiers</span>` : ""}
+            ${overviewExchangeCount ? `<span>${overviewExchangeCount} échange${overviewExchangeCount > 1 ? "s" : ""}</span>` : ""}
           </div>
+          ${online && state.presence.length ? `<div class="project-context-presence">${renderPresenceChips(state.presence, 4)}</div>` : ""}
         </div>
       `;
       els.kpiGrid.classList.add("project-metadata");
@@ -187,8 +203,25 @@ export function createAnalysisRenderer({
         else selectNode(row.dataset.node, true);
       });
     });
+    bindContextCardActions(selected);
     renderTypeDistributionChart(focusNodes);
     renderPresenceSummary(selected, selectedLink);
+  }
+
+  function bindContextCardActions(selected) {
+    els.timeline.querySelector("[data-edit-overview-context]")?.addEventListener("click", () => openOverviewEdit?.());
+    els.timeline.querySelector("[data-edit-selected-context]")?.addEventListener("click", () => {
+      if (selected?.id) openEntityEdit?.(selected.id);
+    });
+  }
+
+  function countCommentsForContext(contextId) {
+    return (state.comments?.[contextId] || []).filter((comment) => !comment.deletedAt && !comment.systemKind).length;
+  }
+
+  function formatManifestRelativeDate(value) {
+    const timestamp = parseManifestDate(value);
+    return timestamp ? formatRelativeTime(timestamp, { dayjs: windowRef.dayjs }) : "";
   }
 
   function renderPresenceSummary(selected, selectedLink) {
@@ -342,4 +375,32 @@ export function createAnalysisRenderer({
     renderAnalysis,
     renderPresenceSummary
   };
+}
+
+function parseManifestDate(value) {
+  if (!value) return null;
+  const direct = Date.parse(value);
+  if (Number.isFinite(direct)) return direct;
+  const match = String(value).match(/^(\d{1,2})\s+([a-zéû]+)\s+(\d{4})$/i);
+  if (!match) return null;
+  const months = {
+    janvier: 0,
+    fevrier: 1,
+    février: 1,
+    mars: 2,
+    avril: 3,
+    mai: 4,
+    juin: 5,
+    juillet: 6,
+    aout: 7,
+    août: 7,
+    septembre: 8,
+    octobre: 9,
+    novembre: 10,
+    decembre: 11,
+    décembre: 11
+  };
+  const month = months[match[2].toLowerCase()];
+  if (month === undefined) return null;
+  return new Date(Number(match[3]), month, Number(match[1])).getTime();
 }

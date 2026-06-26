@@ -57,24 +57,27 @@ export function renderEditFormView({
   summaryEnabled,
   summaryStyle,
   graphImageEnabled,
-  graphImageValue
+  graphImageValue,
+  showLocalNotice = true
 }) {
   return `
     <section class="edit-surface" data-edit-dirty="false" data-body-dirty="false">
-      <header class="edit-surface-head">
-        <div>
-          <h2>${escapeHtml(entity.label || "Fiche")}</h2>
+      <header class="edit-surface-head entity-edit-head">
+        <div class="edit-surface-head__row">
+          <div class="edit-surface-title">
+            <h2>${escapeHtml(entity.label || "Fiche")}</h2>
+          </div>
+          <label class="edit-toggle">
+            <i>edit</i>
+            <span>Modifier</span>
+            <span class="ps-switch" aria-label="Quitter le mode édition">
+              <input id="edit-toggle" type="checkbox" checked>
+              <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
+            </span>
+          </label>
         </div>
-        <label class="edit-toggle">
-          <i>edit</i>
-          <span>Modifier</span>
-          <span class="switch">
-            <input id="edit-toggle" type="checkbox" checked>
-            <span></span>
-          </span>
-        </label>
+        ${showLocalNotice ? `<div class="local-edit-warning local-edit-warning--dismissable ps-chip" data-entity-edit-notice><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span><button class="ps-icon-button" type="button" data-dismiss-entity-edit-notice aria-label="Masquer ce rappel"><i>close</i></button></div>` : ""}
       </header>
-      <div class="local-edit-warning ps-chip"><i>info</i><span>Les changements sont enregistrés localement ici, puis exportables comme nouveau pack.</span></div>
       <div class="edit-card ps-card ps-surface">
         <label class="field-label ps-field ps-text-label">Titre
           <input id="adjust-label" class="text-field ps-input" type="text" value="${escapeHtml(entity.label)}">
@@ -86,9 +89,9 @@ export function renderEditFormView({
             <h3>Résumé</h3>
             <p>Afficher un résumé distinct du contenu principal.</p>
           </div>
-          <label class="switch" aria-label="Activer le résumé">
+          <label class="ps-switch" aria-label="Activer le résumé">
             <input id="summary-toggle" type="checkbox"${summaryEnabled ? " checked" : ""}>
-            <span></span>
+            <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
           </label>
         </div>
         <textarea id="adjust-summary" class="ps-input" rows="4"${summaryEnabled ? "" : " disabled"}>${escapeHtml(entity.summary || "")}</textarea>
@@ -132,9 +135,9 @@ export function renderEditFormView({
             <h3>Image du nœud</h3>
             <p>Utiliser une image comme texture du nœud sélectionné.</p>
           </div>
-          <label class="switch" aria-label="Activer l’image du graphe">
+          <label class="ps-switch" aria-label="Activer l’image du graphe">
             <input id="graph-image-toggle" type="checkbox"${graphImageEnabled ? " checked" : ""}>
-            <span></span>
+            <span class="ps-switch__track" aria-hidden="true"><span class="ps-switch__thumb"></span></span>
           </label>
         </div>
         <div class="graph-image-editor ${graphImageEnabled ? "" : "hidden"}">
@@ -150,10 +153,10 @@ export function renderEditFormView({
           </div>
         </div>
       </section>
-      <footer class="edit-export-footer">
-        <button id="download-current" class="transfer-action-card edit-download-card" type="button">
-          <i>description</i>
-          <span><strong>Fiche</strong><small>Télécharger le Markdown sélectionné</small></span>
+      <footer class="edit-actions edit-actions--download">
+        <button id="download-current" class="ps-button edit-download-card" type="button">
+          <i>download</i>
+          <span>Télécharger la fiche Markdown</span>
         </button>
       </footer>
     </section>

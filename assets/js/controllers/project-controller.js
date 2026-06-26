@@ -9,7 +9,7 @@ import {
   getRemoteFileName as getRemoteFileNameValue,
   mergeProjectManifestWithMoodlePack as mergeProjectManifestWithMoodlePackValue,
   resolveProjectRestore
-} from "../services/project-launch.js";
+} from "../services/project-launch.js?v=20260626-v324-library-reperes-1";
 
 export function createProjectController({
   state,
@@ -96,7 +96,10 @@ export function createProjectController({
           id: manifest.id || entry.id,
           title: manifest.titre || entry.title,
           version: manifest.version || entry.version || "",
-          description: manifest.description || entry.description || ""
+          description: manifest.description || entry.description || "",
+          cover: getManifestCover(manifest) || entry.cover || "",
+          date_generation: manifest.date_generation || entry.date_generation || "",
+          fichiers: Array.isArray(manifest.fichiers) ? manifest.fichiers : entry.fichiers
         };
       } catch (error) {
         consoleRef.info(`Pack local absent ou indisponible: ${entry.url}`, error);
@@ -512,4 +515,10 @@ export function createProjectController({
     mergeProjectManifestWithMoodlePack,
     extractZipEntries
   };
+}
+
+function getManifestCover(manifest = {}) {
+  return ["cover", "image", "illustration", "thumbnail", "hero", "coverImage", "image_cover"]
+    .map((field) => manifest?.[field] || manifest?.media?.[field])
+    .find((value) => typeof value === "string" && value.trim()) || "";
 }

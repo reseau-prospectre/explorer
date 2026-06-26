@@ -52,7 +52,11 @@ export function createRecentProjectList(recent, manifest, limit = 8) {
     id: manifest.id,
     title: manifest.titre || manifest.id,
     version: manifest.version || "",
-    group: "Imports récents"
+    group: "Imports récents",
+    description: manifest.description || "",
+    cover: manifest.cover || manifest.image || manifest.thumbnail || "",
+    date_generation: manifest.date_generation || "",
+    fileCount: Array.isArray(manifest.fichiers) ? manifest.fichiers.length : 0
   };
   return [
     entry,

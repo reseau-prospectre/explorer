@@ -272,7 +272,8 @@
   }
 
   .panel-content {
-    padding: 14px 16px 20px;
+    --panel-content-bottom-padding: 20px;
+    padding: 14px 16px var(--panel-content-bottom-padding);
   }
 
   .comment-box textarea {

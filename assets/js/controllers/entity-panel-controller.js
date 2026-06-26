@@ -5,14 +5,20 @@ import {
   getVisibleEntitySummary,
   renderEntityReadView,
   renderInlineRelations
-} from "../ui/entity-view.js";
-import { renderSummaryCallout } from "../ui/editor-view.js";
+} from "../ui/entity-view.js?v=20260626-v324-library-reperes-1";
+import { renderSummaryCallout } from "../ui/editor-view.js?v=20260626-v326-edit-library-hero-1";
 import {
+  getManifestCover,
   renderOverviewDetailsView,
-  renderOverviewEditView
-} from "../ui/overview-view.js";
+  renderOverviewEditView,
+  setOverviewCoverOptionEnabled,
+  setOverviewCoverValue
+} from "../ui/overview-view.js?v=20260626-v326-edit-library-hero-1";
 import { renderPanelSkeleton } from "../ui/panel-skeletons.js?v=20260626-v315-granular-skeletons-1";
 import { bindDiscussionPanel } from "./discussion-panel-controller.js";
+
+const OVERVIEW_EDIT_NOTICE_DISMISS_KEY = "prospectre.editNotice.dismissed";
+const OVERVIEW_EDIT_NOTICE_DISMISS_LIMIT = 10;
 
 export function createEntityPanelController({
   els,
@@ -130,7 +136,13 @@ export function createEntityPanelController({
       manifest,
       datasetId: state.datasetId,
       generatedAt,
-      fileCount
+      fileCount,
+      coverUrl: resolveOverviewCoverPreviewUrl(manifest, state),
+      manifestPath: formatManifestPath(state.projectManifestUrl)
+    });
+    els.panelContent.querySelector("[data-overview-edit-action]")?.addEventListener("click", () => {
+      state.editMode = true;
+      renderOverviewMetaDetails();
     });
     els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
       state.editMode = event.target.checked;
@@ -146,7 +158,13 @@ export function createEntityPanelController({
       manifest,
       datasetId: state.datasetId,
       generatedAt,
-      fileCount
+      fileCount,
+      showLocalNotice: shouldShowOverviewEditNotice(),
+      coverPreviewUrl: resolveOverviewCoverPreviewUrl(manifest, state)
+    });
+    els.panelContent.querySelector("[data-dismiss-overview-edit-notice]")?.addEventListener("click", () => {
+      incrementOverviewEditNoticeDismissCount();
+      els.panelContent.querySelector("[data-overview-edit-notice]")?.remove();
     });
     els.panelContent.querySelector("#overview-edit-toggle")?.addEventListener("change", (event) => {
       state.editMode = event.target.checked;
@@ -162,14 +180,37 @@ export function createEntityPanelController({
         if (enabled) description.focus();
       }
     });
+    els.panelContent.querySelector("#overview-cover-toggle")?.addEventListener("change", (event) => {
+      setOverviewCoverOptionEnabled(els.panelContent, event.target.checked);
+    });
+    els.panelContent.querySelector("#overview-cover-source")?.addEventListener("input", (event) => {
+      setOverviewCoverValue(els.panelContent, event.target.value.trim());
+    });
+    els.panelContent.querySelector("#overview-cover-file")?.addEventListener("change", async (event) => {
+      const [file] = event.target.files || [];
+      if (!file) return;
+      const extension = getImageExtensionFromFile(file);
+      const uuid = windowRef.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const path = `assets/uploads/manifest-cover-${uuid}.${extension}`;
+      const dataUrl = await blobToDataUrl(file);
+      state.files.set(path, { path, dataUrl, binary: true });
+      setOverviewCoverValue(els.panelContent, path, dataUrl);
+    });
+    els.panelContent.querySelector("#clear-overview-cover")?.addEventListener("click", () => {
+      setOverviewCoverValue(els.panelContent, "");
+    });
     els.panelContent.querySelector("#apply-overview-adjust")?.addEventListener("click", () => {
       const title = els.panelContent.querySelector("#overview-title")?.value.trim();
       const descriptionEnabled = Boolean(els.panelContent.querySelector("#overview-description-toggle")?.checked);
       const description = descriptionEnabled ? els.panelContent.querySelector("#overview-description")?.value.trim() || "" : "";
+      const coverEnabled = Boolean(els.panelContent.querySelector("#overview-cover-toggle")?.checked);
+      const cover = coverEnabled ? els.panelContent.querySelector("#overview-cover-source")?.value.trim() || "" : "";
       state.projectManifest ||= {};
       if (title) state.projectManifest.titre = title;
       if (description) state.projectManifest.description = description;
       else delete state.projectManifest.description;
+      if (cover) state.projectManifest.cover = cover;
+      else delete state.projectManifest.cover;
       updateManifestFile();
       saveSession();
       renderProjectSwitcher();
@@ -202,6 +243,10 @@ export function createEntityPanelController({
       summaryHtml: summary ? renderSummaryCallout(entity, summary) : "",
       contentHtml: renderContentWithEntityLinks(entity.body, entity.path, renderFormat),
       relatedHtml
+    });
+    els.panelContent.querySelector("[data-entity-edit-action]")?.addEventListener("click", () => {
+      state.editMode = true;
+      renderRightPanel();
     });
     els.panelContent.querySelector("#edit-toggle").addEventListener("change", (event) => {
       state.editMode = event.target.checked;
@@ -303,4 +348,64 @@ export function createEntityPanelController({
 
 function escapeRegExp(value) {
   return String(value).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+function shouldShowOverviewEditNotice() {
+  return getOverviewEditNoticeDismissCount() < OVERVIEW_EDIT_NOTICE_DISMISS_LIMIT;
+}
+
+function getOverviewEditNoticeDismissCount() {
+  try {
+    return Math.max(0, Number(localStorage.getItem(OVERVIEW_EDIT_NOTICE_DISMISS_KEY) || 0) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function incrementOverviewEditNoticeDismissCount() {
+  try {
+    localStorage.setItem(OVERVIEW_EDIT_NOTICE_DISMISS_KEY, String(getOverviewEditNoticeDismissCount() + 1));
+  } catch {
+    // Non-critical preference.
+  }
+}
+
+function getImageExtensionFromFile(file) {
+  const fromName = String(file?.name || "").split(".").pop()?.toLowerCase();
+  if (fromName && /^[a-z0-9]+$/.test(fromName)) return fromName === "jpeg" ? "jpg" : fromName;
+  return {
+    "image/png": "png",
+    "image/jpeg": "jpg",
+    "image/gif": "gif",
+    "image/webp": "webp",
+    "image/svg+xml": "svg"
+  }[file?.type] || "png";
+}
+
+function blobToDataUrl(blob) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.addEventListener("load", () => resolve(reader.result));
+    reader.addEventListener("error", () => reject(reader.error));
+    reader.readAsDataURL(blob);
+  });
+}
+
+function resolveOverviewCoverPreviewUrl(manifest = {}, state) {
+  const raw = getManifestCover(manifest);
+  if (!raw || /^(https?:|data:|blob:)/i.test(raw)) return raw || "";
+  const file = state?.files?.get(raw) || state?.files?.get(raw.replace(/^\.\//, ""));
+  return file?.dataUrl || raw;
+}
+
+function formatManifestPath(value = "") {
+  if (!value) return "manifest.json";
+  try {
+    const path = new URL(value, document.baseURI).pathname;
+    const parts = decodeURIComponent(path).split("/").filter(Boolean);
+    return parts.slice(-2).join("/") || "manifest.json";
+  } catch {
+    const parts = String(value).split(/[\\/]/).filter(Boolean);
+    return parts.slice(-2).join("/") || "manifest.json";
+  }
 }

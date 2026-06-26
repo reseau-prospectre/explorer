@@ -40,7 +40,7 @@ import {
   createProjectNavigationHref,
   createRecentProjectList,
   sameProjectUrl as sameProjectUrlValue
-} from "./services/project-launch.js";
+} from "./services/project-launch.js?v=20260626-v324-library-reperes-1";
 import { createRealtimeProviders } from "./services/realtime.js";
 import {
   groupCommentsByEntity
@@ -48,11 +48,11 @@ import {
 import { createMarkdownRenderer } from "./ui/markdown.js";
 import {
   normalizeSummaryStyle
-} from "./ui/editor-view.js";
+} from "./ui/editor-view.js?v=20260626-v326-edit-library-hero-1";
 import {
   getVisibleEntitySummary
-} from "./ui/entity-view.js";
-import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260626-v315-granular-skeletons-1";
+} from "./ui/entity-view.js?v=20260626-v324-library-reperes-1";
+import { createAnalysisRenderer } from "./ui/analysis-view.js?v=20260626-v325-reperes-manifest-polish-1";
 import {
   emojiToId,
   reactionEmojiMarkup,
@@ -93,8 +93,8 @@ import {
   QUICK_REACTIONS
 } from "./controllers/comments-controller.js";
 import { createCommentInteractionsController } from "./controllers/comment-interactions-controller.js";
-import { createEntityPanelController } from "./controllers/entity-panel-controller.js?v=20260626-v315-granular-skeletons-1";
-import { createEditorFormController } from "./controllers/editor-form-controller.js";
+import { createEntityPanelController } from "./controllers/entity-panel-controller.js?v=20260626-v326-edit-library-hero-1";
+import { createEditorFormController } from "./controllers/editor-form-controller.js?v=20260626-v326-edit-library-hero-1";
 import { createExportController } from "./controllers/export-controller.js";
 import { createGraphController } from "./controllers/graph-controller.js";
 import { createLifecycleController } from "./controllers/lifecycle-controller.js?v=20260626-v314-load-sequence-1";
@@ -105,11 +105,11 @@ import {
 } from "./controllers/gamification-controller.js?v=20260626-v315-granular-skeletons-1";
 import { createPresenceController } from "./controllers/presence-controller.js?v=20260626-liquid-consolidation-1";
 import { createProfileController } from "./controllers/profile-controller.js?v=20260626-v315-granular-skeletons-1";
-import { createProjectController } from "./controllers/project-controller.js?v=20260626-v314-load-sequence-1";
-import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js?v=20260626-v313-motion-shell-1";
+import { createProjectController } from "./controllers/project-controller.js?v=20260626-v324-library-reperes-1";
+import { createProjectSwitcherController } from "./controllers/project-switcher-controller.js?v=20260626-v328-library-masonry-tabs-1";
 import { createRealtimeController } from "./controllers/realtime-controller.js";
 import { createSearchController } from "./controllers/search-controller.js";
-import { createSelectionController } from "./controllers/selection-controller.js";
+import { createSelectionController } from "./controllers/selection-controller.js?v=20260626-v324-library-reperes-1";
 import { createSchemaAdminController } from "./controllers/schema-admin-controller.js";
 import { createSessionController } from "./controllers/session-controller.js";
 import { createSmartLinkController } from "./controllers/smart-link-controller.js";
@@ -204,6 +204,10 @@ const els = {
   insightsToggle: document.querySelector("#insights-toggle"),
   projectSwitcherToggle: document.querySelector("#project-switcher-toggle"),
   projectSwitcherMenu: document.querySelector("#project-switcher-menu"),
+  projectLibrary: document.querySelector("#project-library"),
+  projectLibrarySearch: document.querySelector("#project-library-search"),
+  projectLibraryContent: document.querySelector("#project-library-content"),
+  projectLibraryClose: document.querySelector("#project-library-close"),
   activeProjectName: document.querySelector("#active-project-name"),
   activeProjectVersion: document.querySelector("#active-project-version"),
   quickTypeFilters: document.querySelector("#quick-type-filters"),
@@ -608,6 +612,24 @@ state.analysisRenderer = createAnalysisRenderer({
   selectNode,
   selectContributionNode,
   selectOverview,
+  openOverviewEdit: () => {
+    state.selectedId = null;
+    state.selectedLinkKey = null;
+    state.activeTab = "overview";
+    state.editMode = true;
+    document.querySelectorAll("#panel-tabs .tab").forEach((tab) => tab.classList.toggle("active", tab.dataset.tab === "overview"));
+    els.panelKicker.textContent = "Vue d’ensemble";
+    els.panelTitle.textContent = state.projectManifest?.titre || state.projectManifest?.id || "Vue d’ensemble";
+    state.panelManager?.update("context", { title: els.panelTitle.textContent, badge: { label: "Vue d’ensemble", color: "var(--accent)" } });
+    openContextPanel();
+    renderOverviewMetaDetails();
+    updateDeepLink();
+    state.graphController.scheduleResize();
+  },
+  openEntityEdit: (id) => {
+    state.editMode = true;
+    selectNode(id, false);
+  },
   renderRightPanel,
   updateDeepLink,
   followUser
@@ -725,8 +747,10 @@ state.graphOptionsController = createGraphOptionsController({
   closeFilterMenu,
   closeGraphSearch: () => state.chromeController.closeGraphSearch(),
   closeGraphHelp: () => state.chromeController.closeGraphHelp(),
+  renderPresenceChips,
   setLoadingPhase: (phase, options) => state.uiRuntimeController.setLoadingPhase(phase, options),
-  showToast
+  showToast,
+  windowRef: window
 });
 
 window.__prospectreState = state;

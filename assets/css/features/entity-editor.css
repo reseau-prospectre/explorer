@@ -11,10 +11,10 @@
   display: grid;
   gap: 12px;
   margin: -16px -18px 0;
-  padding: 0 0 8px;
+  padding: 0;
 }
 
-.edit-surface > :not(.edit-surface-head) {
+.edit-surface > :not(.edit-surface-head, .edit-actions) {
   margin-right: 18px;
   margin-left: 18px;
 }
@@ -23,9 +23,8 @@
   position: sticky;
   top: -16px;
   z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  align-items: stretch;
   gap: 12px;
   margin: 0;
   padding: 16px 22px 14px;
@@ -34,11 +33,33 @@
   backdrop-filter: blur(14px);
 }
 
+.edit-surface-head__row,
+.overview-edit-head__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+}
+
+.edit-surface-title {
+  min-width: 0;
+}
+
+.entity-edit-head .local-edit-warning,
+.overview-edit-head .local-edit-warning {
+  width: 100%;
+  margin: 0;
+}
+
 .edit-surface-head h2 {
+  overflow: hidden;
   margin: 0;
   color: var(--text);
   font-size: 18px;
   line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .edit-surface .kicker {
@@ -63,6 +84,11 @@
   align-items: flex-start;
   justify-content: space-between;
   gap: 12px;
+}
+
+.edit-card-head .ps-switch,
+.edit-surface-head .ps-switch {
+  flex: 0 0 auto;
 }
 
 .edit-card-head h3 {
@@ -194,8 +220,60 @@
   gap: 10px;
 }
 
+.overview-cover-editor {
+  display: grid;
+  gap: 10px;
+}
+
 .edit-option-card:not(.is-enabled) .graph-image-editor {
   display: none;
+}
+
+.edit-option-card:not(.is-enabled) .overview-cover-editor {
+  display: none;
+}
+
+.overview-cover-preview {
+  position: relative;
+  display: grid;
+  min-height: 152px;
+  place-items: center;
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 32%, var(--line));
+  border-radius: 10px;
+  background:
+    radial-gradient(circle at 22% 18%, color-mix(in srgb, var(--ps-palette-2, var(--accent)) 22%, transparent), transparent 32%),
+    radial-gradient(circle at 78% 24%, color-mix(in srgb, var(--ps-palette-5, var(--accent-2)) 18%, transparent), transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--accent) 9%, var(--soft)), color-mix(in srgb, var(--panel) 88%, transparent));
+}
+
+.overview-cover-preview img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+}
+
+.overview-cover-preview.is-empty span {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  min-width: 88px;
+  min-height: 72px;
+  place-items: center;
+  gap: 4px;
+  border: 1px solid color-mix(in srgb, var(--accent) 36%, var(--line));
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--accent) 10%, var(--card));
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 820;
+}
+
+.overview-cover-preview.is-empty i {
+  color: var(--accent);
+  font-size: 24px;
 }
 
 .graph-image-actions {
@@ -340,24 +418,28 @@
   background: color-mix(in srgb, var(--soft) 32%, transparent);
 }
 
-.edit-export-footer {
-  display: flex;
-  justify-content: flex-end;
-}
-
 .edit-download-card {
-  max-width: 280px;
+  width: 100%;
+  justify-content: center;
 }
 
 .edit-actions {
   position: sticky;
-  bottom: 0;
-  z-index: 2;
+  bottom: calc(-1 * var(--panel-content-bottom-padding, 0px));
+  z-index: 5;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) minmax(116px, auto);
   gap: 10px;
-  padding: 12px 0 0;
-  background: linear-gradient(0deg, var(--panel) 78%, color-mix(in srgb, var(--panel) 0%, transparent));
+  margin: 0;
+  padding: 10px 18px 12px;
+  border-top: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+  background:
+    linear-gradient(0deg, color-mix(in srgb, var(--panel) 98%, transparent) 78%, color-mix(in srgb, var(--panel) 0%, transparent));
+  backdrop-filter: blur(14px);
+}
+
+.edit-actions--download {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .edit-actions button {

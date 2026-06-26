@@ -16,7 +16,7 @@ import {
   setSummaryOptionEnabled,
   setSummaryStyleSelection,
   summaryStyleLabel
-} from "../ui/editor-view.js";
+} from "../ui/editor-view.js?v=20260626-v326-edit-library-hero-1";
 import {
   destroyEditorState,
   getEntityEditSignature,
@@ -30,6 +30,9 @@ import {
   normalizeEditorMode,
   scheduleEditorAutosave
 } from "./editor-controller.js";
+
+const ENTITY_EDIT_NOTICE_DISMISS_KEY = "prospectre.editNotice.dismissed";
+const ENTITY_EDIT_NOTICE_DISMISS_LIMIT = 10;
 
 export function createEditorFormController({
   els,
@@ -70,7 +73,12 @@ export function createEditorFormController({
       summaryEnabled,
       summaryStyle,
       graphImageEnabled,
-      graphImageValue
+      graphImageValue,
+      showLocalNotice: shouldShowEntityEditNotice()
+    });
+    els.panelContent.querySelector("[data-dismiss-entity-edit-notice]")?.addEventListener("click", () => {
+      incrementEntityEditNoticeDismissCount();
+      els.panelContent.querySelector("[data-entity-edit-notice]")?.remove();
     });
     els.panelContent.querySelector("#edit-toggle").addEventListener("change", (event) => {
       if (event.target.checked) return;
@@ -366,4 +374,24 @@ export function createEditorFormController({
     resetEditorScroll,
     destroyContentEditor
   };
+}
+
+function shouldShowEntityEditNotice() {
+  return getEntityEditNoticeDismissCount() < ENTITY_EDIT_NOTICE_DISMISS_LIMIT;
+}
+
+function getEntityEditNoticeDismissCount() {
+  try {
+    return Math.max(0, Number(localStorage.getItem(ENTITY_EDIT_NOTICE_DISMISS_KEY) || 0) || 0);
+  } catch {
+    return 0;
+  }
+}
+
+function incrementEntityEditNoticeDismissCount() {
+  try {
+    localStorage.setItem(ENTITY_EDIT_NOTICE_DISMISS_KEY, String(getEntityEditNoticeDismissCount() + 1));
+  } catch {
+    // Non-critical preference.
+  }
 }

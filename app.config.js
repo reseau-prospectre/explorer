@@ -1,6 +1,6 @@
 window.APP_CONFIG = {
   appName: "PROSPECTRE",
-  version: "3.1.5-beta",
+  version: "3.2.8-beta",
   realtime: {
     provider: "firebase",
     roomId: "prospectre-atelier",

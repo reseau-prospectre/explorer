@@ -1,7 +1,42 @@
 /* Entity reading feature layer: overview, summary callouts, reading footer, relations and KPI/meta cards. */
 .overview-details-card {
+  position: relative;
   display: grid;
   gap: 14px;
+  padding-right: 58px;
+}
+
+.readable-card {
+  position: relative;
+}
+
+.card-hover-action {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 2;
+  width: 34px;
+  height: 34px;
+  border-color: color-mix(in srgb, var(--accent) 36%, var(--line));
+  background: color-mix(in srgb, var(--panel) 74%, transparent);
+  color: var(--text);
+  opacity: 0;
+  transform: translateY(-4px);
+  pointer-events: none;
+  transition: opacity 140ms ease, transform 140ms ease, border-color 140ms ease, background 140ms ease;
+}
+
+.readable-card:hover .card-hover-action,
+.readable-card:focus-within .card-hover-action,
+.card-hover-action:focus-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.card-hover-action:hover {
+  border-color: color-mix(in srgb, var(--accent) 68%, var(--line));
+  background: color-mix(in srgb, var(--accent) 16%, var(--panel));
 }
 
 .overview-detail-list {
@@ -11,6 +46,24 @@
   border: 1px solid var(--line);
   border-radius: 8px;
   overflow: hidden;
+}
+
+.overview-cover-display {
+  position: relative;
+  min-height: 180px;
+  margin: 0 0 2px;
+  overflow: hidden;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--panel) 82%, transparent);
+}
+
+.overview-cover-display img {
+  width: 100%;
+  height: 100%;
+  min-height: inherit;
+  object-fit: cover;
+  display: block;
 }
 
 .overview-detail-list > div {
@@ -76,6 +129,20 @@
   line-height: 1.45;
 }
 
+.local-edit-warning--dismissable {
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  min-height: 38px;
+  margin-top: -4px;
+}
+
+.local-edit-warning--dismissable .ps-icon-button {
+  width: 28px;
+  height: 28px;
+  min-height: 28px;
+  color: var(--muted);
+}
+
 .local-edit-warning i {
   color: var(--accent);
   font-size: 18px;
@@ -97,6 +164,10 @@
   display: flex;
   align-items: center;
   gap: 7px;
+}
+
+.edit-toggle .ps-switch {
+  flex: 0 0 auto;
 }
 
 .share-link-button,

@@ -2,7 +2,7 @@ import { cssEscape, getId } from "../core/utils.js";
 import {
   createSelectionDeepLinkUrl,
   getInitialDeepLinkRequest
-} from "../services/project-launch.js";
+} from "../services/project-launch.js?v=20260626-v324-library-reperes-1";
 
 export function createSelectionController({
   els,
